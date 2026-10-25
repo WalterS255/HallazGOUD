@@ -368,7 +368,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 ### Fase B — Andamiaje del repositorio
 - [ ] Monorepo con `frontend/`, `backend/`, `docs/`, `docker-compose.yml`, `.env.example`, `.gitignore`, `README.md`.
 - [x] `docker-compose.yml` con `db` (PostgreSQL 18), `s3` (SeaweedFS, imágenes) y `mailpit` (correos de prueba). Puertos solo en `127.0.0.1`.
-- [ ] oxlint + Prettier + husky (lint antes de cada commit).
+- [x] oxlint + Prettier + husky (lint antes de cada commit). `package.json` de la raíz solo con husky + lint-staged; la configuración está en `backend/lint-staged.config.js`. Antes de cada commit: Prettier + oxlint **rápido** (sin tipos); el lint completo con tipos (`npm run lint`, ~23 s) va a mano y en el CI.
 - [x] Backend NestJS mínimo con `GET /api/salud` → `{ ok: true }` (Nest 12, TypeScript, módulo `salud`, prueba unitaria + e2e). `multer` forzado a 2.5.0 con `overrides` por una vulnerabilidad en la 2.4.0.
 - [x] Filtro global de errores (`comun/errores/`: `{ error: { codigo, mensaje } }`, 500 sin detalles internos, `ErrorApp` para errores de negocio) y logger pino (`comun/logger/`: `X-Request-Id`, redacción de secretos, JSON en producción).
 
@@ -497,7 +497,9 @@ npx prisma migrate dev --create-only --name <nombre>   # para editar el SQL a ma
 npx prisma studio                    # ver los datos en el navegador
 npx prisma db seed
 npm test                             # pruebas
-npm run lint
+npm run lint                         # lint completo con tipos (~23 s)
+npm run format:check                 # ¿todo está formateado? (no cambia nada)
+npm install                          # en la RAÍZ: instala husky y activa el hook de pre-commit
 cd frontend && npm run dev           # frontend en http://localhost:5173
 ```
 
