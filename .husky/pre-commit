@@ -1,0 +1,4 @@
+# Se ejecuta antes de cada commit. Si algo falla, el commit NO se hace.
+# lint-staged revisa solo los archivos que vas a guardar (los del "git add"),
+# usando la configuración más cercana a cada archivo (p. ej. backend/.lintstagedrc.json).
+npx lint-staged
