@@ -233,7 +233,8 @@ Prisma no sabe expresar algunas cosas en `schema.prisma`. Esas se agregan **a ma
 
 - Restricciones `CHECK` (dominio del correo, longitud del título, `fecha_suceso <= fecha_creacion`, `orden BETWEEN 1 AND 5`).
 - La columna `tsvector` generada (en el schema se declara como `Unsupported("tsvector")`) y su índice GIN.
-- Los índices únicos parciales (`WHERE estado = 'ACEPTADA'`).
+- ~~Los índices únicos parciales~~ → **ya no**: desde Prisma 7.4 se declaran en el schema con la preview `partialIndexes` (`@@unique([...], where: raw("estado = 'ACEPTADA'"))`).
+- La columna generada `busqueda` y su índice GIN **también se repiten en el schema** (`@default(dbgenerated("…"))` con la expresión exacta que guarda Postgres, y `@@index([busqueda], type: Gin)`). Si no se repiten, la siguiente migración intenta borrarlos. **Regla:** después de editar una migración a mano, ejecutar `npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script`; debe decir *"This is an empty migration"*.
 - El índice único sobre una expresión `uq_usuario_correo ON usuario (lower(correo))`. Por eso `correo` **no** lleva `@unique` en el schema, y Prisma no permite `findUnique({ where: { correo } })`: el repositorio busca con `findFirst` y el correo ya en minúsculas. Además, el backend guarda siempre el correo con `.trim().toLowerCase()` (la BD es la última barrera, no la única).
 - El trigger que vuelve inmutable la `auditoria`.
 
@@ -373,9 +374,10 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [x] Filtro global de errores (`comun/errores/`: `{ error: { codigo, mensaje } }`, 500 sin detalles internos, `ErrorApp` para errores de negocio) y logger pino (`comun/logger/`: `X-Request-Id`, redacción de secretos, JSON en producción).
 
 ### Fase C — Base de datos con Prisma
-- [ ] `prisma init` y `schema.prisma` con todo el modelo de la sección 5.3.
-- [ ] Migración inicial + migración manual con CHECK, tsvector, GIN, índices parciales y trigger.
-- [ ] Comparar el SQL generado por Prisma con los scripts de la Fase A (para aprender).
+- [x] `schema.prisma` con todo el modelo de la sección 5.3 (Prisma 7.10.1, nombres iguales a la BD, cliente en `src/generated/prisma`, URL en `prisma.config.ts`).
+- [x] Migración `init` + SQL manual (CHECK, tsvector generado, `lower(correo)`, triggers). Sin diferencias entre schema y BD.
+- [x] Comparar con la Fase A: columnas, CHECK, índices y triggers idénticos. Diferencias: Prisma usa `SERIAL` (no `IDENTITY`), `UNIQUE INDEX` (no `CONSTRAINT UNIQUE`) y agrega `ON UPDATE CASCADE` / `ON DELETE RESTRICT o SET NULL` a las FK.
+- Bases: `hallazgo_ud` es solo de Prisma; los scripts de la Fase A se practican en `hallazgo_practica`.
 - [ ] `prisma/seed.ts` con categorías, sedes de la UD, lugares y 2–3 usuarios de prueba (uno por rol).
 
 ### Fase D — Autenticación (RF-01 a RF-05, RNF-06, RNF-09)

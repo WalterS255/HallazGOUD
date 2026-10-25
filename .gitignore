@@ -9,6 +9,8 @@ dist/
 build/
 coverage/
 *.tsbuildinfo
+# Cliente de Prisma: se genera con `prisma generate` (lo hace solo el postinstall)
+backend/src/generated/
 
 # Logs
 *.log

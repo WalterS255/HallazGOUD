@@ -1,0 +1,332 @@
+// =====================================================================
+// HallazGO UD · modelo de datos (CLAUDE.md §5.3)
+// Nombres iguales a la base de datos: modelos y campos en español, snake_case.
+// Lo que Prisma no sabe expresar (CHECK, tsvector generado, índices sobre
+// expresiones, triggers) va a mano en el SQL de la migración: ver §5.5.
+// =====================================================================
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js" // los import del cliente generado terminan en .js (ES modules)
+  previewFeatures     = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+  // La URL está en prisma.config.ts (Prisma 7).
+}
+
+// ---------------------------------------------------------------------
+// ENUMs
+// ---------------------------------------------------------------------
+enum rol_usuario {
+  USUARIO
+  MODERADOR
+  ADMIN
+}
+
+enum estado_cuenta {
+  ACTIVA
+  SUSPENDIDA
+  ELIMINADA
+}
+
+enum tipo_publicacion {
+  PERDIDO
+  ENCONTRADO
+}
+
+enum estado_publicacion {
+  ACTIVA
+  EN_RECLAMACION
+  ENTREGADA
+  EXPIRADA
+  RETIRADA
+}
+
+enum estado_reclamacion {
+  PENDIENTE
+  ACEPTADA
+  RECHAZADA
+  CANCELADA
+}
+
+enum tipo_token {
+  VERIFICACION
+  RECUPERACION
+}
+
+enum tipo_notificacion {
+  COINCIDENCIA
+  RECLAMACION
+  MENSAJE
+  ESTADO
+  MODERACION
+}
+
+enum estado_reporte {
+  PENDIENTE
+  RESUELTO
+  DESCARTADO
+}
+
+// ---------------------------------------------------------------------
+// Acceso
+// ---------------------------------------------------------------------
+model usuario {
+  id                   Int           @id @default(autoincrement())
+  nombre               String?       @db.VarChar(120) // NULL solo si la cuenta está ELIMINADA (anonimizada)
+  correo               String?       @db.VarChar(160) // único sin mayúsculas: índice manual uq_usuario_correo
+  hash_contrasena      String?       @db.VarChar(100)
+  programa             String?       @db.VarChar(160)
+  foto_url             String?
+  rol                  rol_usuario   @default(USUARIO)
+  verificado           Boolean       @default(false)
+  estado_cuenta        estado_cuenta @default(ACTIVA)
+  notificar_por_correo Boolean       @default(true)
+  intentos_fallidos    Int           @default(0)
+  bloqueado_hasta      DateTime?     @db.Timestamptz(6)
+  acepto_politica_en   DateTime      @db.Timestamptz(6)
+  fecha_registro       DateTime      @default(now()) @db.Timestamptz(6)
+
+  tokens             token_usuario[]
+  publicaciones      publicacion[]
+  reclamaciones      reclamacion[]
+  mensajes           mensaje[]
+  cambios_estado     historial_estado[]
+  notificaciones     notificacion[]
+  reportes_hechos    reporte[]          @relation("reporte_reportante")
+  reportes_moderados reporte[]          @relation("reporte_moderador")
+  acciones_auditadas auditoria[]
+}
+
+model token_usuario {
+  id         Int        @id @default(autoincrement())
+  id_usuario Int
+  tipo       tipo_token
+  token_hash String     @unique @db.Char(64) // SHA-256 en hex; nunca el token en claro
+  creado_en  DateTime   @default(now()) @db.Timestamptz(6)
+  expira_en  DateTime   @db.Timestamptz(6)
+  usado_en   DateTime?  @db.Timestamptz(6)
+
+  usuario usuario @relation(fields: [id_usuario], references: [id], onDelete: Cascade)
+
+  @@index([id_usuario, tipo])
+}
+
+// ---------------------------------------------------------------------
+// Catálogos
+// ---------------------------------------------------------------------
+model categoria {
+  id       Int     @id @default(autoincrement())
+  nombre   String  @unique @db.VarChar(60)
+  icono    String? @db.VarChar(60)
+  sensible Boolean @default(false) // documentos, tarjetas, llaves (regla 6.6)
+  activa   Boolean @default(true)
+
+  publicaciones publicacion[]
+}
+
+model sede {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique @db.VarChar(80)
+
+  lugares lugar[]
+}
+
+model lugar {
+  id         Int     @id @default(autoincrement())
+  id_sede    Int
+  edificio   String  @db.VarChar(100)
+  referencia String? @db.VarChar(200)
+
+  sede          sede          @relation(fields: [id_sede], references: [id])
+  publicaciones publicacion[]
+
+  @@unique([id_sede, edificio])
+  @@index([id_sede])
+}
+
+// ---------------------------------------------------------------------
+// Publicaciones
+// ---------------------------------------------------------------------
+model publicacion {
+  id               Int                      @id @default(autoincrement())
+  id_usuario       Int
+  id_categoria     Int
+  id_lugar         Int
+  tipo             tipo_publicacion
+  titulo           String                   @db.VarChar(100)
+  descripcion      String
+  fecha_suceso     DateTime                 @db.Timestamptz(6)
+  estado           estado_publicacion       @default(ACTIVA)
+  oculta           Boolean                  @default(false)
+  fecha_creacion   DateTime                 @default(now()) @db.Timestamptz(6)
+  ultima_actividad DateTime                 @default(now()) @db.Timestamptz(6)
+  // Columna GENERADA por Postgres (búsqueda en español). Prisma no sabe crearla:
+  // el GENERATED ALWAYS AS está escrito a mano en la migración init. Aquí se repite
+  // la expresión tal como Postgres la guarda, para que Prisma no la vea como una
+  // diferencia y no intente "arreglarla" en la próxima migración.
+  // Es opcional (?) porque un campo Unsupported obligatorio impediría usar create().
+  busqueda         Unsupported("tsvector")? @default(dbgenerated("(setweight(to_tsvector('spanish'::regconfig, (COALESCE(titulo, ''::character varying))::text), 'A'::\"char\") || setweight(to_tsvector('spanish'::regconfig, COALESCE(descripcion, ''::text)), 'B'::\"char\"))"))
+
+  usuario           usuario            @relation(fields: [id_usuario], references: [id])
+  categoria         categoria          @relation(fields: [id_categoria], references: [id])
+  lugar             lugar              @relation(fields: [id_lugar], references: [id])
+  detalle_reservado detalle_reservado?
+  imagenes          imagen[]
+  historial         historial_estado[]
+  reclamaciones     reclamacion[]
+  reportes          reporte[]
+
+  @@index([tipo, id_categoria, fecha_suceso], map: "idx_publicacion_coincidencias")
+  @@index([estado, fecha_creacion(sort: Desc)], map: "idx_publicacion_catalogo")
+  @@index([busqueda], type: Gin, map: "idx_publicacion_busqueda")
+  @@index([id_usuario])
+  @@index([id_categoria])
+  @@index([id_lugar])
+}
+
+// Tabla 1:1 aparte para que ningún include/select descuidado la filtre (§5.2.1).
+model detalle_reservado {
+  id_publicacion Int    @id
+  texto          String
+
+  publicacion publicacion @relation(fields: [id_publicacion], references: [id], onDelete: Cascade)
+}
+
+model imagen {
+  id             Int    @id @default(autoincrement())
+  id_publicacion Int
+  url            String
+  url_miniatura  String
+  orden          Int    @db.SmallInt
+
+  publicacion publicacion @relation(fields: [id_publicacion], references: [id], onDelete: Cascade)
+
+  @@unique([id_publicacion, orden])
+}
+
+model historial_estado {
+  id              Int                 @id @default(autoincrement())
+  id_publicacion  Int
+  estado_anterior estado_publicacion?
+  estado_nuevo    estado_publicacion
+  id_usuario      Int? // NULL = lo hizo el sistema (cron)
+  motivo          String?             @db.VarChar(300)
+  fecha           DateTime            @default(now()) @db.Timestamptz(6)
+
+  publicacion publicacion @relation(fields: [id_publicacion], references: [id])
+  usuario     usuario?    @relation(fields: [id_usuario], references: [id])
+
+  @@index([id_publicacion, fecha])
+  @@index([id_usuario])
+}
+
+// ---------------------------------------------------------------------
+// Reclamaciones
+// ---------------------------------------------------------------------
+model reclamacion {
+  id                Int                @id @default(autoincrement())
+  id_publicacion    Int
+  id_reclamante     Int
+  respuesta_detalle String
+  evidencia_url     String?
+  estado            estado_reclamacion @default(PENDIENTE)
+  fecha             DateTime           @default(now()) @db.Timestamptz(6)
+  fecha_resolucion  DateTime?          @db.Timestamptz(6)
+
+  publicacion publicacion @relation(fields: [id_publicacion], references: [id])
+  reclamante  usuario     @relation(fields: [id_reclamante], references: [id])
+  mensajes    mensaje[]
+  entrega     entrega?
+
+  // Índices únicos PARCIALES (preview "partialIndexes"): la unicidad solo aplica a las filas del where.
+  @@unique([id_publicacion], map: "uq_reclamacion_una_aceptada", where: raw("estado = 'ACEPTADA'"))
+  @@unique([id_publicacion, id_reclamante], map: "uq_reclamacion_pendiente_por_usuario", where: raw("estado = 'PENDIENTE'"))
+  @@index([id_publicacion])
+  @@index([id_reclamante])
+}
+
+model mensaje {
+  id             Int      @id @default(autoincrement())
+  id_reclamacion Int
+  id_emisor      Int
+  contenido      String
+  leido          Boolean  @default(false)
+  fecha_envio    DateTime @default(now()) @db.Timestamptz(6)
+
+  reclamacion reclamacion @relation(fields: [id_reclamacion], references: [id])
+  emisor      usuario     @relation(fields: [id_emisor], references: [id])
+
+  @@index([id_reclamacion, fecha_envio], map: "idx_mensaje_hilo")
+  @@index([id_emisor])
+}
+
+model entrega {
+  id                  Int       @id @default(autoincrement())
+  id_reclamacion      Int       @unique
+  confirmo_autor      Boolean   @default(false)
+  confirmo_reclamante Boolean   @default(false)
+  fecha_entrega       DateTime? @db.Timestamptz(6)
+
+  reclamacion reclamacion @relation(fields: [id_reclamacion], references: [id])
+}
+
+// ---------------------------------------------------------------------
+// Notificaciones, moderación y auditoría
+// ---------------------------------------------------------------------
+model notificacion {
+  id            Int               @id @default(autoincrement())
+  id_usuario    Int
+  tipo          tipo_notificacion
+  mensaje       String            @db.VarChar(300)
+  id_referencia Int? // apunta a tablas distintas según el tipo: por eso no es FK
+  leida         Boolean           @default(false)
+  fecha         DateTime          @default(now()) @db.Timestamptz(6)
+
+  usuario usuario @relation(fields: [id_usuario], references: [id])
+
+  @@index([id_usuario, leida, fecha(sort: Desc)])
+}
+
+model reporte {
+  id               Int            @id @default(autoincrement())
+  id_publicacion   Int
+  id_reportante    Int
+  motivo           String         @db.VarChar(500)
+  estado           estado_reporte @default(PENDIENTE)
+  id_moderador     Int?
+  fecha            DateTime       @default(now()) @db.Timestamptz(6)
+  fecha_resolucion DateTime?      @db.Timestamptz(6)
+
+  publicacion publicacion @relation(fields: [id_publicacion], references: [id])
+  reportante  usuario     @relation("reporte_reportante", fields: [id_reportante], references: [id])
+  moderador   usuario?    @relation("reporte_moderador", fields: [id_moderador], references: [id])
+
+  @@unique([id_publicacion, id_reportante], map: "uq_reporte_pendiente_por_usuario", where: raw("estado = 'PENDIENTE'"))
+  @@index([estado, fecha], map: "idx_reporte_bandeja")
+  @@index([id_publicacion])
+  @@index([id_reportante])
+  @@index([id_moderador])
+}
+
+// Inmutable: un trigger (migración manual) impide UPDATE, DELETE y TRUNCATE.
+model auditoria {
+  id         BigInt   @id @default(autoincrement())
+  id_usuario Int? // NULL = sistema o visitante
+  accion     String   @db.VarChar(60)
+  entidad    String   @db.VarChar(60)
+  id_entidad Int?
+  detalle    Json     @default("{}")
+  ip         String?  @db.Inet
+  fecha      DateTime @default(now()) @db.Timestamptz(6)
+
+  usuario usuario? @relation(fields: [id_usuario], references: [id])
+
+  @@index([entidad, id_entidad])
+  @@index([id_usuario, fecha])
+  @@index([fecha])
+}
