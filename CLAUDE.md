@@ -387,7 +387,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [ ] Verificación por correo (visible en Mailpit).
 - [ ] Login con JWT, bloqueo por intentos y rate limit.
 - [ ] Recuperación de contraseña.
-- [ ] *Guards* de Nest para sesión y roles (`@Roles('ADMIN')`).
+- [ ] *Guards* de Nest para sesión y roles (`@Roles('ADMIN')`). **Roles ya hecho** (`comun/autorizacion/roles.ts`: sin sesión → 401, rol que no corresponde → 403; prueba e2e con una sesión falsa). Falta el guard de sesión con JWT; al crearlo, registrar en `AppModule` **primero** el de sesión y **después** `RolesGuard` (los guards globales se ejecutan en ese orden).
 - [ ] Pruebas unitarias e integración.
 
 ### Fase E — Publicaciones (RF-06 a RF-12)
