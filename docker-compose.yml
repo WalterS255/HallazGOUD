@@ -1,0 +1,41 @@
+# HallazGO UD · servicios de apoyo para desarrollo local
+#   docker compose up -d      → levanta todo
+#   docker compose ps         → ver estado
+#   docker compose down       → apaga (los datos se conservan en los volúmenes)
+# Las credenciales salen del archivo .env (copia .env.example a .env).
+
+name: hallazgo
+
+services:
+  db:
+    image: postgres:18.6
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      TZ: UTC  # se guarda en UTC; la app muestra en America/Bogota (RNF-20)
+    ports:
+      # 127.0.0.1 = solo accesible desde tu PC, no desde la red del café o la U.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # Desde Postgres 18 el volumen se monta en /var/lib/postgresql (antes era .../data).
+      - db_datos:/var/lib/postgresql
+      # Scripts de la Fase A, solo lectura, para practicar con psql.
+      - ./docs/sql:/sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailpit:
+    # Atrapa todos los correos que envíe el backend; nada sale a Internet.
+    image: axllent/mailpit:v1.32.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1025:1025"  # SMTP: aquí envía el backend
+      - "127.0.0.1:8025:8025"  # Interfaz web: http://localhost:8025
+
+volumes:
+  db_datos:
