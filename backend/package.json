@@ -24,7 +24,8 @@
     "db:migrate": "prisma migrate dev",
     "db:status": "prisma migrate status",
     "db:seed": "prisma db seed",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "test:db": "vitest run --config ./vitest.config.db.ts"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",
