@@ -1,0 +1,8 @@
+# Guarda los archivos de texto con saltos de línea LF (estilo Linux).
+# Los contenedores de Docker son Linux: un script con CRLF (estilo Windows) puede fallar allí.
+* text=auto eol=lf
+
+*.pdf binary
+*.png binary
+*.jpg binary
+*.webp binary
