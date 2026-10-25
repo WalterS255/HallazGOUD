@@ -425,6 +425,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 
 ### Fase K — Despliegue y documentación
 - [ ] Dockerfiles de producción + proxy inverso con TLS. En el VPS no se publican los puertos de Postgres, ni el explorador de SeaweedFS (8888, sin contraseña), ni Mailpit.
+- [ ] Usuario de BD con permisos mínimos. **Script listo y probado:** `infra/bd/roles.sql` crea `hallazgo_app`, que lee y escribe datos, pero en `auditoria` solo puede hacer `INSERT` y `SELECT`. Tampoco puede hacer `DROP`, desactivar triggers ni crear tablas, y las tablas de migraciones futuras heredan sus permisos. Falta: en producción el backend usa `hallazgo_app` y solo `prisma migrate deploy` y los respaldos usan el dueño. Eso requiere separar las dos URL en la configuración.
 - [ ] CI en GitHub Actions: lint + pruebas en cada PR.
 - [ ] Respaldo diario con `pg_dump` (30 días) + prueba de restauración. **Scripts listos y probados** (`infra/respaldo/respaldar.sh` y `restaurar.sh`: misma cantidad de filas, triggers, CHECK e índices). Falta programar el cron en el VPS y guardar una copia fuera del servidor.
 - [ ] Documentación: arquitectura, modelo de datos, API, manual de usuario y manual de administrador.
