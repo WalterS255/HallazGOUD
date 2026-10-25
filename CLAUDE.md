@@ -129,7 +129,7 @@ En la base de datos solo existen tres roles fijos: `USUARIO`, `MODERADOR`, `ADMI
 | RNF-06 | bcrypt con coste ≥ 10 | `bcrypt.hash(pwd, 12)` |
 | RNF-07 | HTTPS | En producción, con un proxy inverso con TLS |
 | RNF-08 | Validar y sanitizar toda entrada (SQLi, XSS) | Zod en cada endpoint + Prisma (consultas parametrizadas) + React escapa por defecto. Nunca `dangerouslySetInnerHTML` |
-| RNF-09 | 5 intentos fallidos / 15 min por cuenta + *rate limit* | Campos `intentos_fallidos` y `bloqueado_hasta` + `express-rate-limit` |
+| RNF-09 | 5 intentos fallidos / 15 min por cuenta + *rate limit* | Campos `intentos_fallidos` y `bloqueado_hasta` (por cuenta) + `@nestjs/throttler` (por IP: 100/min general, 5/min con `@LimiteEstricto()` en login, registro y recuperación) |
 | RNF-10 | Contacto nunca visible para terceros | Selección explícita de campos en repositorios (sección 6.3) |
 | RNF-12 | Respaldo diario, 30 días de retención | `pg_dump` programado (fase de despliegue) |
 | RNF-13 | Capas + linter | oxlint (con reglas que usan los tipos de TypeScript) + Prettier + estructura de la sección 10 |
@@ -319,7 +319,7 @@ Puntaje ponderado entre un `PERDIDO` y cada `ENCONTRADO` en estado `ACTIVA`:
 
 ## 8. API REST
 
-Base: `/api`. Las respuestas van en JSON. Los errores tienen la forma `{ "error": { "codigo": "...", "mensaje": "..." } }`.
+Base: `/api`. Las respuestas van en JSON. Los errores tienen la forma `{ "error": { "codigo": "...", "mensaje": "..." } }`. Los de validación (400 `SOLICITUD_INVALIDA`, del Pipe `ValidacionZod`) agregan `"detalles": [{ "campo": "correo", "mensaje": "..." }]` para que el formulario marque cada campo.
 
 | Método | Ruta | Acceso | Función |
 |---|---|---|---|
@@ -381,6 +381,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [ ] `prisma/seed.ts` con categorías, sedes de la UD, lugares y 2–3 usuarios de prueba (uno por rol).
 
 ### Fase D — Autenticación (RF-01 a RF-05, RNF-06, RNF-09)
+- [x] Piezas base que no usan la BD (rama `feature/fase-d-base`): configuración validada con Zod (`config/configuracion.ts`: el servidor no arranca si falta o está mal una variable; en producción rechaza los valores de ejemplo), Pipe `ValidacionZod` con `detalles` (`comun/validacion/`, mensajes de Zod en español) y rate limit con `@nestjs/throttler` (`comun/limites/`; `/api/salud` exento).
 - [ ] Registro con validación de dominio y consentimiento obligatorio.
 - [ ] Verificación por correo (visible en Mailpit).
 - [ ] Login con JWT, bloqueo por intentos y rate limit.
@@ -420,7 +421,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [ ] Revisión de accesibilidad (WCAG AA) y del responsivo a 360 px.
 
 ### Fase K — Despliegue y documentación
-- [ ] Dockerfiles de producción + proxy inverso con TLS. En el VPS no se publican los puertos de Postgres, ni el explorador de SeaweedFS (8888, sin contraseña), ni Mailpit.
+- [ ] Dockerfiles de producción + proxy inverso con TLS. En el VPS no se publican los puertos de Postgres, ni el explorador de SeaweedFS (8888, sin contraseña), ni Mailpit. Detrás del proxy, activar `app.set('trust proxy', 1)`: si no, el rate limit ve la IP del proxy y **todos** los usuarios comparten el mismo límite (ver `comun/limites/limites.ts`).
 - [ ] CI en GitHub Actions: lint + pruebas en cada PR.
 - [ ] Respaldo diario con `pg_dump` (30 días) + prueba de restauración.
 - [ ] Documentación: arquitectura, modelo de datos, API, manual de usuario y manual de administrador.
