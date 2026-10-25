@@ -9,7 +9,7 @@ Este archivo es el contexto permanente del proyecto para Claude Code. Léelo com
 
 ## 0. Cómo trabajar conmigo (léelo primero)
 
-Soy Walter, estudiante de Ingeniería de Sistemas de la Universidad Distrital. Trabajo con datos (SQL, PostgreSQL, Python, Power BI), pero **soy nuevo en desarrollo web**: no conozco todavía Prisma, Express ni React a fondo. Este proyecto también es para aprender.
+Soy Walter, estudiante de Ingeniería de Sistemas de la Universidad Distrital. Trabajo con datos (SQL, PostgreSQL, Python, Power BI), pero **soy nuevo en desarrollo web**: no conozco todavía Prisma, NestJS, TypeScript ni React a fondo. Este proyecto también es para aprender.
 
 Reglas para Claude Code:
 
@@ -150,8 +150,8 @@ No cambiar sin preguntar.
 |---|---|---|
 | Arquitectura | **Monolito modular en capas**, cliente-servidor, API REST | Volumen bajo (decenas de miles de registros); los microservicios serían sobreingeniería |
 | Frontend | React 18 + Vite + Tailwind CSS + React Router | Ecosistema maduro y diseño responsivo rápido |
-| Backend | Node.js 24 LTS + Express 5 (JavaScript, ES modules: `import`/`export`) | Un solo lenguaje en todo el proyecto. Express 5 pasa solo al middleware de errores los errores de funciones `async` (en Express 4 había que usar `try/catch` + `next(err)`) |
-| Validación | Zod | Valida la entrada de cada endpoint con un esquema |
+| Backend | **NestJS 12 + TypeScript** sobre Node.js 24 LTS (por debajo usa Express 5). ES modules: los `import` locales terminan en `.js` aunque el archivo sea `.ts` | **Cambio (2026-10-25):** antes era Express "a mano". Nest trae de fábrica módulos, inyección de dependencias y capas, que encajan con el monolito modular. TypeScript porque es lo que usan la documentación y la CLI de Nest |
+| Validación | Zod, aplicado con un *Pipe* de Nest (no class-validator) | Valida la entrada de cada endpoint con un esquema; el mismo esquema puede reusarse en el frontend |
 | ORM | Prisma | Migraciones versionadas y protección contra inyección SQL |
 | Base de datos | PostgreSQL 15 o superior; se usa **18** (`postgres:18.6`) | Relacional; tiene búsqueda de texto completo incorporada. La 18 tiene soporte hasta 2030. Los scripts de la Fase A se verificaron en 16 y en 18 |
 | Despliegue de la BD | **PostgreSQL en Docker**, tanto en local como en un VPS propio (opción A, 2026-10-25) | Mismo entorno en todos lados; los respaldos (`pg_dump`) los gestionamos nosotros |
@@ -242,7 +242,7 @@ Cada vez que hagas una de estas, explícame en una frase por qué no pudo ir en 
 
 ## 6. Reglas de negocio
 
-Estas reglas van en `backend/src/services/`, nunca en las rutas ni en el frontend. Cada una necesita su prueba unitaria.
+Estas reglas van en los `*.service.ts` de cada módulo (`backend/src/modules/<modulo>/`), nunca en los controladores ni en el frontend. Cada una necesita su prueba unitaria.
 
 ### 6.1 Máquina de estados de una publicación
 
@@ -368,21 +368,21 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [ ] Monorepo con `frontend/`, `backend/`, `docs/`, `docker-compose.yml`, `.env.example`, `.gitignore`, `README.md`.
 - [x] `docker-compose.yml` con `db` (PostgreSQL 18), `s3` (SeaweedFS, imágenes) y `mailpit` (correos de prueba). Puertos solo en `127.0.0.1`.
 - [ ] ESLint + Prettier + husky (lint antes de cada commit).
-- [x] Backend Express mínimo con `GET /api/salud` → `{ ok: true }` (Express 5.3, Node 24, ES modules; `node --watch` y `--env-file` en lugar de nodemon y dotenv).
+- [x] Backend NestJS mínimo con `GET /api/salud` → `{ ok: true }` (Nest 12, TypeScript, módulo `salud`, prueba unitaria + e2e). `multer` forzado a 2.5.0 con `overrides` por una vulnerabilidad en la 2.4.0.
 - [ ] Middleware central de errores y logger.
 
 ### Fase C — Base de datos con Prisma
 - [ ] `prisma init` y `schema.prisma` con todo el modelo de la sección 5.3.
 - [ ] Migración inicial + migración manual con CHECK, tsvector, GIN, índices parciales y trigger.
 - [ ] Comparar el SQL generado por Prisma con los scripts de la Fase A (para aprender).
-- [ ] `prisma/seed.js` con categorías, sedes de la UD, lugares y 2–3 usuarios de prueba (uno por rol).
+- [ ] `prisma/seed.ts` con categorías, sedes de la UD, lugares y 2–3 usuarios de prueba (uno por rol).
 
 ### Fase D — Autenticación (RF-01 a RF-05, RNF-06, RNF-09)
 - [ ] Registro con validación de dominio y consentimiento obligatorio.
 - [ ] Verificación por correo (visible en Mailpit).
 - [ ] Login con JWT, bloqueo por intentos y rate limit.
 - [ ] Recuperación de contraseña.
-- [ ] Middlewares `requiereSesion` y `requiereRol('ADMIN')`.
+- [ ] *Guards* de Nest para sesión y roles (`@Roles('ADMIN')`).
 - [ ] Pruebas unitarias e integración.
 
 ### Fase E — Publicaciones (RF-06 a RF-12)
@@ -440,22 +440,24 @@ hallazgo-ud/
 │   ├── prisma/
 │   │   ├── schema.prisma
 │   │   ├── migrations/
-│   │   └── seed.js
+│   │   └── seed.ts
 │   ├── src/
-│   │   ├── app.js             ← configura Express (sin listen)
-│   │   ├── server.js          ← arranca el servidor
+│   │   ├── main.ts            ← arranca el servidor
+│   │   ├── app.module.ts      ← módulo raíz: solo importa los módulos
+│   │   ├── configurar-app.ts  ← prefijo /api y ajustes globales (lo usan main.ts y las pruebas e2e)
 │   │   ├── config/            ← lectura y validación de variables de entorno
 │   │   ├── modules/
-│   │   │   ├── auth/          ← auth.routes.js, auth.service.js, auth.repository.js, auth.schemas.js
+│   │   │   ├── salud/         ← GET /api/salud
+│   │   │   ├── auth/          ← auth.module.ts, auth.controller.ts, auth.service.ts, auth.repository.ts, auth.schemas.ts, auth.service.spec.ts
 │   │   │   ├── publicaciones/
 │   │   │   ├── reclamaciones/
 │   │   │   ├── notificaciones/
 │   │   │   ├── coincidencias/
 │   │   │   └── admin/
-│   │   ├── middlewares/       ← sesión, roles, validación, errores, rate limit
+│   │   ├── comun/             ← guards (sesión, roles), pipes (Zod), filtros de errores, interceptores
 │   │   ├── jobs/              ← tareas cron
-│   │   └── lib/               ← prisma client, mailer, almacenamiento, auditoría
-│   └── tests/
+│   │   └── lib/               ← prisma, mailer, almacenamiento, auditoría (como providers de Nest)
+│   └── test/                  ← pruebas e2e (*.e2e-spec.ts); las unitarias van junto al archivo (*.spec.ts)
 └── frontend/
     └── src/
         ├── pages/
@@ -466,7 +468,7 @@ hallazgo-ud/
 
 > La propuesta agrupa por capa (`routes/`, `services/`, `repositories/`). Aquí se agrupa **por módulo y dentro de cada uno por capa**, porque refleja mejor el "monolito modular" y facilita extraer un módulo después. Las capas siguen siendo las mismas.
 
-**Regla de capas:** `routes` → llama a `service` → llama a `repository` → usa Prisma. Una ruta nunca usa Prisma directamente, y un repositorio nunca contiene reglas de negocio.
+**Regla de capas:** `controller` → llama a `service` → llama a `repository` → usa Prisma. Un controlador nunca usa Prisma directamente ni contiene reglas de negocio, y un repositorio nunca contiene reglas de negocio. Cada pieza se "inyecta" en la siguiente por el constructor (inyección de dependencias de Nest), lo que permite reemplazarla por una falsa en las pruebas.
 
 ---
 
@@ -486,7 +488,9 @@ La lista completa y actualizada vive en **`.env.example`** (en la raíz). No se 
 docker compose up -d                 # levanta db, s3 (SeaweedFS) y mailpit
 docker compose ps                    # estado de los servicios
 docker compose exec db psql -U hallazgo -d hallazgo_ud -f /sql/01_tablas_base.sql   # practicar con los scripts de la Fase A
-cd backend && npm run dev            # backend en modo desarrollo
+cd backend && npm run start:dev      # backend Nest en modo desarrollo (se reinicia al guardar)
+npm run test:e2e                     # pruebas de punta a punta del backend
+npm run build                        # compila TypeScript a dist/
 npx prisma migrate dev --name <nombre>
 npx prisma migrate dev --create-only --name <nombre>   # para editar el SQL a mano
 npx prisma studio                    # ver los datos en el navegador
