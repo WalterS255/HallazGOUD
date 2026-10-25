@@ -31,6 +31,13 @@ describe('GET /api/salud (e2e)', () => {
     expect(res.headers['x-powered-by']).toBeUndefined();
   });
 
+  // Esta sí toca la BD real (la del DATABASE_URL): necesita `docker compose up -d`.
+  it('GET /api/salud/bd confirma que llega a PostgreSQL', async () => {
+    const res = await request(app.getHttpServer()).get('/api/salud/bd').expect(200);
+    expect(res.body).toMatchObject({ ok: true, bd: 'conectada' });
+    expect(typeof res.body.latencia_ms).toBe('number');
+  });
+
   it('la ruta sin prefijo /api no existe', async () => {
     await request(app.getHttpServer()).get('/salud').expect(404);
   });
