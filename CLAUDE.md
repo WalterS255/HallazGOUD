@@ -490,8 +490,8 @@ La lista completa y actualizada vive en **`.env.example`** (en la raíz). No se 
 ```bash
 docker compose up -d                 # levanta db, s3 (SeaweedFS) y mailpit
 docker compose ps                    # estado de los servicios
-docker compose exec db createdb -U hallazgo practica                               # BD aparte para la práctica (una vez)
-docker compose exec db psql -U hallazgo -d practica -f /sql/01_tablas_base.sql     # scripts de la Fase A: NUNCA sobre hallazgo_ud (borran tablas de la app)
+docker compose exec db createdb -U hallazgo hallazgo_practica                               # BD aparte para la práctica (una vez)
+docker compose exec db psql -U hallazgo -d hallazgo_practica -f /sql/01_tablas_base.sql     # scripts de la Fase A: NUNCA sobre hallazgo_ud (borran tablas de la app)
 cd backend && npm run start:dev      # backend Nest en modo desarrollo (se reinicia al guardar)
 npm run test:e2e                     # pruebas de punta a punta del backend
 npm run build                        # compila TypeScript a dist/
