@@ -399,7 +399,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [ ] Cron de expiración a 90 días. **Lógica lista:** `jobs/expiracion.service.ts` (`expirarInactivas`: ACTIVAS con `ultima_actividad < now() - 90 días`, en lotes de 500, una transacción por publicación vía `cambiarEstado`; cuenta como "omitida" la que otra petición cambió antes). Probado con 89, 91 y 200 días y con una EN_RECLAMACION quieta (esa no expira). **Falta:** el programador diario (`node-cron` o `@nestjs/schedule`): dependencia nueva, pendiente de aprobar.
 
 ### Fase F — Consulta (RF-13 a RF-17) · *Hito: demostración funcional*
-- [ ] Listado con filtros combinados, búsqueda de texto, orden por relevancia y paginación.
+- [ ] Listado con filtros combinados, búsqueda de texto, orden por relevancia y paginación. **Capa de datos lista:** `CatalogoService.listar` y `CatalogoRepository` (una consulta con `Prisma.sql`: valores siempre como parámetros; `ts_rank` para relevancia; desempate por `id` para no repetir filas entre páginas; límite 1–50). Solo devuelve una lista cerrada de campos públicos, sin nada del usuario. Probado contra la BD: filtros, búsqueda en español, paginación, SQL malicioso y anti-fuga. **Falta:** el controlador `GET /publicaciones`, que valida `?…` con el Pipe de Zod de la Fase D, y decidir qué ve el visitante (pregunta 13.5).
 - [ ] Frontend: Inicio, Catálogo, Detalle y asistente de publicación en 3 pasos.
 - [ ] **Hito:** un usuario puede publicar y encontrar un objeto de punta a punta.
 
