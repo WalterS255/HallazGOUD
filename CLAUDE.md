@@ -366,7 +366,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [x] Practicar la consulta del motor de coincidencias en SQL puro (`04_coincidencias.sql`, con casos de 0, 7 y 8 días).
 
 ### Fase B — Andamiaje del repositorio
-- [ ] Monorepo con `frontend/`, `backend/`, `docs/`, `docker-compose.yml`, `.env.example`, `.gitignore`, `README.md`.
+- [x] Monorepo con `backend/`, `docs/`, `docker-compose.yml`, `.env.example`, `.gitignore`, `README.md` (`frontend/` se crea en la Fase F, cuando empiece el frontend). Las sesiones que trabajen en paralelo usan un `git worktree` en su propia rama `feature/*`, para no pisarse los archivos.
 - [x] `docker-compose.yml` con `db` (PostgreSQL 18), `s3` (SeaweedFS, imágenes) y `mailpit` (correos de prueba). Puertos solo en `127.0.0.1`.
 - [x] oxlint + Prettier + husky (lint antes de cada commit). `package.json` de la raíz solo con husky + lint-staged; la configuración está en `backend/lint-staged.config.js`. Antes de cada commit: Prettier + oxlint **rápido** (sin tipos); el lint completo con tipos (`npm run lint`, ~23 s) va a mano y en el CI.
 - [x] Backend NestJS mínimo con `GET /api/salud` → `{ ok: true }` (Nest 12, TypeScript, módulo `salud`, prueba unitaria + e2e). `multer` forzado a 2.5.0 con `overrides` por una vulnerabilidad en la 2.4.0.
@@ -488,7 +488,8 @@ La lista completa y actualizada vive en **`.env.example`** (en la raíz). No se 
 ```bash
 docker compose up -d                 # levanta db, s3 (SeaweedFS) y mailpit
 docker compose ps                    # estado de los servicios
-docker compose exec db psql -U hallazgo -d hallazgo_ud -f /sql/01_tablas_base.sql   # practicar con los scripts de la Fase A
+docker compose exec db createdb -U hallazgo practica                               # BD aparte para la práctica (una vez)
+docker compose exec db psql -U hallazgo -d practica -f /sql/01_tablas_base.sql     # scripts de la Fase A: NUNCA sobre hallazgo_ud (borran tablas de la app)
 cd backend && npm run start:dev      # backend Nest en modo desarrollo (se reinicia al guardar)
 npm run test:e2e                     # pruebas de punta a punta del backend
 npm run build                        # compila TypeScript a dist/
