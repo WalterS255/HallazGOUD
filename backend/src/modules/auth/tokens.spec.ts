@@ -47,3 +47,11 @@ describe('evaluarToken', () => {
     expect(evaluarToken({ ...vigente, expiraEn: ahora }, ahora)).toBe('EXPIRADO');
   });
 });
+
+describe('fechas del token', () => {
+  it('creadoEn y expiraEn salen del mismo reloj (para el CHECK expira_en > creado_en)', () => {
+    const t = generarToken('VERIFICACION', ahora);
+    expect(t.creadoEn).toBe(ahora);
+    expect(t.expiraEn.getTime()).toBeGreaterThan(t.creadoEn.getTime());
+  });
+});

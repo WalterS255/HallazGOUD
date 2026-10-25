@@ -407,7 +407,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [ ] Frontend: Mis publicaciones y Mensajes.
 
 ### Fase H — Coincidencias y notificaciones (RF-23 a RF-25)
-- [x] Función de puntaje pura + pruebas con casos límite (día 0, día 7, día 8) (`modules/coincidencias/puntaje.ts`). Da los mismos puntajes que `docs/sql/04_coincidencias.sql` (89,1 · 58,6 · 54,7 · 43,2). Falta el "edificio análogo" (pregunta 13.2).
+- [ ] Función de puntaje pura + pruebas con casos límite (día 0, día 7, día 8).
 - [ ] Notificaciones en la app y por correo (respetando `notificar_por_correo`).
 
 ### Fase I — Administración (RF-26 a RF-30) · *Hito: alcance completo*

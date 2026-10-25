@@ -27,6 +27,10 @@ export function hashToken(token: string): string {
 export interface TokenNuevo {
   token: string; // va en el enlace del correo; NUNCA se guarda
   tokenHash: string; // va a la BD
+  // creadoEn y expiraEn se guardan LOS DOS desde aquí, con el mismo reloj (el de Node).
+  // Si creado_en lo pusiera el DEFAULT now() de Postgres, el reloj del contenedor puede
+  // ir unos cientos de ms distinto y el CHECK (expira_en > creado_en) fallaría a veces.
+  creadoEn: Date;
   expiraEn: Date;
 }
 
@@ -37,6 +41,7 @@ export function generarToken(tipo: TipoToken, ahora: Date = new Date()): TokenNu
   return {
     token,
     tokenHash: hashToken(token),
+    creadoEn: ahora,
     expiraEn: new Date(ahora.getTime() + VIGENCIA[tipo]),
   };
 }
