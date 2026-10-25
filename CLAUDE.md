@@ -382,6 +382,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 
 ### Fase D — Autenticación (RF-01 a RF-05, RNF-06, RNF-09)
 - [x] Piezas base que no usan la BD (rama `feature/fase-d-base`): configuración validada con Zod (`config/configuracion.ts`: el servidor no arranca si falta o está mal una variable; en producción rechaza los valores de ejemplo), Pipe `ValidacionZod` con `detalles` (`comun/validacion/`, mensajes de Zod en español) y rate limit con `@nestjs/throttler` (`comun/limites/`; `/api/salud` exento).
+- [x] Piezas de auth sin BD ni dependencias nuevas (`modules/auth/`): esquemas Zod de registro, login, recuperar y restablecer (`auth.schemas.ts`; el límite de 72 **bytes** de bcrypt se cuenta en bytes, no en letras), tokens de un solo uso con `node:crypto` (`tokens.ts`: se guarda solo el SHA-256) y política de bloqueo + orden de decisión del login como funciones puras (`bloqueo.ts`: bloqueo → contraseña → suspendida → sin verificar).
 - [ ] Registro con validación de dominio y consentimiento obligatorio.
 - [ ] Verificación por correo (visible en Mailpit).
 - [ ] Login con JWT, bloqueo por intentos y rate limit.
