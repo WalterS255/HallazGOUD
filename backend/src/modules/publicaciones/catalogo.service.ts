@@ -1,6 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
+import { ErrorApp } from '../../comun/errores/error-app.js';
 import {
   CatalogoRepository,
+  type DetallePublicacion,
   type FiltrosCatalogo,
   type ItemCatalogo,
 } from './catalogo.repository.js';
@@ -40,5 +42,18 @@ export class CatalogoService {
       desplazamiento: (pagina - 1) * limite,
     });
     return { datos: items, total, pagina, limite };
+  }
+
+  // GET /publicaciones/:id (§8): sin detalle reservado ni datos de contacto.
+  async detalle(id: number): Promise<DetallePublicacion> {
+    const publicacion = await this.repo.detalle(id);
+    if (!publicacion) {
+      throw new ErrorApp(
+        HttpStatus.NOT_FOUND,
+        'PUBLICACION_NO_ENCONTRADA',
+        'La publicación no existe.',
+      );
+    }
+    return publicacion;
   }
 }

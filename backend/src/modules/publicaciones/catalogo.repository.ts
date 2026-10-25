@@ -33,9 +33,39 @@ export interface ItemCatalogo {
   miniatura: string | null;
 }
 
+// Ficha de detalle (RF-17). `select` explícito: Prisma trae SOLO lo nombrado aquí,
+// así una columna nueva en la tabla nunca se filtra sola a la API (§6.3).
+// Del autor, solo { id, nombre }: el id sirve para que el frontend sepa si quien mira
+// es el autor; el correo y el teléfono nunca salen (RF-22).
+const SELECT_DETALLE = {
+  id: true,
+  tipo: true,
+  estado: true,
+  titulo: true,
+  descripcion: true,
+  fecha_suceso: true,
+  fecha_creacion: true,
+  categoria: { select: { id: true, nombre: true, sensible: true } },
+  lugar: {
+    select: { edificio: true, referencia: true, sede: { select: { id: true, nombre: true } } },
+  },
+  imagenes: { select: { url: true, url_miniatura: true, orden: true }, orderBy: { orden: 'asc' } },
+  usuario: { select: { id: true, nombre: true } },
+} satisfies Prisma.publicacionSelect;
+
+export type DetallePublicacion = Prisma.publicacionGetPayload<{ select: typeof SELECT_DETALLE }>;
+
 @Injectable()
 export class CatalogoRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  // Las ocultas por moderación responden igual que si no existieran.
+  detalle(id: number): Promise<DetallePublicacion | null> {
+    return this.prisma.publicacion.findFirst({
+      where: { id, oculta: false },
+      select: SELECT_DETALLE,
+    });
+  }
 
   // Una sola consulta SQL con el WHERE armado según los filtros que lleguen.
   // Prisma.sql pone cada valor como PARÁMETRO ($1, $2…), nunca pegado al texto:

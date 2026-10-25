@@ -141,3 +141,30 @@ describe('CatalogoService.listar (BD real)', () => {
     }
   });
 });
+
+describe('CatalogoService.detalle (BD real)', () => {
+  it('trae la ficha con galería ordenada, categoría, lugar y autor { id, nombre }', async () => {
+    const d = await catalogo.detalle(ids.titulo);
+    expect(d).toMatchObject({ id: ids.titulo, titulo: 'Calculadora Casio', estado: 'ACTIVA' });
+    expect(d.imagenes.map((i) => i.orden)).toEqual([1, 2]);
+    expect(Object.keys(d.usuario).sort()).toEqual(['id', 'nombre']);
+    expect(d.lugar.sede.id).toBe(base.id_sede);
+  });
+
+  it('ANTI-FUGA: el detalle reservado y el correo nunca salen, aunque existan', async () => {
+    await prisma.detalle_reservado.create({
+      data: { id_publicacion: ids.titulo, texto: 'SECRETO-sticker-de-gato' },
+    });
+    const texto = JSON.stringify(await catalogo.detalle(ids.titulo));
+    expect(texto).not.toContain('SECRETO');
+    expect(texto).not.toContain('detalle_reservado');
+    expect(texto).not.toContain('@udistrital.edu.co');
+    expect(texto).not.toContain('hash_contrasena');
+  });
+
+  it('una publicación oculta responde como inexistente (404)', async () => {
+    await expect(catalogo.detalle(ids.oculta)).rejects.toMatchObject({
+      codigo: 'PUBLICACION_NO_ENCONTRADA',
+    });
+  });
+});
