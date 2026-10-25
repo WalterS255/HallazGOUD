@@ -20,7 +20,11 @@ function leerPuerto(valor: string | undefined, porDefecto: number): number {
   return puerto;
 }
 
+const entorno = process.env.NODE_ENV ?? 'development';
+
 export const config = Object.freeze({
-  entorno: process.env.NODE_ENV ?? 'development',
+  entorno,
   puerto: leerPuerto(process.env.PUERTO, 3000),
+  // En las pruebas no se escribe nada al log, para que la salida de Vitest se lea limpia.
+  nivelLog: process.env.NIVEL_LOG ?? (entorno === 'test' ? 'silent' : 'info'),
 });

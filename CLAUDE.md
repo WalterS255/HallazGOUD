@@ -132,8 +132,8 @@ En la base de datos solo existen tres roles fijos: `USUARIO`, `MODERADOR`, `ADMI
 | RNF-09 | 5 intentos fallidos / 15 min por cuenta + *rate limit* | Campos `intentos_fallidos` y `bloqueado_hasta` + `express-rate-limit` |
 | RNF-10 | Contacto nunca visible para terceros | Selección explícita de campos en repositorios (sección 6.3) |
 | RNF-12 | Respaldo diario, 30 días de retención | `pg_dump` programado (fase de despliegue) |
-| RNF-13 | Capas + linter | ESLint + Prettier + estructura de la sección 8 |
-| RNF-14 | Cobertura ≥ 60 % en `services/` del backend | Jest con umbral de cobertura configurado |
+| RNF-13 | Capas + linter | oxlint (con reglas que usan los tipos de TypeScript) + Prettier + estructura de la sección 10 |
+| RNF-14 | Cobertura ≥ 60 % en los `*.service.ts` del backend | Vitest con `coverage.thresholds` configurado sobre `src/modules/**/*.service.ts` |
 | RNF-15 | Backend sin estado | JWT; nada de sesiones en memoria del servidor |
 | RNF-16 | Contenedores | Docker + Docker Compose |
 | RNF-18 | Auditoría de acciones críticas | Tabla `auditoria` (inmutable) |
@@ -161,7 +161,8 @@ No cambiar sin preguntar.
 | Correo | Nodemailer (**Mailpit en local** para ver los correos sin enviarlos de verdad) | Verificación y notificaciones |
 | Tareas programadas | `node-cron` dentro del backend | Expiración a 90 días y limpieza de imágenes |
 | Contenedores | Docker + Docker Compose | Mismo entorno en desarrollo y producción |
-| Pruebas | Jest + Supertest (backend), React Testing Library (frontend), Playwright (E2E), k6 (carga) | Definido en la propuesta |
+| Pruebas | **Vitest** + Supertest (backend), React Testing Library (frontend), Playwright (E2E), k6 (carga) | **Cambio (2026-10-25):** la propuesta decía Jest. Nest 12 trae Vitest de fábrica: mismo estilo (`describe`, `it`, `expect`), más rápido y sin problemas con ES modules |
+| Linter | **oxlint** + Prettier | **Cambio (2026-10-25):** la propuesta decía ESLint. Nest 12 trae oxlint: mismo propósito, mucho más rápido |
 | Versiones | Git + GitHub, ramas `feature/*`, commits con convención semántica (`feat:`, `fix:`, `docs:`…) | Definido en la propuesta |
 
 > **Nota para Claude Code:** antes de instalar, verifica las versiones estables actuales de cada paquete y avísame si alguna cambió algo importante respecto a lo que dice aquí (por ejemplo, cambios de sintaxis en una versión mayor de Prisma o de Tailwind).
@@ -310,7 +311,7 @@ Puntaje ponderado entre un `PERDIDO` y cada `ENCONTRADO` en estado `ACTIVA`:
 - **Prefiltro en SQL** para no recorrer toda la tabla: mismo `tipo` opuesto, estado `ACTIVA` y `fecha_suceso` dentro de ±7 días. La ponderación se calcula después.
 - **Cambio respecto a la propuesta (2026-10-25):** la propuesta pedía `ts_rank` para la similitud textual. Se reemplazó por el porcentaje de palabras en común porque `ts_rank` normalizado nunca pasaba de ~6 de los 20 puntos y casi no distinguía un texto parecido de uno distinto (comparación en `docs/sql/04b_comparar_similitud.sql`). `ts_rank` se sigue usando para ordenar el catálogo por relevancia (RF-16).
 - Limitaciones conocidas del porcentaje: el diccionario español junta raíces distintas ("cálculo" y "calculadora" → `calcul`), y las palabras sobre cómo se perdió el objeto ("perdí", "dejé") nunca coinciden, así que el 100 % es casi imposible. Se puede afinar después (por ejemplo, comparar solo el título).
-- La función de puntaje es **pura** (recibe dos publicaciones y devuelve un número), así se prueba con Jest sin base de datos.
+- La función de puntaje es **pura** (recibe dos publicaciones y devuelve un número), así se prueba con Vitest sin base de datos.
 - Se ejecuta al crear un `PERDIDO` (devuelve sugerencias) y al crear un `ENCONTRADO` (notifica a los autores de los `PERDIDO` compatibles, RF-24).
 
 ---
@@ -367,9 +368,9 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 ### Fase B — Andamiaje del repositorio
 - [ ] Monorepo con `frontend/`, `backend/`, `docs/`, `docker-compose.yml`, `.env.example`, `.gitignore`, `README.md`.
 - [x] `docker-compose.yml` con `db` (PostgreSQL 18), `s3` (SeaweedFS, imágenes) y `mailpit` (correos de prueba). Puertos solo en `127.0.0.1`.
-- [ ] ESLint + Prettier + husky (lint antes de cada commit).
+- [ ] oxlint + Prettier + husky (lint antes de cada commit).
 - [x] Backend NestJS mínimo con `GET /api/salud` → `{ ok: true }` (Nest 12, TypeScript, módulo `salud`, prueba unitaria + e2e). `multer` forzado a 2.5.0 con `overrides` por una vulnerabilidad en la 2.4.0.
-- [ ] Middleware central de errores y logger.
+- [x] Filtro global de errores (`comun/errores/`: `{ error: { codigo, mensaje } }`, 500 sin detalles internos, `ErrorApp` para errores de negocio) y logger pino (`comun/logger/`: `X-Request-Id`, redacción de secretos, JSON en producción).
 
 ### Fase C — Base de datos con Prisma
 - [ ] `prisma init` y `schema.prisma` con todo el modelo de la sección 5.3.
@@ -410,7 +411,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [ ] Estadísticas (consultas de agregación).
 
 ### Fase J — Pruebas y calidad
-- [ ] Cobertura ≥ 60 % en `backend/src/services`.
+- [ ] Cobertura ≥ 60 % en los `*.service.ts` del backend (Vitest).
 - [ ] Playwright: publicar → reclamar → conversar → entregar.
 - [ ] k6 con 200 usuarios virtuales sobre el listado (RNF-01).
 - [ ] OWASP ZAP + revisión manual de control de acceso.
