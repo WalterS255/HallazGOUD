@@ -378,7 +378,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [x] Migración `init` + SQL manual (CHECK, tsvector generado, `lower(correo)`, triggers). Sin diferencias entre schema y BD.
 - [x] Comparar con la Fase A: columnas, CHECK, índices y triggers idénticos. Diferencias: Prisma usa `SERIAL` (no `IDENTITY`), `UNIQUE INDEX` (no `CONSTRAINT UNIQUE`) y agrega `ON UPDATE CASCADE` / `ON DELETE RESTRICT o SET NULL` a las FK.
 - Bases: `hallazgo_ud` es solo de Prisma; los scripts de la Fase A se practican en `hallazgo_practica`.
-- [ ] `prisma/seed.ts` con categorías, sedes de la UD, lugares y 2–3 usuarios de prueba (uno por rol).
+- [x] `prisma/seed.ts` con 8 categorías (3 sensibles), 8 sedes de la UD, 22 lugares y 3 usuarios de prueba (uno por rol). Idempotente (`upsert`). Se ejecuta con **tsx**, no con `node`: el cliente generado importa `./client.js` y Node solo quita tipos, no traduce esas rutas. Los usuarios tienen un hash de relleno (`PENDIENTE-FASE-D`) que no deja iniciar sesión hasta tener bcrypt.
 
 ### Fase D — Autenticación (RF-01 a RF-05, RNF-06, RNF-09)
 - [ ] Registro con validación de dominio y consentimiento obligatorio.
@@ -495,10 +495,12 @@ docker compose exec db psql -U hallazgo -d practica -f /sql/01_tablas_base.sql  
 cd backend && npm run start:dev      # backend Nest en modo desarrollo (se reinicia al guardar)
 npm run test:e2e                     # pruebas de punta a punta del backend
 npm run build                        # compila TypeScript a dist/
-npx prisma migrate dev --name <nombre>
+npm run db:migrate -- --name <nombre>   # nueva migración (es interactivo si detecta cambios: ejecútalo tú en una terminal)
 npx prisma migrate dev --create-only --name <nombre>   # para editar el SQL a mano
-npx prisma studio                    # ver los datos en el navegador
-npx prisma db seed
+npm run db:studio                    # ver los datos en el navegador
+npm run db:seed                      # datos iniciales (se puede repetir sin duplicar)
+npm run db:status                    # qué migraciones están aplicadas
+npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script   # debe salir vacío
 npm test                             # pruebas
 npm run lint                         # lint completo con tipos (~23 s)
 npm run format:check                 # ¿todo está formateado? (no cambia nada)

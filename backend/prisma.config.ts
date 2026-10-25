@@ -13,8 +13,8 @@ export default defineConfig({
   schema: 'prisma/schema.prisma',
   migrations: {
     path: 'prisma/migrations',
-    // Node 24 ejecuta TypeScript directamente (quita los tipos al vuelo): no hace falta tsx.
-    seed: 'node prisma/seed.ts',
+    // tsx (no node) porque traduce los import .js del cliente generado a sus archivos .ts.
+    seed: 'tsx prisma/seed.ts',
   },
   datasource: {
     url: env('DATABASE_URL'),
