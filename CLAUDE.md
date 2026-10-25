@@ -396,7 +396,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [ ] CRUD con la máquina de estados y el historial. **Hecho:** `modules/publicaciones/estados.ts` (tabla única de transiciones; prueba que recorre las 25 combinaciones) y `PublicacionesService.cambiarEstado` (estado + `historial_estado` + auditoría en una transacción, con `SELECT … FOR UPDATE`). Probado contra la BD: atomicidad (si la auditoría falla, no queda nada) y bloqueo (dos cambios simultáneos: gana uno; sin el `FOR UPDATE` ganaban los dos). `lib/auditoria/` registra con lista cerrada de acciones y recibe el `tx`. **Falta:** CRUD y controlador (necesitan los guards de la Fase D).
 - [ ] Subida de imágenes: validación, Sharp (miniatura ≤ 200 KB), SeaweedFS (S3).
 - [ ] Detalle reservado protegido + prueba anti-fuga (6.3).
-- [ ] Cron de expiración a 90 días.
+- [ ] Cron de expiración a 90 días. **Lógica lista:** `jobs/expiracion.service.ts` (`expirarInactivas`: ACTIVAS con `ultima_actividad < now() - 90 días`, en lotes de 500, una transacción por publicación vía `cambiarEstado`; cuenta como "omitida" la que otra petición cambió antes). Probado con 89, 91 y 200 días y con una EN_RECLAMACION quieta (esa no expira). **Falta:** el programador diario (`node-cron` o `@nestjs/schedule`): dependencia nueva, pendiente de aprobar.
 
 ### Fase F — Consulta (RF-13 a RF-17) · *Hito: demostración funcional*
 - [ ] Listado con filtros combinados, búsqueda de texto, orden por relevancia y paginación.

@@ -3,6 +3,7 @@ import { APP_FILTER } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { FiltroErrores } from './comun/errores/filtro-errores.js';
 import { opcionesLogger } from './comun/logger/opciones-logger.js';
+import { JobsModule } from './jobs/jobs.module.js';
 import { AuditoriaModule } from './lib/auditoria/auditoria.module.js';
 import { PrismaModule } from './lib/prisma/prisma.module.js';
 import { CoincidenciasModule } from './modules/coincidencias/coincidencias.module.js';
@@ -20,6 +21,8 @@ import { SaludModule } from './modules/salud/salud.module.js';
     SaludModule,
     CoincidenciasModule,
     PublicacionesModule,
+    // jobs/: tareas programadas
+    JobsModule,
   ],
   providers: [
     // Registrado aquí (y no en main.ts) para que las pruebas e2e también lo usen.
