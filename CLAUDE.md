@@ -379,6 +379,10 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [x] Comparar con la Fase A: columnas, CHECK, índices y triggers idénticos. Diferencias: Prisma usa `SERIAL` (no `IDENTITY`), `UNIQUE INDEX` (no `CONSTRAINT UNIQUE`) y agrega `ON UPDATE CASCADE` / `ON DELETE RESTRICT o SET NULL` a las FK.
 - Bases: `hallazgo_ud` es solo de Prisma; los scripts de la Fase A se practican en `hallazgo_practica`.
 - [x] `prisma/seed.ts` con 8 categorías (3 sensibles), 8 sedes de la UD, 22 lugares y 3 usuarios de prueba (uno por rol). Idempotente (`upsert`). Se ejecuta con **tsx**, no con `node`: el cliente generado importa `./client.js` y Node solo quita tipos, no traduce esas rutas. Los usuarios tienen un hash de relleno (`PENDIENTE-FASE-D`) que no deja iniciar sesión hasta tener bcrypt.
+- [x] Capa de datos en Nest: `lib/prisma/` (`PrismaModule` global + `PrismaService` con el adaptador pg) y `GET /api/salud/bd` (503 `BD_NO_DISPONIBLE` si la BD no responde; `/api/salud` no toca la BD).
+- [x] Pruebas de integración de la BD: `npm run test:db` sobre `hallazgo_test` (se borra y recrea con `migrate deploy` en cada corrida; nunca toca `hallazgo_ud`). Cubre CHECK, `lower(correo)`, únicos parciales, triggers, tsvector y el prefiltro de coincidencias.
+- [x] Rendimiento (RNF-01): `docs/sql/05_rendimiento.sql` con 10.000 publicaciones. Catálogo 5,7 ms, búsqueda 4,9 ms (1,4 ms con el GIN), prefiltro 0,04 ms, conteo 1,1 ms. Falta k6 con 200 usuarios (Fase J).
+- **Regla de fechas:** si un CHECK compara dos fechas de la misma fila (`fecha` vs `fecha_resolucion`, `fecha_suceso` vs `fecha_creacion`), las dos deben salir del **mismo reloj**. El de Node (Windows) y el del contenedor difieren unos cientos de ms: mezclar `new Date()` con el `DEFAULT now()` de la BD viola el CHECK de forma intermitente. En los servicios: pasar las dos fechas desde Node, o dejar las dos a la BD.
 
 ### Fase D — Autenticación (RF-01 a RF-05, RNF-06, RNF-09)
 - [ ] Registro con validación de dominio y consentimiento obligatorio.
@@ -404,7 +408,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [ ] Frontend: Mis publicaciones y Mensajes.
 
 ### Fase H — Coincidencias y notificaciones (RF-23 a RF-25)
-- [ ] Función de puntaje pura + pruebas con casos límite (día 0, día 7, día 8).
+- [x] Función de puntaje pura + pruebas con casos límite (día 0, día 7, día 8). `modules/coincidencias/`: `puntaje.ts` (pura), repositorio con el prefiltro SQL y servicio que sirve en los dos sentidos. Falta el endpoint `GET /publicaciones/:id/coincidencias` (necesita la sesión de la Fase D) y llamarlo al crear publicaciones (Fase E).
 - [ ] Notificaciones en la app y por correo (respetando `notificar_por_correo`).
 
 ### Fase I — Administración (RF-26 a RF-30) · *Hito: alcance completo*
@@ -422,7 +426,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 ### Fase K — Despliegue y documentación
 - [ ] Dockerfiles de producción + proxy inverso con TLS. En el VPS no se publican los puertos de Postgres, ni el explorador de SeaweedFS (8888, sin contraseña), ni Mailpit.
 - [ ] CI en GitHub Actions: lint + pruebas en cada PR.
-- [ ] Respaldo diario con `pg_dump` (30 días) + prueba de restauración.
+- [ ] Respaldo diario con `pg_dump` (30 días) + prueba de restauración. **Scripts listos y probados** (`infra/respaldo/respaldar.sh` y `restaurar.sh`: misma cantidad de filas, triggers, CHECK e índices). Falta programar el cron en el VPS y guardar una copia fuera del servidor.
 - [ ] Documentación: arquitectura, modelo de datos, API, manual de usuario y manual de administrador.
 
 ---
@@ -501,7 +505,10 @@ npm run db:studio                    # ver los datos en el navegador
 npm run db:seed                      # datos iniciales (se puede repetir sin duplicar)
 npm run db:status                    # qué migraciones están aplicadas
 npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script   # debe salir vacío
-npm test                             # pruebas
+npm test                             # pruebas unitarias (sin BD)
+npm run test:db                      # pruebas de integración contra PostgreSQL (BD hallazgo_test)
+bash infra/respaldo/respaldar.sh     # (desde la raíz) respaldo de hallazgo_ud en respaldos/
+bash infra/respaldo/restaurar.sh respaldos/<archivo>.dump   # restaura en hallazgo_restaurada para comprobarlo
 npm run lint                         # lint completo con tipos (~23 s)
 npm run format:check                 # ¿todo está formateado? (no cambia nada)
 npm install                          # en la RAÍZ: instala husky y activa el hook de pre-commit
@@ -518,6 +525,7 @@ cd frontend && npm run dev           # frontend en http://localhost:5173
 4. **Revertir una reclamación aceptada.** Si el reclamante no aparece, ¿el autor puede cancelarla y volver a `ACTIVA`? Se asume que sí (sección 6.1), pero hay que confirmarlo.
 5. **Visitante "lectura limitada".** ¿Qué ve exactamente? Propuesta: título, categoría, sede, fecha e imagen en miniatura, sin la descripción completa.
 6. **Imágenes en publicaciones PERDIDO.** RF-08 pide "entre una y cinco" imágenes. Para un objeto perdido muchas veces no hay foto. ¿Se vuelven opcionales en ese caso?
+7. **`fecha_suceso` con el reloj del celular.** El CHECK exige `fecha_suceso <= fecha_creacion` (reloj de la BD). Si el celular del usuario va adelantado y reporta "ahora mismo", la publicación se rechaza. Propuesta: el servicio recorta `fecha_suceso` a `min(fecha_suceso, ahora)` antes de guardar y envía `fecha_creacion` desde el mismo reloj (ver la regla de fechas de la Fase C).
 
 ---
 
