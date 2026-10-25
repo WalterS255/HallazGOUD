@@ -29,6 +29,24 @@ services:
       timeout: 3s
       retries: 10
 
+  s3:
+    # SeaweedFS: almacenamiento de imágenes compatible con S3 (reemplaza a MinIO, ver CLAUDE.md §4).
+    # El backend le habla con el SDK de S3, así que cambiar de proveedor solo cambia el .env.
+    image: chrislusf/seaweedfs:4.50
+    restart: unless-stopped
+    command: server -dir=/data -s3 -s3.port=8333
+    environment:
+      # Llaves de administrador del S3. Sin ellas, SeaweedFS acepta peticiones anónimas.
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
+    ports:
+      - "127.0.0.1:8333:8333"  # API S3: aquí sube y descarga el backend
+      # Explorador de archivos (filer): http://localhost:8888. NO tiene contraseña:
+      # sirve para aprender en local, pero en el VPS este puerto nunca se publica.
+      - "127.0.0.1:8888:8888"
+    volumes:
+      - s3_datos:/data
+
   mailpit:
     # Atrapa todos los correos que envíe el backend; nada sale a Internet.
     image: axllent/mailpit:v1.32.0
@@ -39,3 +57,4 @@ services:
 
 volumes:
   db_datos:
+  s3_datos:

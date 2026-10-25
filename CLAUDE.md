@@ -153,11 +153,11 @@ No cambiar sin preguntar.
 | Backend | Node.js + Express (JavaScript) | Un solo lenguaje en todo el proyecto |
 | Validación | Zod | Valida la entrada de cada endpoint con un esquema |
 | ORM | Prisma | Migraciones versionadas y protección contra inyección SQL |
-| Base de datos | PostgreSQL 15 o superior | Relacional; tiene búsqueda de texto completo incorporada |
+| Base de datos | PostgreSQL 15 o superior; se usa **18** (`postgres:18.6`) | Relacional; tiene búsqueda de texto completo incorporada. La 18 tiene soporte hasta 2030. Los scripts de la Fase A se verificaron en 16 y en 18 |
 | Despliegue de la BD | **PostgreSQL en Docker**, tanto en local como en un VPS propio (opción A, 2026-10-25) | Mismo entorno en todos lados; los respaldos (`pg_dump`) los gestionamos nosotros |
 | Organización de la BD | **Opción 1: un solo esquema (`public`)**, normalizado | Más fácil para aprender. La Opción 2 (un esquema de Postgres por módulo) queda para después si hace falta |
 | Autenticación | JWT + bcrypt | Sin estado, permite escalar |
-| Imágenes | Almacenamiento compatible con S3 (**MinIO en local**) + Sharp | Saca los archivos del servidor y genera miniaturas |
+| Imágenes | Almacenamiento compatible con S3 (**SeaweedFS**, `chrislusf/seaweedfs`, en local y en el VPS) + Sharp | Saca los archivos del servidor y genera miniaturas. **Reemplaza a MinIO (2026-10-25):** MinIO dejó de publicar imágenes Docker gratuitas en oct. 2025 y archivó el proyecto. SeaweedFS es Apache 2.0 y maduro. El backend usa el SDK de S3, así que el proveedor solo se cambia en el `.env` |
 | Correo | Nodemailer (**Mailpit en local** para ver los correos sin enviarlos de verdad) | Verificación y notificaciones |
 | Tareas programadas | `node-cron` dentro del backend | Expiración a 90 días y limpieza de imágenes |
 | Contenedores | Docker + Docker Compose | Mismo entorno en desarrollo y producción |
@@ -172,7 +172,7 @@ No cambiar sin preguntar.
 
 ### 5.1 Qué ya está hecho
 
-Existe un script de aprendizaje en **SQL puro**: `docs/sql/01_tablas_base.sql`. Crea `usuario`, `categoria`, `sede`, `lugar` y `publicacion`, con ENUMs, llaves foráneas, `CHECK`, índices, datos de prueba y una consulta con `JOIN`. Se probó en PostgreSQL 16 y funciona. Las restricciones rechazaron un correo `@gmail.com`, un usuario inexistente y el valor `'PERDIDOO'`.
+Existe un script de aprendizaje en **SQL puro**: `docs/sql/01_tablas_base.sql`. Crea `usuario`, `categoria`, `sede`, `lugar` y `publicacion`, con ENUMs, llaves foráneas, `CHECK`, índices, datos de prueba y una consulta con `JOIN`. Se probó en PostgreSQL 16 y 18 y funciona. Las restricciones rechazaron un correo `@gmail.com`, un usuario inexistente y el valor `'PERDIDOO'`.
 
 **Ruta de aprendizaje acordada:** primero entender las tablas en SQL puro y después pasarlas a Prisma, viendo qué SQL genera Prisma por debajo.
 
@@ -366,7 +366,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 
 ### Fase B — Andamiaje del repositorio
 - [ ] Monorepo con `frontend/`, `backend/`, `docs/`, `docker-compose.yml`, `.env.example`, `.gitignore`, `README.md`.
-- [ ] `docker-compose.yml` con `db` (PostgreSQL), `minio` (imágenes) y `mailpit` (correos de prueba).
+- [x] `docker-compose.yml` con `db` (PostgreSQL 18), `s3` (SeaweedFS, imágenes) y `mailpit` (correos de prueba). Puertos solo en `127.0.0.1`.
 - [ ] ESLint + Prettier + husky (lint antes de cada commit).
 - [ ] Backend Express mínimo con `GET /api/salud` → `{ ok: true }`.
 - [ ] Middleware central de errores y logger.
@@ -387,7 +387,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 
 ### Fase E — Publicaciones (RF-06 a RF-12)
 - [ ] CRUD con la máquina de estados y el historial.
-- [ ] Subida de imágenes: validación, Sharp (miniatura ≤ 200 KB), MinIO.
+- [ ] Subida de imágenes: validación, Sharp (miniatura ≤ 200 KB), SeaweedFS (S3).
 - [ ] Detalle reservado protegido + prueba anti-fuga (6.3).
 - [ ] Cron de expiración a 90 días.
 
@@ -417,7 +417,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [ ] Revisión de accesibilidad (WCAG AA) y del responsivo a 360 px.
 
 ### Fase K — Despliegue y documentación
-- [ ] Dockerfiles de producción + proxy inverso con TLS.
+- [ ] Dockerfiles de producción + proxy inverso con TLS. En el VPS no se publican los puertos de Postgres, ni el explorador de SeaweedFS (8888, sin contraseña), ni Mailpit.
 - [ ] CI en GitHub Actions: lint + pruebas en cada PR.
 - [ ] Respaldo diario con `pg_dump` (30 días) + prueba de restauración.
 - [ ] Documentación: arquitectura, modelo de datos, API, manual de usuario y manual de administrador.
@@ -472,41 +472,20 @@ hallazgo-ud/
 
 ## 11. Variables de entorno (`.env.example`)
 
-```
-# Base de datos
-DATABASE_URL=postgresql://hallazgo:hallazgo@localhost:5432/hallazgo_ud
+La lista completa y actualizada vive en **`.env.example`** (en la raíz). No se copia aquí para que no queden dos versiones distintas.
 
-# Autenticación
-JWT_SECRET=cambia-esto-por-un-valor-largo-y-aleatorio
-JWT_EXPIRA_EN=1d
-BCRYPT_COSTE=12
-
-# Dominio permitido para el registro
-DOMINIO_CORREO=udistrital.edu.co
-
-# Correo (Mailpit en local)
-SMTP_HOST=localhost
-SMTP_PORT=1025
-SMTP_FROM="HallazGO UD <no-responder@hallazgo.local>"
-
-# Almacenamiento de imágenes (MinIO en local)
-S3_ENDPOINT=http://localhost:9000
-S3_BUCKET=hallazgo-imagenes
-S3_ACCESS_KEY=minioadmin
-S3_SECRET_KEY=minioadmin
-
-# App
-PUERTO=3000
-URL_FRONTEND=http://localhost:5173
-ZONA_HORARIA=America/Bogota
-```
+- `docker-compose.yml` lee el mismo `.env`: `POSTGRES_*` para la base de datos y `S3_ACCESS_KEY` / `S3_SECRET_KEY` como llaves de SeaweedFS.
+- Si Postgres ya está instalado en Windows y ocupa el 5432, se usa `POSTGRES_PORT=5433` y el mismo puerto en `DATABASE_URL` (es el caso del PC de Walter).
+- Puertos locales: Postgres `5433`, S3 `8333`, explorador de SeaweedFS `8888`, Mailpit SMTP `1025` y web `8025`.
 
 ---
 
 ## 12. Comandos útiles (se completan a medida que existan)
 
 ```bash
-docker compose up -d                 # levanta db, minio y mailpit
+docker compose up -d                 # levanta db, s3 (SeaweedFS) y mailpit
+docker compose ps                    # estado de los servicios
+docker compose exec db psql -U hallazgo -d hallazgo_ud -f /sql/01_tablas_base.sql   # practicar con los scripts de la Fase A
 cd backend && npm run dev            # backend en modo desarrollo
 npx prisma migrate dev --name <nombre>
 npx prisma migrate dev --create-only --name <nombre>   # para editar el SQL a mano
