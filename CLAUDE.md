@@ -150,7 +150,7 @@ No cambiar sin preguntar.
 |---|---|---|
 | Arquitectura | **Monolito modular en capas**, cliente-servidor, API REST | Volumen bajo (decenas de miles de registros); los microservicios serían sobreingeniería |
 | Frontend | React 18 + Vite + Tailwind CSS + React Router | Ecosistema maduro y diseño responsivo rápido |
-| Backend | Node.js + Express (JavaScript) | Un solo lenguaje en todo el proyecto |
+| Backend | Node.js 24 LTS + Express 5 (JavaScript, ES modules: `import`/`export`) | Un solo lenguaje en todo el proyecto. Express 5 pasa solo al middleware de errores los errores de funciones `async` (en Express 4 había que usar `try/catch` + `next(err)`) |
 | Validación | Zod | Valida la entrada de cada endpoint con un esquema |
 | ORM | Prisma | Migraciones versionadas y protección contra inyección SQL |
 | Base de datos | PostgreSQL 15 o superior; se usa **18** (`postgres:18.6`) | Relacional; tiene búsqueda de texto completo incorporada. La 18 tiene soporte hasta 2030. Los scripts de la Fase A se verificaron en 16 y en 18 |
@@ -368,7 +368,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [ ] Monorepo con `frontend/`, `backend/`, `docs/`, `docker-compose.yml`, `.env.example`, `.gitignore`, `README.md`.
 - [x] `docker-compose.yml` con `db` (PostgreSQL 18), `s3` (SeaweedFS, imágenes) y `mailpit` (correos de prueba). Puertos solo en `127.0.0.1`.
 - [ ] ESLint + Prettier + husky (lint antes de cada commit).
-- [ ] Backend Express mínimo con `GET /api/salud` → `{ ok: true }`.
+- [x] Backend Express mínimo con `GET /api/salud` → `{ ok: true }` (Express 5.3, Node 24, ES modules; `node --watch` y `--env-file` en lugar de nodemon y dotenv).
 - [ ] Middleware central de errores y logger.
 
 ### Fase C — Base de datos con Prisma
