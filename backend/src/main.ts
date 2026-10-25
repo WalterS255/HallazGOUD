@@ -19,6 +19,9 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   await app.listen(config.puerto);
-  logger.log(`HallazGO API escuchando en http://localhost:${config.puerto} (${config.entorno})`, 'Arranque');
+  logger.log(
+    `HallazGO API escuchando en http://localhost:${config.puerto} (${config.entorno})`,
+    'Arranque',
+  );
 }
 await bootstrap();

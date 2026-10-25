@@ -37,7 +37,11 @@ export const opcionesLogger: Params = {
 
     // De cada petición solo se guarda lo útil (no todos los encabezados).
     serializers: {
-      req: (req: { id: string; method: string; url: string }) => ({ id: req.id, metodo: req.method, url: req.url }),
+      req: (req: { id: string; method: string; url: string }) => ({
+        id: req.id,
+        metodo: req.method,
+        url: req.url,
+      }),
       res: (res: { statusCode: number }) => ({ estado: res.statusCode }),
     },
 

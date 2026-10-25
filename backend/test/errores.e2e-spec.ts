@@ -16,7 +16,11 @@ class ControladorDePrueba {
 
   @Get('negocio')
   negocio(): never {
-    throw new ErrorApp(HttpStatus.CONFLICT, 'RECLAMACION_DUPLICADA', 'Ya tienes una reclamación pendiente.');
+    throw new ErrorApp(
+      HttpStatus.CONFLICT,
+      'RECLAMACION_DUPLICADA',
+      'Ya tienes una reclamación pendiente.',
+    );
   }
 
   @Get('async')
@@ -52,7 +56,9 @@ describe('Formato de errores (e2e)', () => {
 
   it('ruta inexistente → 404 con nuestro formato', async () => {
     const res = await http.get('/api/no-existe').expect(404);
-    expect(res.body).toEqual({ error: { codigo: 'NO_ENCONTRADO', mensaje: 'El recurso no existe.' } });
+    expect(res.body).toEqual({
+      error: { codigo: 'NO_ENCONTRADO', mensaje: 'El recurso no existe.' },
+    });
   });
 
   it('error inesperado → 500 genérico, SIN detalles internos', async () => {

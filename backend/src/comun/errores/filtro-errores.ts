@@ -65,7 +65,10 @@ export class FiltroErrores implements ExceptionFilter {
     // No son HttpException, pero traen su estado en `status` y no son culpa del servidor.
     const estadoExpress = (excepcion as { status?: unknown })?.status;
     if (typeof estadoExpress === 'number' && estadoExpress >= 400 && estadoExpress < 500) {
-      return { estado: estadoExpress, cuerpo: { error: { ...(POR_ESTADO[estadoExpress] ?? POR_ESTADO[400]) } } };
+      return {
+        estado: estadoExpress,
+        cuerpo: { error: { ...(POR_ESTADO[estadoExpress] ?? POR_ESTADO[400]) } },
+      };
     }
 
     // Cualquier otra cosa es un error de programación: 500 genérico.

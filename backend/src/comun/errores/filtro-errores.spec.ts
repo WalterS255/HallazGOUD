@@ -7,7 +7,9 @@ describe('FiltroErrores.traducir', () => {
   const filtro = new FiltroErrores();
 
   it('respeta el código y mensaje de un ErrorApp', () => {
-    const r = filtro.traducir(new ErrorApp(HttpStatus.CONFLICT, 'RECLAMACION_DUPLICADA', 'Ya reclamaste esto.'));
+    const r = filtro.traducir(
+      new ErrorApp(HttpStatus.CONFLICT, 'RECLAMACION_DUPLICADA', 'Ya reclamaste esto.'),
+    );
     expect(r).toEqual({
       estado: 409,
       cuerpo: { error: { codigo: 'RECLAMACION_DUPLICADA', mensaje: 'Ya reclamaste esto.' } },
@@ -32,7 +34,10 @@ describe('FiltroErrores.traducir', () => {
   });
 
   it('el JSON mal escrito (error de Express con status 400) es 400, no 500', () => {
-    const errorExpress = Object.assign(new SyntaxError('Unexpected token'), { status: 400, type: 'entity.parse.failed' });
+    const errorExpress = Object.assign(new SyntaxError('Unexpected token'), {
+      status: 400,
+      type: 'entity.parse.failed',
+    });
     expect(filtro.traducir(errorExpress).estado).toBe(400);
   });
 });
