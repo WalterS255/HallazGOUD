@@ -410,7 +410,8 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
   - `resolver` hace todo en una transacción: reclamación + `cambiarEstadoEn` + entrega vacía + auditoría.
   - `confirmarEntrega` guarda las dos marcas y `fecha_entrega` en un solo `UPDATE`.
   - Bloqueos `FOR UPDATE` en la reclamación y la entrega. Probado: dos aceptaciones simultáneas (gana una y la otra se deshace entera) y dos confirmaciones simultáneas (sin los bloqueos la entrega quedaba abierta para siempre).
-  - **Falta:** controladores (guards de la Fase D), el chat (`mensaje`) y cancelar una aceptada (pregunta 13.4).
+  - Chat (`MensajesService`): solo con la reclamación `ACEPTADA` y solo las dos partes; al abrir el hilo se marca como leído lo de la otra parte; solo lectura después de la entrega.
+  - **Falta:** controladores (guards de la Fase D) y cancelar una aceptada (pregunta 13.4).
 - [ ] Frontend: Mis publicaciones y Mensajes.
 
 ### Fase H — Coincidencias y notificaciones (RF-23 a RF-25)
@@ -420,7 +421,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 ### Fase I — Administración (RF-26 a RF-30) · *Hito: alcance completo*
 - [ ] Reportes y moderación.
 - [ ] CRUD de catálogos y suspensión de usuarios.
-- [ ] Estadísticas (consultas de agregación).
+- [ ] Estadísticas (consultas de agregación). **Capa de datos lista:** `modules/admin/estadisticas.*`: publicaciones por mes en **hora de Colombia** (`AT TIME ZONE 'America/Bogota'`; probado con una del 31 de enero a las 22:00, que en UTC ya es febrero), tasa de recuperación (encontrados entregados / encontrados del periodo), categorías más frecuentes y lugares críticos (solo PERDIDOS). Sin fechas = últimos 12 meses. **Falta:** el controlador con el guard de rol ADMIN.
 
 ### Fase J — Pruebas y calidad
 - [ ] Cobertura ≥ 60 % en los `*.service.ts` del backend (Vitest).

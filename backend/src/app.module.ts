@@ -7,6 +7,7 @@ import { JobsModule } from './jobs/jobs.module.js';
 import { AuditoriaModule } from './lib/auditoria/auditoria.module.js';
 import { PrismaModule } from './lib/prisma/prisma.module.js';
 import { CoincidenciasModule } from './modules/coincidencias/coincidencias.module.js';
+import { AdminModule } from './modules/admin/admin.module.js';
 import { PublicacionesModule } from './modules/publicaciones/publicaciones.module.js';
 import { ReclamacionesModule } from './modules/reclamaciones/reclamaciones.module.js';
 import { SaludModule } from './modules/salud/salud.module.js';
@@ -23,6 +24,7 @@ import { SaludModule } from './modules/salud/salud.module.js';
     CoincidenciasModule,
     PublicacionesModule,
     ReclamacionesModule,
+    AdminModule,
     // jobs/: tareas programadas
     JobsModule,
   ],
