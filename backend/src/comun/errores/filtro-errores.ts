@@ -7,12 +7,13 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import { ErrorApp } from './error-app.js';
+import { DetalleError, ErrorApp } from './error-app.js';
 
 // Todas las respuestas de error de la API tienen la misma forma (sección 8):
 //   { "error": { "codigo": "NO_ENCONTRADO", "mensaje": "..." } }
+// Los errores de validación agregan `detalles`: un elemento por cada campo con problemas.
 export interface CuerpoError {
-  error: { codigo: string; mensaje: string };
+  error: { codigo: string; mensaje: string; detalles?: DetalleError[] };
 }
 
 // Código y mensaje por defecto para cada estado HTTP, cuando el error no trae uno propio.

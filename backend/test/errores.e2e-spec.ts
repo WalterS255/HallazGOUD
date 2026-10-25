@@ -2,9 +2,20 @@ import { Body, Controller, Get, HttpStatus, Post } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
+import { z } from 'zod';
 import { AppModule } from '../src/app.module.js';
 import { ErrorApp } from '../src/comun/errores/error-app.js';
+import { ValidacionZod } from '../src/comun/validacion/validacion-zod.pipe.js';
 import { configurarApp } from '../src/configurar-app.js';
+
+const esquemaPrueba = z.object({
+  correo: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .endsWith('@udistrital.edu.co', { error: 'Debe ser un correo @udistrital.edu.co' }),
+  nombre: z.string().trim().min(2, { error: 'Escribe tu nombre' }),
+});
 
 // Controlador que SOLO existe en esta prueba: provoca cada tipo de error a propósito.
 @Controller('prueba-errores')
@@ -32,6 +43,11 @@ class ControladorDePrueba {
   @Post('eco')
   eco(@Body() cuerpo: unknown): unknown {
     return cuerpo;
+  }
+
+  @Post('validado')
+  validado(@Body(new ValidacionZod(esquemaPrueba)) datos: z.output<typeof esquemaPrueba>) {
+    return datos;
   }
 }
 
@@ -94,6 +110,31 @@ describe('Formato de errores (e2e)', () => {
       .send({ descripcion: 'x'.repeat(150_000) })
       .expect(413);
     expect(res.body.error.codigo).toBe('DEMASIADO_GRANDE');
+  });
+
+  it('datos inválidos → 400 con un detalle por campo', async () => {
+    const res = await http
+      .post('/api/prueba-errores/validado')
+      .send({ correo: 'ana@gmail.com', nombre: 'A' })
+      .expect(400);
+    expect(res.body).toEqual({
+      error: {
+        codigo: 'SOLICITUD_INVALIDA',
+        mensaje: 'Revisa los datos enviados.',
+        detalles: [
+          { campo: 'correo', mensaje: 'Debe ser un correo @udistrital.edu.co' },
+          { campo: 'nombre', mensaje: 'Escribe tu nombre' },
+        ],
+      },
+    });
+  });
+
+  it('datos válidos → el controlador recibe los datos ya limpios y sin campos extra', async () => {
+    const res = await http
+      .post('/api/prueba-errores/validado')
+      .send({ correo: '  ANA@UDistrital.edu.co ', nombre: 'Ana', rol: 'ADMIN' })
+      .expect(201);
+    expect(res.body).toEqual({ correo: 'ana@udistrital.edu.co', nombre: 'Ana' });
   });
 
   it('cada respuesta trae un X-Request-Id para rastrearla en el log', async () => {
