@@ -393,7 +393,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [ ] Pruebas unitarias e integración.
 
 ### Fase E — Publicaciones (RF-06 a RF-12)
-- [ ] CRUD con la máquina de estados y el historial.
+- [ ] CRUD con la máquina de estados y el historial. **Hecho:** `modules/publicaciones/estados.ts` (tabla única de transiciones; prueba que recorre las 25 combinaciones) y `PublicacionesService.cambiarEstado` (estado + `historial_estado` + auditoría en una transacción, con `SELECT … FOR UPDATE`). Probado contra la BD: atomicidad (si la auditoría falla, no queda nada) y bloqueo (dos cambios simultáneos: gana uno; sin el `FOR UPDATE` ganaban los dos). `lib/auditoria/` registra con lista cerrada de acciones y recibe el `tx`. **Falta:** CRUD y controlador (necesitan los guards de la Fase D).
 - [ ] Subida de imágenes: validación, Sharp (miniatura ≤ 200 KB), SeaweedFS (S3).
 - [ ] Detalle reservado protegido + prueba anti-fuga (6.3).
 - [ ] Cron de expiración a 90 días.
