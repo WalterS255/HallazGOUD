@@ -8,6 +8,7 @@ import { AuditoriaModule } from './lib/auditoria/auditoria.module.js';
 import { PrismaModule } from './lib/prisma/prisma.module.js';
 import { CoincidenciasModule } from './modules/coincidencias/coincidencias.module.js';
 import { PublicacionesModule } from './modules/publicaciones/publicaciones.module.js';
+import { ReclamacionesModule } from './modules/reclamaciones/reclamaciones.module.js';
 import { SaludModule } from './modules/salud/salud.module.js';
 
 // Módulo raíz: importa los módulos de cada funcionalidad y registra lo global.
@@ -21,6 +22,7 @@ import { SaludModule } from './modules/salud/salud.module.js';
     SaludModule,
     CoincidenciasModule,
     PublicacionesModule,
+    ReclamacionesModule,
     // jobs/: tareas programadas
     JobsModule,
   ],

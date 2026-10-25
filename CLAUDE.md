@@ -404,7 +404,13 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [ ] **Hito:** un usuario puede publicar y encontrar un objeto de punta a punta.
 
 ### Fase G — Reclamación, chat y entrega (RF-18 a RF-22)
-- [ ] Reclamar, aceptar o rechazar, chat y doble confirmación.
+- [ ] Reclamar, aceptar o rechazar, chat y doble confirmación. **Capa de datos lista (sin chat):** `modules/reclamaciones/`.
+  - `crear` aplica las reglas de §6.2 y traduce el choque con el índice único parcial a `RECLAMACION_DUPLICADA`.
+  - `paraElAutor` es el único lugar que lee `detalle_reservado`.
+  - `resolver` hace todo en una transacción: reclamación + `cambiarEstadoEn` + entrega vacía + auditoría.
+  - `confirmarEntrega` guarda las dos marcas y `fecha_entrega` en un solo `UPDATE`.
+  - Bloqueos `FOR UPDATE` en la reclamación y la entrega. Probado: dos aceptaciones simultáneas (gana una y la otra se deshace entera) y dos confirmaciones simultáneas (sin los bloqueos la entrega quedaba abierta para siempre).
+  - **Falta:** controladores (guards de la Fase D), el chat (`mensaje`) y cancelar una aceptada (pregunta 13.4).
 - [ ] Frontend: Mis publicaciones y Mensajes.
 
 ### Fase H — Coincidencias y notificaciones (RF-23 a RF-25)
