@@ -19,5 +19,9 @@ export class ErrorApp extends HttpException {
     readonly detalles?: DetalleError[],
   ) {
     super(detalles ? { codigo, mensaje, detalles } : { codigo, mensaje }, estado);
+    // HttpException arma `message` buscando un campo "message" (en inglés) en la
+    // respuesta; como el nuestro se llama "mensaje", pondría el nombre de la clase
+    // ("Error App"). Se fija a mano para que logs y pruebas vean el texto real.
+    this.message = mensaje;
   }
 }
