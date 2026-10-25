@@ -391,7 +391,6 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [ ] Pruebas unitarias e integración.
 
 ### Fase E — Publicaciones (RF-06 a RF-12)
-- [x] Máquina de estados pura (`modules/publicaciones/estados.ts`): `aplicarEvento(estado, evento)` con las 5 transiciones del diagrama 6.1; las otras 20 combinaciones lanzan 409 `TRANSICION_INVALIDA`. `REVERTIR_RECLAMACION` asume la pregunta abierta 13.4.
 - [ ] CRUD con la máquina de estados y el historial.
 - [ ] Subida de imágenes: validación, Sharp (miniatura ≤ 200 KB), SeaweedFS (S3).
 - [ ] Detalle reservado protegido + prueba anti-fuga (6.3).
