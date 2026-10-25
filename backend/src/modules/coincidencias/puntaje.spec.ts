@@ -78,3 +78,62 @@ describe('calcularPuntaje', () => {
     });
   });
 });
+
+// Paridad con la práctica de la Fase A: los mismos casos de docs/sql/04_coincidencias.sql
+// (lexemas tomados de la salida de 04b_comparar_similitud.sql) deben dar los mismos totales.
+// Si el SQL y el código dejan de coincidir, alguno de los dos cambió la fórmula.
+describe('paridad con docs/sql/04_coincidencias.sql', () => {
+  const refSql: DatosCoincidencia = {
+    id_categoria: 5,
+    id_sede: 1,
+    fecha_suceso: base,
+    palabras: [
+      '-570',
+      'bibliotec',
+      'calcul',
+      'casi',
+      'cientif',
+      'dej',
+      'fx',
+      'gris',
+      'negr',
+      'perd',
+      'tap',
+    ],
+  };
+  it.each([
+    [
+      'mismo día, misma sede',
+      {
+        id_categoria: 5,
+        id_sede: 1,
+        dias: 0,
+        palabras: ['bibliotec', 'calcul', 'casi', 'cientif', 'encontr', 'gris', 'mes'],
+      },
+      89.1,
+    ],
+    [
+      'exactamente 7 días',
+      {
+        id_categoria: 5,
+        id_sede: 1,
+        dias: 7,
+        palabras: ['calcul', 'gris', 'olvid', 'parcial', 'salon', '305'],
+      },
+      58.6,
+    ],
+    [
+      'otra sede, 3 días antes',
+      { id_categoria: 5, id_sede: 2, dias: -3, palabras: ['cafeteri', 'calcul', 'cientif', 'tap'] },
+      54.7,
+    ],
+    [
+      'otra categoría',
+      { id_categoria: 1, id_sede: 1, dias: 1, palabras: ['calcul', 'encontr', 'grafic', 'pasill'] },
+      43.2,
+    ],
+  ])('%s → %d', (_nombre, c, total) => {
+    const cand = { ...c, fecha_suceso: enDias(c.dias) };
+    expect(calcularPuntaje(refSql, cand).total).toBe(total);
+  });
+});

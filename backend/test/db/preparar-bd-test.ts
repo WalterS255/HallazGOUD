@@ -38,7 +38,9 @@ export default async function prepararBdTest(): Promise<void> {
   // `migrate deploy` aplica las migraciones tal cual (sin preguntas ni cambios al schema):
   // es el mismo comando que se usará en producción.
   execFileSync('npx', ['prisma', 'migrate', 'deploy'], {
-    env: { ...process.env, DATABASE_URL: urlTest },
+    // Las DOS variables: si DATABASE_URL_MIGRACIONES existiera y apuntara a hallazgo_ud,
+    // prisma.config.ts la preferiría y las migraciones de prueba caerían en la base real.
+    env: { ...process.env, DATABASE_URL: urlTest, DATABASE_URL_MIGRACIONES: urlTest },
     stdio: 'pipe',
     shell: true,
   });

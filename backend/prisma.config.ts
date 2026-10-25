@@ -17,6 +17,9 @@ export default defineConfig({
     seed: 'tsx prisma/seed.ts',
   },
   datasource: {
-    url: env('DATABASE_URL'),
+    // Migraciones, seed y studio usan el DUEÑO de las tablas (DATABASE_URL_MIGRACIONES).
+    // El backend usa DATABASE_URL, que en producción es el rol hallazgo_app con permisos
+    // mínimos (infra/bd/roles.sql). En desarrollo puede faltar: entonces se usa DATABASE_URL.
+    url: process.env.DATABASE_URL_MIGRACIONES ?? env('DATABASE_URL'),
   },
 });
