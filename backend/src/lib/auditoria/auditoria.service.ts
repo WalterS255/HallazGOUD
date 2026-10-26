@@ -5,6 +5,8 @@ import { PrismaService } from '../prisma/prisma.service.js';
 // Acciones críticas que se auditan (RNF-18). Una lista cerrada evita que cada
 // módulo invente nombres distintos para lo mismo ("LOGIN_FALLO" vs "LOGIN_FALLIDO").
 export type AccionAuditada =
+  | 'PUBLICACION_CREADA'
+  | 'PUBLICACION_EDITADA'
   | 'PUBLICACION_CAMBIO_ESTADO'
   | 'RECLAMACION_ACEPTADA'
   | 'RECLAMACION_RECHAZADA'

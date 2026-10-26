@@ -11,5 +11,9 @@ export default defineConfig({
     globalSetup: ['test/db/preparar-bd-test.ts'],
     // Un archivo a la vez: todos comparten la misma base de datos.
     fileParallelism: false,
+    // 15 s (el normal es 5): la primera prueba de cada archivo abre la conexión y,
+    // en un PC lento, eso solo ya rozaba los 5 s y fallaba de vez en cuando.
+    testTimeout: 15_000,
+    hookTimeout: 30_000,
   },
 });
