@@ -379,6 +379,10 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [x] Comparar con la Fase A: columnas, CHECK, índices y triggers idénticos. Diferencias: Prisma usa `SERIAL` (no `IDENTITY`), `UNIQUE INDEX` (no `CONSTRAINT UNIQUE`) y agrega `ON UPDATE CASCADE` / `ON DELETE RESTRICT o SET NULL` a las FK.
 - Bases: `hallazgo_ud` es solo de Prisma; los scripts de la Fase A se practican en `hallazgo_practica`.
 - [x] `prisma/seed.ts` con 8 categorías (3 sensibles), 8 sedes de la UD, 22 lugares y 3 usuarios de prueba (uno por rol). Idempotente (`upsert`). Se ejecuta con **tsx**, no con `node`: el cliente generado importa `./client.js` y Node solo quita tipos, no traduce esas rutas. Los usuarios tienen un hash de relleno (`PENDIENTE-FASE-D`) que no deja iniciar sesión hasta tener bcrypt.
+- [x] Capa de datos en Nest: `lib/prisma/` (`PrismaModule` global + `PrismaService` con el adaptador pg) y `GET /api/salud/bd` (503 `BD_NO_DISPONIBLE` si la BD no responde; `/api/salud` no toca la BD).
+- [x] Pruebas de integración de la BD: `npm run test:db` sobre `hallazgo_test` (se borra y recrea con `migrate deploy` en cada corrida; nunca toca `hallazgo_ud`). Cubre CHECK, `lower(correo)`, únicos parciales, triggers, tsvector y el prefiltro de coincidencias.
+- [x] Rendimiento (RNF-01): `docs/sql/05_rendimiento.sql` con 10.000 publicaciones. Catálogo 5,7 ms, búsqueda 4,9 ms (1,4 ms con el GIN), prefiltro 0,04 ms, conteo 1,1 ms. Falta k6 con 200 usuarios (Fase J).
+- **Regla de fechas:** si un CHECK compara dos fechas de la misma fila (`fecha` vs `fecha_resolucion`, `fecha_suceso` vs `fecha_creacion`), las dos deben salir del **mismo reloj**. El de Node (Windows) y el del contenedor difieren unos cientos de ms: mezclar `new Date()` con el `DEFAULT now()` de la BD viola el CHECK de forma intermitente. En los servicios: pasar las dos fechas desde Node, o dejar las dos a la BD.
 
 ### Fase D — Autenticación (RF-01 a RF-05, RNF-06, RNF-09)
 - [x] Piezas base que no usan la BD (rama `feature/fase-d-base`): configuración validada con Zod (`config/configuracion.ts`: el servidor no arranca si falta o está mal una variable; en producción rechaza los valores de ejemplo), Pipe `ValidacionZod` con `detalles` (`comun/validacion/`, mensajes de Zod en español) y rate limit con `@nestjs/throttler` (`comun/limites/`; `/api/salud` exento).
@@ -391,28 +395,35 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [ ] Pruebas unitarias e integración.
 
 ### Fase E — Publicaciones (RF-06 a RF-12)
-- [ ] CRUD con la máquina de estados y el historial.
+- [ ] CRUD con la máquina de estados y el historial. **Hecho:** `modules/publicaciones/estados.ts` (tabla única de transiciones; prueba que recorre las 25 combinaciones) y `PublicacionesService.cambiarEstado` (estado + `historial_estado` + auditoría en una transacción, con `SELECT … FOR UPDATE`). Probado contra la BD: atomicidad (si la auditoría falla, no queda nada) y bloqueo (dos cambios simultáneos: gana uno; sin el `FOR UPDATE` ganaban los dos). `lib/auditoria/` registra con lista cerrada de acciones y recibe el `tx`. **Falta:** CRUD y controlador (necesitan los guards de la Fase D).
 - [ ] Subida de imágenes: validación, Sharp (miniatura ≤ 200 KB), SeaweedFS (S3).
 - [ ] Detalle reservado protegido + prueba anti-fuga (6.3).
-- [ ] Cron de expiración a 90 días.
+- [ ] Cron de expiración a 90 días. **Lógica lista:** `jobs/expiracion.service.ts` (`expirarInactivas`: ACTIVAS con `ultima_actividad < now() - 90 días`, en lotes de 500, una transacción por publicación vía `cambiarEstado`; cuenta como "omitida" la que otra petición cambió antes). Probado con 89, 91 y 200 días y con una EN_RECLAMACION quieta (esa no expira). **Falta:** el programador diario (`node-cron` o `@nestjs/schedule`): dependencia nueva, pendiente de aprobar.
 
 ### Fase F — Consulta (RF-13 a RF-17) · *Hito: demostración funcional*
-- [ ] Listado con filtros combinados, búsqueda de texto, orden por relevancia y paginación.
+- [ ] Listado con filtros combinados, búsqueda de texto, orden por relevancia y paginación. **Capa de datos lista:** `CatalogoService.listar` y `CatalogoRepository` (una consulta con `Prisma.sql`: valores siempre como parámetros; `ts_rank` para relevancia; desempate por `id` para no repetir filas entre páginas; límite 1–50). Solo devuelve una lista cerrada de campos públicos, sin nada del usuario. Probado contra la BD: filtros, búsqueda en español, paginación, SQL malicioso y anti-fuga. **Falta:** el controlador `GET /publicaciones`, que valida `?…` con el Pipe de Zod de la Fase D, y decidir qué ve el visitante (pregunta 13.5).
 - [ ] Frontend: Inicio, Catálogo, Detalle y asistente de publicación en 3 pasos.
 - [ ] **Hito:** un usuario puede publicar y encontrar un objeto de punta a punta.
 
 ### Fase G — Reclamación, chat y entrega (RF-18 a RF-22)
-- [ ] Reclamar, aceptar o rechazar, chat y doble confirmación.
+- [ ] Reclamar, aceptar o rechazar, chat y doble confirmación. **Capa de datos lista (sin chat):** `modules/reclamaciones/`.
+  - `crear` aplica las reglas de §6.2 y traduce el choque con el índice único parcial a `RECLAMACION_DUPLICADA`.
+  - `paraElAutor` es el único lugar que lee `detalle_reservado`.
+  - `resolver` hace todo en una transacción: reclamación + `cambiarEstadoEn` + entrega vacía + auditoría.
+  - `confirmarEntrega` guarda las dos marcas y `fecha_entrega` en un solo `UPDATE`.
+  - Bloqueos `FOR UPDATE` en la reclamación y la entrega. Probado: dos aceptaciones simultáneas (gana una y la otra se deshace entera) y dos confirmaciones simultáneas (sin los bloqueos la entrega quedaba abierta para siempre).
+  - Chat (`MensajesService`): solo con la reclamación `ACEPTADA` y solo las dos partes; al abrir el hilo se marca como leído lo de la otra parte; solo lectura después de la entrega.
+  - **Falta:** controladores (guards de la Fase D) y cancelar una aceptada (pregunta 13.4).
 - [ ] Frontend: Mis publicaciones y Mensajes.
 
 ### Fase H — Coincidencias y notificaciones (RF-23 a RF-25)
-- [ ] Función de puntaje pura + pruebas con casos límite (día 0, día 7, día 8).
+- [x] Función de puntaje pura + pruebas con casos límite (día 0, día 7, día 8). `modules/coincidencias/`: `puntaje.ts` (pura), repositorio con el prefiltro SQL y servicio que sirve en los dos sentidos. Falta el endpoint `GET /publicaciones/:id/coincidencias` (necesita la sesión de la Fase D) y llamarlo al crear publicaciones (Fase E).
 - [ ] Notificaciones en la app y por correo (respetando `notificar_por_correo`).
 
 ### Fase I — Administración (RF-26 a RF-30) · *Hito: alcance completo*
 - [ ] Reportes y moderación.
 - [ ] CRUD de catálogos y suspensión de usuarios.
-- [ ] Estadísticas (consultas de agregación).
+- [ ] Estadísticas (consultas de agregación). **Capa de datos lista:** `modules/admin/estadisticas.*`: publicaciones por mes en **hora de Colombia** (`AT TIME ZONE 'America/Bogota'`; probado con una del 31 de enero a las 22:00, que en UTC ya es febrero), tasa de recuperación (encontrados entregados / encontrados del periodo), categorías más frecuentes y lugares críticos (solo PERDIDOS). Sin fechas = últimos 12 meses. **Falta:** el controlador con el guard de rol ADMIN.
 
 ### Fase J — Pruebas y calidad
 - [ ] Cobertura ≥ 60 % en los `*.service.ts` del backend (Vitest).
@@ -423,8 +434,9 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 
 ### Fase K — Despliegue y documentación
 - [ ] Dockerfiles de producción + proxy inverso con TLS. En el VPS no se publican los puertos de Postgres, ni el explorador de SeaweedFS (8888, sin contraseña), ni Mailpit. Detrás del proxy, activar `app.set('trust proxy', 1)`: si no, el rate limit ve la IP del proxy y **todos** los usuarios comparten el mismo límite (ver `comun/limites/limites.ts`).
+- [ ] Usuario de BD con permisos mínimos. **Script listo y probado:** `infra/bd/roles.sql` crea `hallazgo_app`, que lee y escribe datos, pero en `auditoria` solo puede hacer `INSERT` y `SELECT`. Tampoco puede hacer `DROP`, desactivar triggers ni crear tablas, y las tablas de migraciones futuras heredan sus permisos. Falta: en producción el backend usa `hallazgo_app` y solo `prisma migrate deploy` y los respaldos usan el dueño. Eso requiere separar las dos URL en la configuración.
 - [ ] CI en GitHub Actions: lint + pruebas en cada PR.
-- [ ] Respaldo diario con `pg_dump` (30 días) + prueba de restauración.
+- [ ] Respaldo diario con `pg_dump` (30 días) + prueba de restauración. **Scripts listos y probados** (`infra/respaldo/respaldar.sh` y `restaurar.sh`: misma cantidad de filas, triggers, CHECK e índices). Falta programar el cron en el VPS y guardar una copia fuera del servidor.
 - [ ] Documentación: arquitectura, modelo de datos, API, manual de usuario y manual de administrador.
 
 ---
@@ -503,7 +515,10 @@ npm run db:studio                    # ver los datos en el navegador
 npm run db:seed                      # datos iniciales (se puede repetir sin duplicar)
 npm run db:status                    # qué migraciones están aplicadas
 npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script   # debe salir vacío
-npm test                             # pruebas
+npm test                             # pruebas unitarias (sin BD)
+npm run test:db                      # pruebas de integración contra PostgreSQL (BD hallazgo_test)
+bash infra/respaldo/respaldar.sh     # (desde la raíz) respaldo de hallazgo_ud en respaldos/
+bash infra/respaldo/restaurar.sh respaldos/<archivo>.dump   # restaura en hallazgo_restaurada para comprobarlo
 npm run lint                         # lint completo con tipos (~23 s)
 npm run format:check                 # ¿todo está formateado? (no cambia nada)
 npm install                          # en la RAÍZ: instala husky y activa el hook de pre-commit
@@ -520,6 +535,7 @@ cd frontend && npm run dev           # frontend en http://localhost:5173
 4. **Revertir una reclamación aceptada.** Si el reclamante no aparece, ¿el autor puede cancelarla y volver a `ACTIVA`? Se asume que sí (sección 6.1), pero hay que confirmarlo.
 5. **Visitante "lectura limitada".** ¿Qué ve exactamente? Propuesta: título, categoría, sede, fecha e imagen en miniatura, sin la descripción completa.
 6. **Imágenes en publicaciones PERDIDO.** RF-08 pide "entre una y cinco" imágenes. Para un objeto perdido muchas veces no hay foto. ¿Se vuelven opcionales en ese caso?
+7. **`fecha_suceso` con el reloj del celular.** El CHECK exige `fecha_suceso <= fecha_creacion` (reloj de la BD). Si el celular del usuario va adelantado y reporta "ahora mismo", la publicación se rechaza. Propuesta: el servicio recorta `fecha_suceso` a `min(fecha_suceso, ahora)` antes de guardar y envía `fecha_creacion` desde el mismo reloj (ver la regla de fechas de la Fase C).
 
 ---
 

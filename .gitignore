@@ -26,3 +26,6 @@ Thumbs.db
 # Pruebas E2E (Playwright)
 playwright-report/
 test-results/
+
+# Respaldos de la BD: contienen datos personales, nunca al repositorio
+respaldos/
