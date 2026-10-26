@@ -3,7 +3,7 @@
 // arme solo lo que necesita sin chocar con las demás.
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../src/generated/prisma/client.js';
-import { urlDe } from './preparar-bd-test.js';
+import { nombreBdTest, urlDe } from './preparar-bd-test.js';
 
 export function clienteTest(): PrismaClient {
   try {
@@ -13,7 +13,7 @@ export function clienteTest(): PrismaClient {
   }
   // Se deriva aquí también (y no solo en globalSetup) porque cada archivo de
   // prueba corre en su propio proceso y no comparte variables con el setup.
-  const url = urlDe(process.env.DATABASE_URL ?? '', 'hallazgo_test');
+  const url = urlDe(process.env.DATABASE_URL ?? '', nombreBdTest());
   return new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
 }
 

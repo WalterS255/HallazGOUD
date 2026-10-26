@@ -1,6 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ErrorApp } from '../../comun/errores/error-app.js';
-import { CoincidenciasRepository } from './coincidencias.repository.js';
+import { CoincidenciasRepository, type Publicacion } from './coincidencias.repository.js';
 import { calcularPuntaje, type Desglose, seMuestra } from './puntaje.js';
 
 export interface Sugerencia {
@@ -23,7 +23,26 @@ export class CoincidenciasService {
         'La publicación no existe.',
       );
     }
-    const candidatos = await this.repo.buscarCandidatos(ref);
+    return this.puntuar(ref, await this.repo.buscarCandidatos(ref));
+  }
+
+  // GET /publicaciones/:id/coincidencias (§8): SOLO el autor de la publicación.
+  // `sugerencias` (sin solicitante) queda para uso interno, como avisar a los autores
+  // de PERDIDOS compatibles cuando se crea un ENCONTRADO (RF-24).
+  async sugerenciasParaAutor(idPublicacion: number, idSolicitante: number): Promise<Sugerencia[]> {
+    const ref = await this.repo.buscarReferencia(idPublicacion);
+    if (!ref || ref.id_usuario !== idSolicitante) {
+      // Mismo error si no existe o si no es el autor: no se revela qué publicaciones existen.
+      throw new ErrorApp(
+        HttpStatus.FORBIDDEN,
+        'PROHIBIDO',
+        'Solo el autor puede ver las coincidencias de su publicación.',
+      );
+    }
+    return this.puntuar(ref, await this.repo.buscarCandidatos(ref));
+  }
+
+  private puntuar(ref: Publicacion, candidatos: Publicacion[]): Sugerencia[] {
     return candidatos
       .map((c) => ({ id_publicacion: c.id, puntaje: calcularPuntaje(ref, c) }))
       .filter((s) => seMuestra(s.puntaje))
