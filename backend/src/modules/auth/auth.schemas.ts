@@ -71,9 +71,11 @@ export const esquemaRecuperar = z.object({
   }),
 });
 
+// Los tokens son 32 bytes aleatorios en hexadecimal = 64 caracteres (ver tokens.ts).
+export const esquemaToken = z.string().regex(/^[0-9a-f]{64}$/, { error: 'El enlace no es válido' });
+
 export const esquemaRestablecer = z.object({
-  // Los tokens son 32 bytes aleatorios en hexadecimal = 64 caracteres (ver tokens.ts).
-  token: z.string().regex(/^[0-9a-f]{64}$/, { error: 'El enlace no es válido' }),
+  token: esquemaToken,
   contrasena: contrasenaNueva,
 });
 

@@ -387,12 +387,13 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 ### Fase D — Autenticación (RF-01 a RF-05, RNF-06, RNF-09)
 - [x] Piezas base que no usan la BD (rama `feature/fase-d-base`): configuración validada con Zod (`config/configuracion.ts`: el servidor no arranca si falta o está mal una variable; en producción rechaza los valores de ejemplo), Pipe `ValidacionZod` con `detalles` (`comun/validacion/`, mensajes de Zod en español) y rate limit con `@nestjs/throttler` (`comun/limites/`; `/api/salud` exento).
 - [x] Piezas de auth sin BD ni dependencias nuevas (`modules/auth/`): esquemas Zod de registro, login, recuperar y restablecer (`auth.schemas.ts`; el límite de 72 **bytes** de bcrypt se cuenta en bytes, no en letras), tokens de un solo uso con `node:crypto` (`tokens.ts`: se guarda solo el SHA-256) y política de bloqueo + orden de decisión del login como funciones puras (`bloqueo.ts`: bloqueo → contraseña → suspendida → sin verificar).
-- [ ] Registro con validación de dominio y consentimiento obligatorio.
-- [ ] Verificación por correo (visible en Mailpit).
-- [ ] Login con JWT, bloqueo por intentos y rate limit.
-- [ ] Recuperación de contraseña.
-- [ ] *Guards* de Nest para sesión y roles (`@Roles('ADMIN')`). **Roles ya hecho** (`comun/autorizacion/roles.ts`: sin sesión → 401, rol que no corresponde → 403; prueba e2e con una sesión falsa). Falta el guard de sesión con JWT; al crearlo, registrar en `AppModule` **primero** el de sesión y **después** `RolesGuard` (los guards globales se ejecutan en ese orden).
-- [ ] Pruebas unitarias e integración.
+- [x] Registro con validación de dominio y consentimiento obligatorio (`POST /api/auth/registro`; bcrypt con `bcryptjs`, coste de `BCRYPT_COSTE`; correo repetido → 409 `CORREO_REGISTRADO`).
+- [x] Verificación por correo, visible en Mailpit (`lib/correo/`: nodemailer; en `NODE_ENV=test` los correos se guardan en memoria; el nombre se escapa en el HTML). `GET /api/auth/verificar/:token`.
+- [x] Login con JWT, bloqueo por intentos y rate limit (`POST /api/auth/login`, HS256, `sub` + `rol`). Mismo mensaje si el correo no existe o la clave está mal, y bcrypt corre igual contra un hash falso para que el tiempo no lo delate. Bloqueada → 423, suspendida/sin verificar → 403.
+- [x] Recuperación de contraseña (`POST /api/auth/recuperar` responde 202 igual exista o no el correo; `POST /api/auth/restablecer` invalida los demás enlaces y quita el bloqueo).
+- [x] *Guards* de Nest para sesión y roles: `SesionGuard` (JWT; sin token = visitante; token malo → 401 `SESION_INVALIDA`) y `RolesGuard`, globales en ese orden. `@Autenticado()`, `@Roles(...)` y `@UsuarioActual()`. `GET /api/usuarios/me`. Limitación conocida (RNF-15, sin estado): si se suspende una cuenta, su JWT sigue sirviendo hasta que vence (`JWT_EXPIRA_EN`).
+- [x] Pruebas unitarias e integración (`test/db/auth.db-spec.ts`: flujo HTTP completo contra `hallazgo_test`). Los tokens de un solo uso se ocultan también en las URL del log (`ocultarTokens`). El seed toma la contraseña de prueba de `CONTRASENA_SEED` (en el `.env`).
+- [ ] Editar perfil (`PUT /api/usuarios/me`, RF-05) y reenviar el correo de verificación.
 
 ### Fase E — Publicaciones (RF-06 a RF-12)
 - [ ] CRUD con la máquina de estados y el historial. **Hecho:** `modules/publicaciones/estados.ts` (tabla única de transiciones; prueba que recorre las 25 combinaciones) y `PublicacionesService.cambiarEstado` (estado + `historial_estado` + auditoría en una transacción, con `SELECT … FOR UPDATE`). Probado contra la BD: atomicidad (si la auditoría falla, no queda nada) y bloqueo (dos cambios simultáneos: gana uno; sin el `FOR UPDATE` ganaban los dos). `lib/auditoria/` registra con lista cerrada de acciones y recibe el `tx`. **Falta:** CRUD y controlador (necesitan los guards de la Fase D).

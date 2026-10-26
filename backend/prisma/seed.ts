@@ -2,6 +2,7 @@
 // Se ejecuta con `npm run db:seed`. Es idempotente: se puede correr varias veces
 // sin duplicar nada, porque usa upsert (crear si no existe, actualizar si existe).
 import { PrismaPg } from '@prisma/adapter-pg';
+import { hash } from 'bcryptjs';
 import { PrismaClient } from '../src/generated/prisma/client.js';
 
 try {
@@ -43,9 +44,17 @@ const sedes: Record<string, string[]> = {
   'Aduanilla de Paiba': ['Biblioteca central', 'Auditorio'],
 };
 
-// Hash de relleno: NO es un hash bcrypt válido, así que con él nadie puede
-// iniciar sesión. En la Fase D (bcrypt) se reemplaza por una contraseña de prueba real.
+// Contraseña de los usuarios de prueba: viene del .env (CONTRASENA_SEED), nunca del
+// código (regla 5). Se guarda su hash bcrypt, como haría el registro real.
+// Hash de relleno de versiones anteriores del seed: si una cuenta lo tiene, se reemplaza.
 const HASH_PENDIENTE = 'PENDIENTE-FASE-D';
+const contrasenaSeed = process.env.CONTRASENA_SEED;
+if (!contrasenaSeed || contrasenaSeed.length < 8) {
+  throw new Error(
+    'Define CONTRASENA_SEED en el .env (mínimo 8 caracteres): es la contraseña de los usuarios de prueba.',
+  );
+}
+const hashSeed = await hash(contrasenaSeed, Number(process.env.BCRYPT_COSTE ?? 12));
 
 const usuarios = [
   {
@@ -93,16 +102,22 @@ async function main() {
   for (const u of usuarios) {
     const existe = await prisma.usuario.findFirst({
       where: { correo: u.correo },
-      select: { id: true },
+      select: { id: true, hash_contrasena: true },
     });
     if (!existe) {
       await prisma.usuario.create({
         data: {
           ...u,
-          hash_contrasena: HASH_PENDIENTE,
+          hash_contrasena: hashSeed,
           verificado: true,
           acepto_politica_en: new Date(),
         },
+      });
+    } else if (existe.hash_contrasena === HASH_PENDIENTE) {
+      // Cuenta creada por un seed anterior: se le pone la contraseña real de prueba.
+      await prisma.usuario.update({
+        where: { id: existe.id },
+        data: { hash_contrasena: hashSeed },
       });
     }
   }

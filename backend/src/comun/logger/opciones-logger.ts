@@ -3,6 +3,13 @@ import type { IncomingMessage } from 'node:http';
 import type { Params } from 'nestjs-pino';
 import { config } from '../../config/configuracion.js';
 
+// Algunos enlaces llevan un token de un solo uso EN LA URL (/api/auth/verificar/<token>).
+// `redact` solo oculta campos (encabezados, cuerpo), no pedazos de texto, así que la
+// URL se limpia aquí: cualquier secuencia de 64 caracteres hex se reemplaza.
+export function ocultarTokens(url: string): string {
+  return url.replace(/[0-9a-f]{64}/gi, '[OCULTO]');
+}
+
 // Configuración de pino (logger) y pino-http (una línea de log por cada petición).
 export const opcionesLogger: Params = {
   pinoHttp: {
@@ -40,7 +47,7 @@ export const opcionesLogger: Params = {
       req: (req: { id: string; method: string; url: string }) => ({
         id: req.id,
         metodo: req.method,
-        url: req.url,
+        url: ocultarTokens(req.url),
       }),
       res: (res: { statusCode: number }) => ({ estado: res.statusCode }),
     },
