@@ -47,3 +47,17 @@ describe('CoincidenciasService.sugerencias', () => {
     expect((error as ErrorApp).codigo).toBe('PUBLICACION_NO_ENCONTRADA');
   });
 });
+
+describe('CoincidenciasService.sugerenciasParaAutor', () => {
+  it('el autor las ve', async () => {
+    const servicio = servicioCon(pub({ id_usuario: 10 }), [pub({ id: 3, tipo: 'ENCONTRADO' })]);
+    await expect(servicio.sugerenciasParaAutor(1, 10)).resolves.toHaveLength(1);
+  });
+
+  it('otro usuario recibe PROHIBIDO (no se filtra qué objetos coinciden)', async () => {
+    const servicio = servicioCon(pub({ id_usuario: 10 }), [pub({ id: 3, tipo: 'ENCONTRADO' })]);
+    await expect(servicio.sugerenciasParaAutor(1, 99)).rejects.toMatchObject({
+      codigo: 'PROHIBIDO',
+    });
+  });
+});

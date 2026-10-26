@@ -402,29 +402,29 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [ ] Cron de expiración a 90 días. **Lógica lista:** `jobs/expiracion.service.ts` (`expirarInactivas`: ACTIVAS con `ultima_actividad < now() - 90 días`, en lotes de 500, una transacción por publicación vía `cambiarEstado`; cuenta como "omitida" la que otra petición cambió antes). Probado con 89, 91 y 200 días y con una EN_RECLAMACION quieta (esa no expira). **Falta:** el programador diario (`node-cron` o `@nestjs/schedule`): dependencia nueva, pendiente de aprobar.
 
 ### Fase F — Consulta (RF-13 a RF-17) · *Hito: demostración funcional*
-- [ ] Listado con filtros combinados, búsqueda de texto, orden por relevancia y paginación. **Capa de datos lista:** `CatalogoService.listar` y `CatalogoRepository` (una consulta con `Prisma.sql`: valores siempre como parámetros; `ts_rank` para relevancia; desempate por `id` para no repetir filas entre páginas; límite 1–50). Solo devuelve una lista cerrada de campos públicos, sin nada del usuario. Probado contra la BD: filtros, búsqueda en español, paginación, SQL malicioso y anti-fuga. **Falta:** el controlador `GET /publicaciones`, que valida `?…` con el Pipe de Zod de la Fase D, y decidir qué ve el visitante (pregunta 13.5).
+- [x] Listado con filtros combinados, búsqueda de texto, orden por relevancia y paginación. `GET /api/publicaciones` (público, `?…` validado con Zod) y `GET /api/publicaciones/:id` sobre `CatalogoService` (Prisma.sql parametrizado, lista cerrada de campos públicos). Pendiente: qué ve exactamente un visitante (pregunta 13.5).
 - [ ] Frontend: Inicio, Catálogo, Detalle y asistente de publicación en 3 pasos.
 - [ ] **Hito:** un usuario puede publicar y encontrar un objeto de punta a punta.
 
 ### Fase G — Reclamación, chat y entrega (RF-18 a RF-22)
-- [ ] Reclamar, aceptar o rechazar, chat y doble confirmación. **Capa de datos lista (sin chat):** `modules/reclamaciones/`.
+- [x] Reclamar, aceptar o rechazar, chat y doble confirmación. Rutas: `POST/GET /api/publicaciones/:id/reclamaciones`, `PATCH /api/reclamaciones/:id`, `GET/POST /api/reclamaciones/:id/mensajes`, `POST /api/reclamaciones/:id/entrega`. Servicios en `modules/reclamaciones/`:
   - `crear` aplica las reglas de §6.2 y traduce el choque con el índice único parcial a `RECLAMACION_DUPLICADA`.
   - `paraElAutor` es el único lugar que lee `detalle_reservado`.
   - `resolver` hace todo en una transacción: reclamación + `cambiarEstadoEn` + entrega vacía + auditoría.
   - `confirmarEntrega` guarda las dos marcas y `fecha_entrega` en un solo `UPDATE`.
   - Bloqueos `FOR UPDATE` en la reclamación y la entrega. Probado: dos aceptaciones simultáneas (gana una y la otra se deshace entera) y dos confirmaciones simultáneas (sin los bloqueos la entrega quedaba abierta para siempre).
   - Chat (`MensajesService`): solo con la reclamación `ACEPTADA` y solo las dos partes; al abrir el hilo se marca como leído lo de la otra parte; solo lectura después de la entrega.
-  - **Falta:** controladores (guards de la Fase D) y cancelar una aceptada (pregunta 13.4).
+  - **Falta:** cancelar una reclamación aceptada (pregunta 13.4).
 - [ ] Frontend: Mis publicaciones y Mensajes.
 
 ### Fase H — Coincidencias y notificaciones (RF-23 a RF-25)
-- [x] Función de puntaje pura + pruebas con casos límite (día 0, día 7, día 8). `modules/coincidencias/`: `puntaje.ts` (pura), repositorio con el prefiltro SQL y servicio que sirve en los dos sentidos. Falta el endpoint `GET /publicaciones/:id/coincidencias` (necesita la sesión de la Fase D) y llamarlo al crear publicaciones (Fase E).
+- [x] Función de puntaje pura + pruebas con casos límite (día 0, día 7, día 8). `modules/coincidencias/`: `puntaje.ts` (pura), repositorio con el prefiltro SQL y servicio que sirve en los dos sentidos. Endpoint `GET /api/publicaciones/:id/coincidencias` **solo para el autor** (`sugerenciasParaAutor`; antes cualquiera con sesión podía ver las de otros). Falta llamarlo al crear publicaciones (Fase E) y notificar (RF-24).
 - [ ] Notificaciones en la app y por correo (respetando `notificar_por_correo`).
 
 ### Fase I — Administración (RF-26 a RF-30) · *Hito: alcance completo*
 - [ ] Reportes y moderación.
 - [ ] CRUD de catálogos y suspensión de usuarios.
-- [ ] Estadísticas (consultas de agregación). **Capa de datos lista:** `modules/admin/estadisticas.*`: publicaciones por mes en **hora de Colombia** (`AT TIME ZONE 'America/Bogota'`; probado con una del 31 de enero a las 22:00, que en UTC ya es febrero), tasa de recuperación (encontrados entregados / encontrados del periodo), categorías más frecuentes y lugares críticos (solo PERDIDOS). Sin fechas = últimos 12 meses. **Falta:** el controlador con el guard de rol ADMIN.
+- [x] Estadísticas (consultas de agregación). `GET /api/admin/estadisticas` (`@Roles('ADMIN')`, `?desde&hasta`) sobre `modules/admin/estadisticas.*`: por mes en **hora de Colombia** (probado con el 31 de enero a las 22:00), tasa de recuperación, categorías frecuentes y lugares críticos.
 
 ### Fase J — Pruebas y calidad
 - [ ] Cobertura ≥ 60 % en los `*.service.ts` del backend (Vitest).
@@ -517,7 +517,7 @@ npm run db:seed                      # datos iniciales (se puede repetir sin dup
 npm run db:status                    # qué migraciones están aplicadas
 npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script   # debe salir vacío
 npm test                             # pruebas unitarias (sin BD)
-npm run test:db                      # pruebas de integración contra PostgreSQL (BD hallazgo_test)
+npm run test:db                      # pruebas de integración contra PostgreSQL (una BD por carpeta: hallazgo_test_<carpeta>)
 bash infra/respaldo/respaldar.sh     # (desde la raíz) respaldo de hallazgo_ud en respaldos/
 bash infra/respaldo/restaurar.sh respaldos/<archivo>.dump   # restaura en hallazgo_restaurada para comprobarlo
 npm run lint                         # lint completo con tipos (~23 s)

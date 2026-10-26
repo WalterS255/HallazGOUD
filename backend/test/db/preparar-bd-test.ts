@@ -2,10 +2,22 @@
 // Borra y recrea la base `hallazgo_test` y le aplica las migraciones, para que
 // cada corrida empiece desde cero. Nunca toca `hallazgo_ud` (la de desarrollo).
 import { execFileSync } from 'node:child_process';
+import path from 'node:path';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../src/generated/prisma/client.js';
 
-const BD_TEST = 'hallazgo_test';
+// Una base de pruebas POR CARPETA (worktree): hallazgo_test_hallazgo, hallazgo_test_hallazgo_db…
+// Si dos sesiones corren test:db a la vez sobre la MISMA base, el DROP DATABASE de una
+// borra la base de la otra a mitad de sus pruebas (pasó: "la tabla usuario no existe").
+export function nombreBdTest(): string {
+  const carpeta = path.basename(path.resolve(import.meta.dirname, '../../..'));
+  const sufijo = carpeta
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '');
+  return `hallazgo_test_${sufijo}`.slice(0, 63); // 63 = largo máximo de un nombre en Postgres
+}
+const BD_TEST = nombreBdTest();
 
 export function urlDe(url: string, baseDatos: string): string {
   const u = new URL(url);
