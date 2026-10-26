@@ -8,6 +8,7 @@ import { FiltroErrores } from './comun/errores/filtro-errores.js';
 import { opcionesLimites } from './comun/limites/limites.js';
 import { opcionesLogger } from './comun/logger/opciones-logger.js';
 import { JobsModule } from './jobs/jobs.module.js';
+import { AlmacenamientoModule } from './lib/almacenamiento/almacenamiento.module.js';
 import { AuditoriaModule } from './lib/auditoria/auditoria.module.js';
 import { CorreoModule } from './lib/correo/correo.module.js';
 import { PrismaModule } from './lib/prisma/prisma.module.js';
@@ -27,6 +28,7 @@ import { SaludModule } from './modules/salud/salud.module.js';
     PrismaModule,
     AuditoriaModule,
     CorreoModule,
+    AlmacenamientoModule,
     // modules/: una funcionalidad cada uno
     SaludModule,
     AuthModule,

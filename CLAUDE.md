@@ -334,7 +334,9 @@ Base: `/api`. Las respuestas van en JSON. Los errores tienen la forma `{ "error"
 | GET | `/publicaciones/:id` | público | Detalle (sin detalle reservado ni contacto) |
 | PUT | `/publicaciones/:id` | autor | Editar |
 | DELETE | `/publicaciones/:id` | autor / moderador | Retirar (cambia el estado; no borra la fila) |
-| POST | `/publicaciones/:id/imagenes` | autor | Subir imágenes (multipart) |
+| POST | `/publicaciones/:id/imagenes` | autor | Subir imágenes (multipart, campo `imagenes`) |
+| DELETE | `/publicaciones/:id/imagenes/:orden` | autor | Quitar una imagen *(añadido, RF-10)* |
+| GET | `/imagenes/publicaciones/:id/:archivo` | público | Servir una imagen desde el bucket privado *(añadido)* |
 | GET | `/publicaciones/:id/coincidencias` | autor | Sugerencias |
 | POST | `/publicaciones/:id/reclamaciones` | sesión | Reclamar |
 | GET | `/publicaciones/:id/reclamaciones` | autor | Ver reclamaciones de mi publicación *(añadido, RF-19)* |
@@ -397,7 +399,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 
 ### Fase E — Publicaciones (RF-06 a RF-12)
 - [x] CRUD con la máquina de estados y el historial. **Crear, editar y retirar** (`modules/publicaciones/gestion.*`): `POST /publicaciones` (detalle reservado obligatorio en ENCONTRADO y prohibido en PERDIDO; categoría activa y lugar existente; fecha no futura; `fecha_creacion` desde Node; historial `null → ACTIVA`; `aviso_sensible` para la regla 6.6), `PUT /publicaciones/:id` (solo el autor y solo si no es final; **con reclamaciones, el detalle reservado ya no se puede cambiar**: 409 `DETALLE_BLOQUEADO`) y `DELETE /publicaciones/:id` (autor, moderador o admin; pasa por `cambiarEstado(…, 'RETIRADA')`; la fila no se borra). Pruebas HTTP en `test/db/gestion.db-spec.ts`. **Antes:** `modules/publicaciones/estados.ts` (tabla única de transiciones; prueba que recorre las 25 combinaciones) y `PublicacionesService.cambiarEstado` (estado + `historial_estado` + auditoría en una transacción, con `SELECT … FOR UPDATE`). Probado contra la BD: atomicidad (si la auditoría falla, no queda nada) y bloqueo (dos cambios simultáneos: gana uno; sin el `FOR UPDATE` ganaban los dos). `lib/auditoria/` registra con lista cerrada de acciones y recibe el `tx`.
-- [ ] Subida de imágenes: validación, Sharp (miniatura ≤ 200 KB), SeaweedFS (S3).
+- [x] Subida de imágenes: validación, Sharp (miniatura ≤ 200 KB), SeaweedFS (S3). `modules/publicaciones/imagenes.*` + `lib/almacenamiento/` (SDK de AWS con `forcePathStyle`; en `NODE_ENV=test`, en memoria; crea el bucket en desarrollo si falta). El tipo real se revisa por los **bytes** con `file-type` (no por la extensión); todo se reconvierte a WEBP (1600 px y miniatura de 480 px) y **se pierden los metadatos EXIF, incluido el GPS**. Máximo 5 por publicación con `FOR UPDATE`; si algo falla después de subir a S3, se borran los archivos (S3 no participa de la transacción). El bucket es privado: las imágenes se sirven por `GET /api/imagenes/…`, que no muestra las de publicaciones ocultas. Pendiente: pregunta abierta 13.6 (¿imágenes opcionales en PERDIDO?) y el desenfoque opcional de la regla 6.6.
 - [ ] Detalle reservado protegido + prueba anti-fuga (6.3).
 - [ ] Cron de expiración a 90 días. **Lógica lista:** `jobs/expiracion.service.ts` (`expirarInactivas`: ACTIVAS con `ultima_actividad < now() - 90 días`, en lotes de 500, una transacción por publicación vía `cambiarEstado`; cuenta como "omitida" la que otra petición cambió antes). Probado con 89, 91 y 200 días y con una EN_RECLAMACION quieta (esa no expira). **Falta:** el programador diario (`node-cron` o `@nestjs/schedule`): dependencia nueva, pendiente de aprobar.
 
