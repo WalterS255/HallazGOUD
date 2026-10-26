@@ -1,5 +1,6 @@
 import { ErrorApp } from '../../comun/errores/error-app.js';
 import type { CoincidenciasRepository, Publicacion } from './coincidencias.repository.js';
+import type { NotificacionesService } from '../notificaciones/notificaciones.service.js';
 import { CoincidenciasService } from './coincidencias.service.js';
 
 const fecha = new Date('2026-10-01T15:00:00Z');
@@ -20,8 +21,15 @@ function servicioCon(ref: Publicacion | null, candidatos: Publicacion[]): Coinci
     buscarReferencia: async () => ref,
     buscarCandidatos: async () => candidatos,
   } as unknown as CoincidenciasRepository;
-  return new CoincidenciasService(repo);
+  return new CoincidenciasService(repo, avisosFalsos as unknown as NotificacionesService);
 }
+
+const avisados: { id_usuario: number; tipo: string }[] = [];
+const avisosFalsos = {
+  avisarATodos: async (lista: { id_usuario: number; tipo: string }[]) => {
+    avisados.push(...lista);
+  },
+};
 
 describe('CoincidenciasService.sugerencias', () => {
   it('ordena de mayor a menor y descarta las de 50 o menos', async () => {
@@ -59,5 +67,30 @@ describe('CoincidenciasService.sugerenciasParaAutor', () => {
     await expect(servicio.sugerenciasParaAutor(1, 99)).rejects.toMatchObject({
       codigo: 'PROHIBIDO',
     });
+  });
+});
+
+describe('CoincidenciasService.avisarCompatibles (RF-24)', () => {
+  beforeEach(() => {
+    avisados.length = 0;
+  });
+
+  it('avisa UNA vez a cada autor de PERDIDOS compatibles (> 50)', async () => {
+    const encontrado = pub({ id: 1, tipo: 'ENCONTRADO', id_usuario: 10 });
+    const servicio = servicioCon(encontrado, [
+      pub({ id: 2, id_usuario: 20 }), // 100 puntos
+      pub({ id: 3, id_usuario: 20 }), // el mismo autor otra vez
+      pub({ id: 4, id_usuario: 30, id_categoria: 9, id_sede: 2, palabras: [] }), // 25: no
+    ]);
+    await expect(servicio.avisarCompatibles(1)).resolves.toBe(1);
+    expect(avisados).toEqual([expect.objectContaining({ id_usuario: 20, tipo: 'COINCIDENCIA' })]);
+  });
+
+  it('con un PERDIDO (o una publicación que no existe) no avisa a nadie', async () => {
+    await expect(
+      servicioCon(pub({ tipo: 'PERDIDO' }), [pub({})]).avisarCompatibles(1),
+    ).resolves.toBe(0);
+    await expect(servicioCon(null, []).avisarCompatibles(99)).resolves.toBe(0);
+    expect(avisados).toEqual([]);
   });
 });

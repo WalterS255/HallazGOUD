@@ -5,20 +5,24 @@ import type { PrismaClient } from '../../src/generated/prisma/client.js';
 import type { PrismaService } from '../../src/lib/prisma/prisma.service.js';
 import { CoincidenciasRepository } from '../../src/modules/coincidencias/coincidencias.repository.js';
 import { CoincidenciasService } from '../../src/modules/coincidencias/coincidencias.service.js';
-import { clienteTest, crearUsuario, unico } from './ayudas.js';
+import { clienteTest, crearUsuario, notificadorFalso, unico } from './ayudas.js';
 
 const DIA = 86_400_000;
 let prisma: PrismaClient;
 let servicio: CoincidenciasService;
 const ids: Record<string, number> = {};
+const notificador = notificadorFalso();
+let idPerdedor: number;
 
 beforeAll(async () => {
   prisma = clienteTest();
   servicio = new CoincidenciasService(
     new CoincidenciasRepository(prisma as unknown as PrismaService),
+    notificador.servicio,
   );
 
   const [perdedor, otro] = [await crearUsuario(prisma), await crearUsuario(prisma)];
+  idPerdedor = perdedor.id;
   const sede = await prisma.sede.create({ data: { nombre: unico('Sede ') } });
   const otraSede = await prisma.sede.create({ data: { nombre: unico('Sede ') } });
   const lugar = await prisma.lugar.create({ data: { id_sede: sede.id, edificio: 'Biblioteca' } });
@@ -101,5 +105,19 @@ describe('CoincidenciasService con el prefiltro SQL real', () => {
   it('funciona al revés: un ENCONTRADO encuentra al PERDIDO (a quién notificar)', async () => {
     const res = await servicio.sugerencias(ids.mismoDia);
     expect(res.map((s) => s.id_publicacion)).toContain(ids.ref);
+  });
+});
+
+describe('avisarCompatibles con la BD real (RF-24)', () => {
+  it('publicar el ENCONTRADO del mismo día avisa al autor del PERDIDO, una sola vez', async () => {
+    notificador.avisos.length = 0;
+    await expect(servicio.avisarCompatibles(ids.mismoDia)).resolves.toBe(1);
+    expect(notificador.avisos).toEqual([
+      expect.objectContaining({
+        id_usuario: idPerdedor,
+        tipo: 'COINCIDENCIA',
+        id_referencia: ids.mismoDia,
+      }),
+    ]);
   });
 });

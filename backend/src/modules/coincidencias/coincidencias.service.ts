@@ -1,5 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ErrorApp } from '../../comun/errores/error-app.js';
+import { NotificacionesService } from '../notificaciones/notificaciones.service.js';
 import { CoincidenciasRepository, type Publicacion } from './coincidencias.repository.js';
 import { calcularPuntaje, type Desglose, seMuestra } from './puntaje.js';
 
@@ -10,7 +11,34 @@ export interface Sugerencia {
 
 @Injectable()
 export class CoincidenciasService {
-  constructor(private readonly repo: CoincidenciasRepository) {}
+  constructor(
+    private readonly repo: CoincidenciasRepository,
+    private readonly notificaciones: NotificacionesService,
+  ) {}
+
+  // RF-24: al publicar un ENCONTRADO, avisar a los autores de los PERDIDOS compatibles.
+  // Se llama DESPUÉS de guardar la publicación (fuera de su transacción). Devuelve a
+  // cuántas personas se avisó. Con un PERDIDO no hace nada: ese autor ve sus
+  // sugerencias en GET /publicaciones/:id/coincidencias (RF-23).
+  async avisarCompatibles(idEncontrado: number): Promise<number> {
+    const ref = await this.repo.buscarReferencia(idEncontrado);
+    if (!ref || ref.tipo !== 'ENCONTRADO') return 0;
+    const candidatos = await this.repo.buscarCandidatos(ref);
+    // Un mismo autor con varios PERDIDOS compatibles recibe UN aviso, no varios.
+    const autores = new Set(
+      candidatos.filter((c) => seMuestra(calcularPuntaje(ref, c))).map((c) => c.id_usuario),
+    );
+    await this.notificaciones.avisarATodos(
+      [...autores].map((id_usuario) => ({
+        id_usuario,
+        tipo: 'COINCIDENCIA' as const,
+        mensaje: 'Apareció un objeto encontrado que podría ser el que perdiste. Revísalo.',
+        id_referencia: idEncontrado,
+        ruta: `/publicaciones/${idEncontrado}`,
+      })),
+    );
+    return autores.size;
+  }
 
   // Sirve en los dos sentidos (§7): para un PERDIDO devuelve ENCONTRADOS
   // (sugerencias, RF-23) y para un ENCONTRADO devuelve PERDIDOS (a quién notificar, RF-24).
