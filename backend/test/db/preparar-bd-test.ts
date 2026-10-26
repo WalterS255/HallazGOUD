@@ -1,23 +1,30 @@
 // "globalSetup" de Vitest: se ejecuta UNA vez antes de todas las pruebas de BD.
-// Borra y recrea la base `hallazgo_test` y le aplica las migraciones, para que
-// cada corrida empiece desde cero. Nunca toca `hallazgo_ud` (la de desarrollo).
+// Crea una base de pruebas NUEVA para esta corrida, le aplica las migraciones y la
+// borra al terminar. Nunca toca `hallazgo_ud` (la de desarrollo).
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../src/generated/prisma/client.js';
 
-// Una base de pruebas POR CARPETA (worktree): hallazgo_test_hallazgo, hallazgo_test_hallazgo_db…
-// Si dos sesiones corren test:db a la vez sobre la MISMA base, el DROP DATABASE de una
-// borra la base de la otra a mitad de sus pruebas (pasó: "la tabla usuario no existe").
-export function nombreBdTest(): string {
+// Una base de pruebas POR CORRIDA: hallazgo_test_<carpeta>_<pid>. Si dos corridas usan
+// la MISMA base, el DROP DATABASE de una borra la de la otra a mitad de sus pruebas
+// (pasó dos veces: "la tabla usuario no existe"). Primero se separó por carpeta, pero
+// dos sesiones verificando main en la misma carpeta volvieron a chocar: por eso el pid.
+export function nombreBdTest(pid = process.pid): string {
   const carpeta = path.basename(path.resolve(import.meta.dirname, '../../..'));
   const sufijo = carpeta
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_|_$/g, '');
-  return `hallazgo_test_${sufijo}`.slice(0, 63); // 63 = largo máximo de un nombre en Postgres
+  // 63 = largo máximo de un nombre en Postgres; el pid va al final para que no se corte.
+  return `hallazgo_test_${sufijo.slice(0, 40)}_${pid}`;
 }
 const BD_TEST = nombreBdTest();
+
+// Por seguridad: el cliente de las pruebas solo acepta conectarse a una base de pruebas.
+export function esUrlDePruebas(url: string): boolean {
+  return /^\/hallazgo_test_[a-z0-9_]+$/.test(new URL(url).pathname);
+}
 
 export function urlDe(url: string, baseDatos: string): string {
   const u = new URL(url);
@@ -25,7 +32,7 @@ export function urlDe(url: string, baseDatos: string): string {
   return u.toString();
 }
 
-export default async function prepararBdTest(): Promise<void> {
+export default async function prepararBdTest(): Promise<() => Promise<void>> {
   try {
     process.loadEnvFile('../.env');
   } catch {
@@ -57,6 +64,19 @@ export default async function prepararBdTest(): Promise<void> {
     shell: true,
   });
 
-  // Las pruebas leen esta variable para conectarse a la BD de pruebas.
+  // Las pruebas (y la app que levantan) leen esta variable: los procesos de cada
+  // archivo de prueba nacen después de este setup y la heredan.
   process.env.DATABASE_URL = urlTest;
+
+  // Lo que devuelve un globalSetup, Vitest lo ejecuta al final ("teardown").
+  return async () => {
+    const limpieza = new PrismaClient({
+      adapter: new PrismaPg({ connectionString: urlDe(urlDev, 'postgres') }),
+    });
+    try {
+      await limpieza.$executeRawUnsafe(`DROP DATABASE IF EXISTS ${BD_TEST} WITH (FORCE)`);
+    } finally {
+      await limpieza.$disconnect();
+    }
+  };
 }

@@ -1,19 +1,20 @@
-// Utilidades compartidas por las pruebas de BD: cliente conectado a `hallazgo_test`
+// Utilidades compartidas por las pruebas de BD: cliente conectado a la base de pruebas
 // y "fábricas" que crean filas válidas con valores únicos, para que cada prueba
 // arme solo lo que necesita sin chocar con las demás.
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../src/generated/prisma/client.js';
-import { nombreBdTest, urlDe } from './preparar-bd-test.js';
+import { esUrlDePruebas } from './preparar-bd-test.js';
 
 export function clienteTest(): PrismaClient {
-  try {
-    process.loadEnvFile('../.env');
-  } catch {
-    // en CI las variables llegan por el entorno
+  // globalSetup ya dejó en DATABASE_URL la base de ESTA corrida (los procesos de
+  // prueba la heredan). Si por algún error apuntara a otra base, se aborta: unas
+  // pruebas que crean y borran datos jamás deben correr contra hallazgo_ud.
+  const url = process.env.DATABASE_URL ?? '';
+  if (!esUrlDePruebas(url)) {
+    throw new Error(
+      `Las pruebas de BD solo corren contra hallazgo_test_*: ${new URL(url).pathname}`,
+    );
   }
-  // Se deriva aquí también (y no solo en globalSetup) porque cada archivo de
-  // prueba corre en su propio proceso y no comparte variables con el setup.
-  const url = urlDe(process.env.DATABASE_URL ?? '', nombreBdTest());
   return new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
 }
 
