@@ -517,7 +517,7 @@ npm run db:seed                      # datos iniciales (se puede repetir sin dup
 npm run db:status                    # qué migraciones están aplicadas
 npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script   # debe salir vacío
 npm test                             # pruebas unitarias (sin BD)
-npm run test:db                      # pruebas de integración contra PostgreSQL (una BD por carpeta: hallazgo_test_<carpeta>)
+npm run test:db                      # pruebas contra PostgreSQL: cada corrida crea y borra su propia BD (hallazgo_test_<carpeta>_<pid>)
 bash infra/respaldo/respaldar.sh     # (desde la raíz) respaldo de hallazgo_ud en respaldos/
 bash infra/respaldo/restaurar.sh respaldos/<archivo>.dump   # restaura en hallazgo_restaurada para comprobarlo
 npm run lint                         # lint completo con tipos (~23 s)
