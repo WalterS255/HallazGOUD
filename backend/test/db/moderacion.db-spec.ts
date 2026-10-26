@@ -106,7 +106,7 @@ describe('resolver (RF-27)', () => {
       como('moderadora').patch(`/api/admin/reportes/${r.id}`, { decision: 'DESCARTAR' }),
       como('moderador2').patch(`/api/admin/reportes/${r.id}`, { decision: 'DESCARTAR' }),
     ]);
-    expect([a.status, b.status].sort()).toEqual([204, 409]);
+    expect([a.status, b.status].sort((x, y) => x - y)).toEqual([204, 409]);
     expect((await prisma.reporte.findUniqueOrThrow({ where: { id: r.id } })).estado).toBe(
       'DESCARTADO',
     );
