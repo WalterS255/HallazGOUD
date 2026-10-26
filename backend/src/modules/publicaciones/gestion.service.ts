@@ -6,7 +6,7 @@ import { esEditable } from './estados.js';
 import type { DatosCrear, DatosEditar } from './gestion.schemas.js';
 import { GestionRepository } from './gestion.repository.js';
 import { PublicacionesService } from './publicaciones.service.js';
-import type { Tx } from './publicaciones.repository.js';
+import { PublicacionesRepository, type Tx } from './publicaciones.repository.js';
 
 export interface Contexto {
   usuario: UsuarioSesion;
@@ -27,6 +27,8 @@ const noEncontrada = () =>
 export class GestionService {
   constructor(
     private readonly repo: GestionRepository,
+    // Un solo lugar escribe historial_estado: el repositorio del módulo de publicaciones.
+    private readonly repoPublicaciones: PublicacionesRepository,
     private readonly publicaciones: PublicacionesService,
     private readonly auditoria: AuditoriaService,
   ) {}
@@ -53,7 +55,13 @@ export class GestionService {
       if (datos.tipo === 'ENCONTRADO') {
         await this.repo.guardarDetalle(tx, id, datos.detalle_reservado);
       }
-      await this.repo.historialInicial(tx, id, ctx.usuario.id, ahora);
+      await this.repoPublicaciones.agregarHistorial(tx, {
+        id_publicacion: id,
+        estado_anterior: null, // el CHECK permite NULL solo en el primer registro
+        estado_nuevo: 'ACTIVA',
+        id_usuario: ctx.usuario.id,
+        motivo: 'Publicación creada',
+      });
       await this.auditoria.registrar(
         {
           accion: 'PUBLICACION_CREADA',

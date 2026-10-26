@@ -61,20 +61,6 @@ export class GestionRepository {
     });
   }
 
-  async historialInicial(tx: Tx, id_publicacion: number, id_usuario: number, ahora: Date) {
-    await tx.historial_estado.create({
-      data: {
-        id_publicacion,
-        estado_anterior: null, // el CHECK permite NULL solo en el primer registro
-        estado_nuevo: 'ACTIVA',
-        id_usuario,
-        motivo: 'Publicación creada',
-        fecha: ahora,
-      },
-      select: { id: true },
-    });
-  }
-
   // FOR UPDATE bloquea la fila hasta que termine la transacción: si al mismo tiempo
   // alguien acepta una reclamación (que cambia el estado), una de las dos espera.
   async paraEditar(tx: Tx, id: number): Promise<ParaEditar | null> {

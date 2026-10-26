@@ -37,7 +37,7 @@ export class PublicacionesRepository {
     tx: Tx,
     datos: {
       id_publicacion: number;
-      estado_anterior: EstadoPublicacion;
+      estado_anterior: EstadoPublicacion | null; // null solo al crear (null → ACTIVA)
       estado_nuevo: EstadoPublicacion;
       id_usuario: number | null;
       motivo: string;
