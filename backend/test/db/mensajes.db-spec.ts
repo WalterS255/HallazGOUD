@@ -9,11 +9,12 @@ import { MensajesRepository } from '../../src/modules/reclamaciones/mensajes.rep
 import { MensajesService } from '../../src/modules/reclamaciones/mensajes.service.js';
 import { ReclamacionesRepository } from '../../src/modules/reclamaciones/reclamaciones.repository.js';
 import { ReclamacionesService } from '../../src/modules/reclamaciones/reclamaciones.service.js';
-import { clienteTest, crearPublicacion, crearUsuario } from './ayudas.js';
+import { clienteTest, crearPublicacion, crearUsuario, notificadorFalso } from './ayudas.js';
 
 let prisma: PrismaClient;
 let reclamaciones: ReclamacionesService;
 let chat: MensajesService;
+const notificador = notificadorFalso();
 
 beforeAll(() => {
   prisma = clienteTest();
@@ -24,8 +25,9 @@ beforeAll(() => {
     new ReclamacionesRepository(bd),
     publicaciones,
     auditoria,
+    notificador.servicio,
   );
-  chat = new MensajesService(new MensajesRepository(bd));
+  chat = new MensajesService(new MensajesRepository(bd), notificador.servicio);
 });
 
 afterAll(async () => {
@@ -113,5 +115,20 @@ describe('chat de una reclamación (BD real)', () => {
         codigo: 'MENSAJE_INVALIDO',
       });
     }
+  });
+});
+
+describe('avisos del chat (RF-25)', () => {
+  it('cada mensaje avisa a la OTRA parte, sin copiar el texto del mensaje', async () => {
+    const r = await reclamacionPendiente();
+    await reclamaciones.resolver(r.id, r.autor, 'ACEPTAR');
+    notificador.avisos.length = 0;
+    await chat.enviar(r.id, r.reclamante, 'Mi número es 300 123 4567');
+    await chat.enviar(r.id, r.autor, 'Nos vemos a las 10');
+    expect(notificador.avisos.map((a) => [a.id_usuario, a.tipo])).toEqual([
+      [r.autor, 'MENSAJE'],
+      [r.reclamante, 'MENSAJE'],
+    ]);
+    for (const a of notificador.avisos) expect(a.mensaje).not.toMatch(/300|10/);
   });
 });

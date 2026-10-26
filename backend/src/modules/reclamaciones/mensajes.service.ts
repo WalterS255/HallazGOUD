@@ -1,5 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ErrorApp } from '../../comun/errores/error-app.js';
+import { NotificacionesService } from '../notificaciones/notificaciones.service.js';
 import { type Hilo, MensajesRepository } from './mensajes.repository.js';
 
 export const LARGO_MAXIMO = 2000; // igual que chk_mensaje_contenido
@@ -7,7 +8,10 @@ export const LARGO_MAXIMO = 2000; // igual que chk_mensaje_contenido
 // Chat 1 a 1 de una reclamación aceptada (§6.4, RF-20).
 @Injectable()
 export class MensajesService {
-  constructor(private readonly repo: MensajesRepository) {}
+  constructor(
+    private readonly repo: MensajesRepository,
+    private readonly notificaciones: NotificacionesService,
+  ) {}
 
   async listar(id_reclamacion: number, id_usuario: number) {
     this.exigirParte(await this.repo.hilo(id_reclamacion), id_usuario);
@@ -31,12 +35,21 @@ export class MensajesService {
         `El mensaje debe tener entre 1 y ${LARGO_MAXIMO} caracteres.`,
       );
     }
-    return this.repo.crear({
+    const mensaje = await this.repo.crear({
       id_reclamacion,
       id_emisor,
       contenido: texto,
       id_publicacion: hilo.id_publicacion,
     });
+    // RF-25: avisar a la OTRA parte. El texto del mensaje no va en el aviso ni en el correo.
+    await this.notificaciones.avisar({
+      id_usuario: id_emisor === hilo.id_autor ? hilo.id_reclamante : hilo.id_autor,
+      tipo: 'MENSAJE',
+      mensaje: `Tienes un mensaje nuevo sobre «${hilo.titulo}».`,
+      id_referencia: id_reclamacion,
+      ruta: `/reclamaciones/${id_reclamacion}`,
+    });
+    return mensaje;
   }
 
   private exigirParte(hilo: Hilo | null, id_usuario: number): Hilo {

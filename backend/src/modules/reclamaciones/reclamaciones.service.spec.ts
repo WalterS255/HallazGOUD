@@ -1,5 +1,6 @@
 import { Prisma } from '../../generated/prisma/client.js';
 import type { AuditoriaService } from '../../lib/auditoria/auditoria.service.js';
+import type { NotificacionesService } from '../notificaciones/notificaciones.service.js';
 import type { PublicacionesService } from '../publicaciones/publicaciones.service.js';
 import type { ReclamacionBloqueada, ReclamacionesRepository } from './reclamaciones.repository.js';
 import { ReclamacionesService } from './reclamaciones.service.js';
@@ -44,7 +45,15 @@ function armar(o: {
       llamadas.push(`auditoria:${e.accion}`);
     },
   } as unknown as AuditoriaService;
-  return { servicio: new ReclamacionesService(repo, publicaciones, auditoria), llamadas };
+  const notificaciones = {
+    avisar: async (a: { tipo: string }) => {
+      llamadas.push(`aviso:${a.tipo}`);
+    },
+  } as unknown as NotificacionesService;
+  return {
+    servicio: new ReclamacionesService(repo, publicaciones, auditoria, notificaciones),
+    llamadas,
+  };
 }
 
 const datos = { id_publicacion: 9, id_reclamante: 2, respuesta_detalle: 'un sticker' };
@@ -94,13 +103,18 @@ describe('ReclamacionesService.resolver', () => {
       'publicacion:EN_RECLAMACION',
       'entrega',
       'auditoria:RECLAMACION_ACEPTADA',
+      'aviso:ESTADO', // al reclamante, DESPUÉS de la transacción
     ]);
   });
 
   it('RECHAZAR no toca la publicación ni crea entrega', async () => {
     const { servicio, llamadas } = armar({});
     await servicio.resolver(5, 1, 'RECHAZAR');
-    expect(llamadas).toEqual(['reclamacion:RECHAZADA', 'auditoria:RECLAMACION_RECHAZADA']);
+    expect(llamadas).toEqual([
+      'reclamacion:RECHAZADA',
+      'auditoria:RECLAMACION_RECHAZADA',
+      'aviso:ESTADO',
+    ]);
   });
 
   it('quien no es el autor recibe PROHIBIDO; una ya resuelta, RECLAMACION_RESUELTA', async () => {

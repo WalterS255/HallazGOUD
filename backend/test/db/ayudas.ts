@@ -3,6 +3,10 @@
 // arme solo lo que necesita sin chocar con las demás.
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../src/generated/prisma/client.js';
+import type {
+  Aviso,
+  NotificacionesService,
+} from '../../src/modules/notificaciones/notificaciones.service.js';
 import { esUrlDePruebas } from './preparar-bd-test.js';
 
 export function clienteTest(): PrismaClient {
@@ -69,4 +73,19 @@ export async function crearPublicacion(
 export function resueltaAhora(): { fecha: Date; fecha_resolucion: Date } {
   const ahora = new Date();
   return { fecha: ahora, fecha_resolucion: ahora };
+}
+
+// Notificador FALSO para las pruebas que arman los servicios a mano: anota cada aviso
+// en `avisos` para revisar a quién y de qué se avisó (el real se prueba en api.db-spec).
+export function notificadorFalso() {
+  const avisos: Aviso[] = [];
+  const servicio = {
+    avisar: async (a: Aviso) => {
+      avisos.push(a);
+    },
+    avisarATodos: async (lista: Aviso[]) => {
+      avisos.push(...lista);
+    },
+  } as unknown as NotificacionesService;
+  return { servicio, avisos };
 }

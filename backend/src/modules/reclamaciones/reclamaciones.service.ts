@@ -2,6 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { ErrorApp } from '../../comun/errores/error-app.js';
 import { Prisma } from '../../generated/prisma/client.js';
 import { AuditoriaService } from '../../lib/auditoria/auditoria.service.js';
+import { NotificacionesService } from '../notificaciones/notificaciones.service.js';
 import { PublicacionesService } from '../publicaciones/publicaciones.service.js';
 import { ReclamacionesRepository, type ReclamacionBloqueada } from './reclamaciones.repository.js';
 
@@ -17,6 +18,7 @@ export class ReclamacionesService {
     private readonly repo: ReclamacionesRepository,
     private readonly publicaciones: PublicacionesService,
     private readonly auditoria: AuditoriaService,
+    private readonly notificaciones: NotificacionesService,
   ) {}
 
   // RF-18 · §6.2
@@ -43,8 +45,9 @@ export class ReclamacionesService {
     if (pub.id_usuario === datos.id_reclamante) {
       throw conflicto('RECLAMACION_PROPIA', 'No puedes reclamar tu propia publicación.');
     }
+    let creada: { id: number };
     try {
-      return await this.repo.crear(datos);
+      creada = await this.repo.crear(datos);
     } catch (error) {
       // El índice único parcial uq_reclamacion_pendiente_por_usuario frena la segunda
       // pendiente del mismo usuario, incluso si llegan dos peticiones a la vez.
@@ -56,6 +59,15 @@ export class ReclamacionesService {
       }
       throw error;
     }
+    // RF-25: el aviso va DESPUÉS de guardar (y nunca falla la reclamación).
+    await this.notificaciones.avisar({
+      id_usuario: pub.id_usuario,
+      tipo: 'RECLAMACION',
+      mensaje: `Alguien reclamó tu publicación «${pub.titulo}». Revisa si conoce el detalle reservado.`,
+      id_referencia: datos.id_publicacion,
+      ruta: `/publicaciones/${datos.id_publicacion}/reclamaciones`,
+    });
+    return creada;
   }
 
   // RF-19: el autor ve cada respuesta junto al detalle reservado para comparar.
@@ -75,7 +87,7 @@ export class ReclamacionesService {
     decision: Decision,
     ip?: string | null,
   ): Promise<void> {
-    await this.repo.enTransaccion(async (tx) => {
+    const r = await this.repo.enTransaccion(async (tx) => {
       const r = this.pendienteDelAutor(await this.repo.bloquear(tx, id_reclamacion), id_autor);
 
       if (decision === 'ACEPTAR') {
@@ -102,6 +114,19 @@ export class ReclamacionesService {
         },
         tx,
       );
+      return r;
+    });
+
+    // RF-25: avisar al reclamante, ya fuera de la transacción.
+    await this.notificaciones.avisar({
+      id_usuario: r.id_reclamante,
+      tipo: 'ESTADO',
+      mensaje:
+        decision === 'ACEPTAR'
+          ? `Tu reclamación sobre «${r.titulo}» fue aceptada: ya puedes conversar para coordinar la entrega.`
+          : `Tu reclamación sobre «${r.titulo}» no fue aceptada.`,
+      id_referencia: r.id,
+      ruta: `/reclamaciones/${r.id}`,
     });
   }
 
@@ -111,7 +136,7 @@ export class ReclamacionesService {
     id_usuario: number,
     ip?: string | null,
   ): Promise<{ entregada: boolean }> {
-    return this.repo.enTransaccion(async (tx) => {
+    const { entregada, r } = await this.repo.enTransaccion(async (tx) => {
       const r = await this.repo.bloquear(tx, id_reclamacion);
       if (!r || r.estado !== 'ACEPTADA') {
         throw conflicto('SIN_ENTREGA', 'Esta reclamación no tiene una entrega en curso.');
@@ -148,8 +173,22 @@ export class ReclamacionesService {
           tx,
         );
       }
-      return { entregada };
+      return { entregada, r };
     });
+
+    if (entregada) {
+      const mensaje = `La entrega de «${r.titulo}» quedó confirmada. ¡Gracias por usar HallazGO UD!`;
+      await this.notificaciones.avisarATodos(
+        [r.id_autor, r.id_reclamante].map((id) => ({
+          id_usuario: id,
+          tipo: 'ESTADO' as const,
+          mensaje,
+          id_referencia: r.id,
+          ruta: `/reclamaciones/${r.id}`,
+        })),
+      );
+    }
+    return { entregada };
   }
 
   private pendienteDelAutor(r: ReclamacionBloqueada | null, id_autor: number) {

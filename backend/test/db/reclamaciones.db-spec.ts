@@ -6,17 +6,23 @@ import { PublicacionesRepository } from '../../src/modules/publicaciones/publica
 import { PublicacionesService } from '../../src/modules/publicaciones/publicaciones.service.js';
 import { ReclamacionesRepository } from '../../src/modules/reclamaciones/reclamaciones.repository.js';
 import { ReclamacionesService } from '../../src/modules/reclamaciones/reclamaciones.service.js';
-import { clienteTest, crearPublicacion, crearUsuario } from './ayudas.js';
+import { clienteTest, crearPublicacion, crearUsuario, notificadorFalso } from './ayudas.js';
 
 let prisma: PrismaClient;
 let servicio: ReclamacionesService;
+const notificador = notificadorFalso();
 
 beforeAll(() => {
   prisma = clienteTest();
   const bd = prisma as unknown as PrismaService;
   const auditoria = new AuditoriaService(bd);
   const publicaciones = new PublicacionesService(new PublicacionesRepository(bd), auditoria);
-  servicio = new ReclamacionesService(new ReclamacionesRepository(bd), publicaciones, auditoria);
+  servicio = new ReclamacionesService(
+    new ReclamacionesRepository(bd),
+    publicaciones,
+    auditoria,
+    notificador.servicio,
+  );
 });
 
 afterAll(async () => {
@@ -170,5 +176,34 @@ describe('entrega con doble confirmación (§6.5)', () => {
     // Sin el FOR UPDATE, cada una leería "la otra no ha confirmado" y nadie cerraría.
     expect(res.filter((x) => x.entregada)).toHaveLength(1); // una cierra, la otra no
     expect(await estadoPub(pub.id)).toBe('ENTREGADA');
+  });
+});
+
+describe('avisos (RF-25)', () => {
+  it('reclamar avisa a la autora; aceptar, al reclamante; la entrega, a los dos', async () => {
+    notificador.avisos.length = 0;
+    const { autor, ana, pub, reclamar } = await escenario();
+    const r = await reclamar(ana.id);
+    await servicio.resolver(r.id, autor.id, 'ACEPTAR');
+    await servicio.confirmarEntrega(r.id, autor.id);
+    await servicio.confirmarEntrega(r.id, ana.id);
+
+    expect(notificador.avisos.map((a) => [a.id_usuario, a.tipo])).toEqual([
+      [autor.id, 'RECLAMACION'],
+      [ana.id, 'ESTADO'], // aceptada
+      [autor.id, 'ESTADO'], // entrega confirmada
+      [ana.id, 'ESTADO'],
+    ]);
+    expect(notificador.avisos[0].ruta).toBe(`/publicaciones/${pub.id}/reclamaciones`);
+    // El aviso NUNCA lleva el detalle reservado, aunque la respuesta lo describa.
+    for (const a of notificador.avisos) expect(a.mensaje).not.toContain('sticker');
+  });
+
+  it('una reclamación que falla (duplicada) no avisa a nadie', async () => {
+    const { ana, reclamar } = await escenario();
+    await reclamar(ana.id);
+    notificador.avisos.length = 0;
+    await expect(reclamar(ana.id)).rejects.toMatchObject({ codigo: 'RECLAMACION_DUPLICADA' });
+    expect(notificador.avisos).toEqual([]);
   });
 });

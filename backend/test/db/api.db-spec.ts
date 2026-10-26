@@ -7,6 +7,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module.js';
 import { configurarApp } from '../../src/configurar-app.js';
+import { CorreoService } from '../../src/lib/correo/correo.service.js';
 import type { PrismaClient } from '../../src/generated/prisma/client.js';
 import { clienteTest, crearUsuario, unico } from './ayudas.js';
 
@@ -209,6 +210,45 @@ describe('estadísticas (solo ADMIN)', () => {
       .get('/api/admin/estadisticas?desde=2026-02-01&hasta=2026-01-01')
       .expect(400);
     expect(malo.body.error.codigo).toBe('PERIODO_INVALIDO');
+  });
+});
+
+describe('notificaciones (RF-24, RF-25)', () => {
+  it('la autora tiene su aviso de reclamación; solo ella puede marcarlo como leído', async () => {
+    const res = await como('autora').get('/api/notificaciones').expect(200);
+    const reclamacion = res.body.datos.find((n: { tipo: string }) => n.tipo === 'RECLAMACION');
+    expect(reclamacion.id_referencia).toBe(idEncontrado);
+    expect(res.body.no_leidas).toBeGreaterThan(0);
+
+    // Otra persona no puede tocarla: 404, como si no existiera.
+    await como('curioso').patch(`/api/notificaciones/${reclamacion.id}`, {}).expect(404);
+    await como('autora').patch(`/api/notificaciones/${reclamacion.id}`, {}).expect(204);
+    const despues = await como('autora').get('/api/notificaciones?no_leidas=true').expect(200);
+    expect(despues.body.datos.some((n: { id: number }) => n.id === reclamacion.id)).toBe(false);
+  });
+
+  it('el reclamante tiene los avisos de aceptación, mensajes y entrega; leer-todas los limpia', async () => {
+    const res = await como('reclamante').get('/api/notificaciones').expect(200);
+    const tipos = new Set(res.body.datos.map((n: { tipo: string }) => n.tipo));
+    expect(tipos).toEqual(new Set(['ESTADO', 'MENSAJE']));
+    const r = await como('reclamante').post('/api/notificaciones/leer-todas').expect(200);
+    expect(r.body.marcadas).toBeGreaterThan(0);
+    const vacia = await como('reclamante').get('/api/notificaciones?no_leidas=true').expect(200);
+    expect(vacia.body).toMatchObject({ datos: [], no_leidas: 0 });
+  });
+
+  it('sin sesión 401; ?no_leidas inválido 400', async () => {
+    await como(null).get('/api/notificaciones').expect(401);
+    await como('autora').get('/api/notificaciones?no_leidas=quizas').expect(400);
+  });
+
+  it('los correos de aviso salieron, sin el detalle reservado ni el texto del chat', () => {
+    const correos = app.get(CorreoService).enviadosEnPrueba;
+    expect(correos.length).toBeGreaterThan(0);
+    for (const c of correos) {
+      expect(c.html + c.texto).not.toContain(SECRETO);
+      expect(c.html + c.texto).not.toContain('biblioteca?'); // texto de un mensaje del chat
+    }
   });
 });
 

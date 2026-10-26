@@ -4,6 +4,7 @@ import { PrismaService } from '../../lib/prisma/prisma.service.js';
 import type { Tx } from '../publicaciones/publicaciones.repository.js';
 
 export interface PublicacionReclamable {
+  titulo: string;
   tipo: 'PERDIDO' | 'ENCONTRADO';
   estado: string;
   id_usuario: number;
@@ -15,6 +16,7 @@ export interface ReclamacionBloqueada {
   id_reclamante: number;
   estado: estado_reclamacion;
   id_autor: number; // autor de la publicación reclamada
+  titulo: string; // para los avisos
 }
 
 export interface EntregaBloqueada {
@@ -35,7 +37,7 @@ export class ReclamacionesRepository {
   publicacion(id: number): Promise<PublicacionReclamable | null> {
     return this.prisma.publicacion.findFirst({
       where: { id, oculta: false },
-      select: { tipo: true, estado: true, id_usuario: true },
+      select: { titulo: true, tipo: true, estado: true, id_usuario: true },
     });
   }
 
@@ -85,7 +87,7 @@ export class ReclamacionesRepository {
   // cambiarEstadoEn). Así dos "aceptar" simultáneos sobre la misma no se pisan.
   async bloquear(tx: Tx, id: number): Promise<ReclamacionBloqueada | null> {
     const filas = await tx.$queryRaw<ReclamacionBloqueada[]>`
-      SELECT r.id, r.id_publicacion, r.id_reclamante, r.estado, p.id_usuario AS id_autor
+      SELECT r.id, r.id_publicacion, r.id_reclamante, r.estado, p.id_usuario AS id_autor, p.titulo
       FROM reclamacion r JOIN publicacion p ON p.id = r.id_publicacion
       WHERE r.id = ${id}
       FOR UPDATE OF r`;

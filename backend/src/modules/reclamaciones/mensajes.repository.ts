@@ -7,6 +7,7 @@ export interface Hilo {
   id_reclamante: number;
   id_publicacion: number;
   entregada: boolean;
+  titulo: string; // para el aviso
 }
 
 @Injectable()
@@ -20,7 +21,7 @@ export class MensajesRepository {
         estado: true,
         id_reclamante: true,
         id_publicacion: true,
-        publicacion: { select: { id_usuario: true } },
+        publicacion: { select: { id_usuario: true, titulo: true } },
         entrega: { select: { fecha_entrega: true } },
       },
     });
@@ -31,6 +32,7 @@ export class MensajesRepository {
       id_reclamante: r.id_reclamante,
       id_publicacion: r.id_publicacion,
       entregada: Boolean(r.entrega?.fecha_entrega),
+      titulo: r.publicacion.titulo,
     };
   }
 
