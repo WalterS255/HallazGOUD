@@ -28,6 +28,7 @@
     "test:db": "vitest run --config ./vitest.config.db.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1156.0",
     "@nestjs/common": "^12.0.1",
     "@nestjs/core": "^12.0.1",
     "@nestjs/jwt": "12.0.3",
@@ -36,12 +37,14 @@
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
     "bcryptjs": "3.0.3",
+    "file-type": "22.2.0",
     "nestjs-pino": "5.3.1",
     "nodemailer": "10.2.1",
     "pino": "10.4.0",
     "pino-http": "11.0.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "sharp": "0.35.5",
     "zod": "4.6.7"
   },
   "devDependencies": {
