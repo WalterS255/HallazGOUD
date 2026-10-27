@@ -6,8 +6,9 @@ Plataforma web de objetos perdidos y encontrados para la Universidad Distrital F
 
 - Alcance, reglas de negocio y decisiones técnicas: [`CLAUDE.md`](CLAUDE.md)
 - Propuesta técnica original: [`docs/propuesta/Aplicacion_Web.pdf`](docs/propuesta/Aplicacion_Web.pdf)
+- **Documentación técnica:** [`docs/`](docs/README.md): API para el frontend, arquitectura, modelo de datos y pendientes
 
-> **Estado:** en desarrollo. Ya existen la infraestructura local (Docker) y el backend mínimo (`GET /api/salud`). El modelo de datos con Prisma (Fase C) está en curso. Ver el plan de trabajo en la sección 9 de `CLAUDE.md`.
+> **Estado:** el **backend está completo y probado** (todas las funciones de la propuesta). Falta el frontend (lo hace otra persona, con [`docs/api.md`](docs/api.md)), algunas decisiones de producto y el despliegue: ver [`docs/pendientes.md`](docs/pendientes.md) y la sección 9 de `CLAUDE.md`.
 
 ## Tecnologías
 

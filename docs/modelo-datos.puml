@@ -1,0 +1,286 @@
+@startuml HallazGO_BD
+' Diagrama entidad-relación de la base hallazgo_ud (PostgreSQL 18, esquema public).
+' Fuente de verdad: backend/prisma/schema.prisma + la migración init (SQL manual).
+' Ver en https://www.plantuml.com/plantuml o con la extensión PlantUML de VS Code.
+hide circle
+skinparam linetype ortho
+skinparam shadowing false
+skinparam class {
+  BackgroundColor<<catalogo>> #E8F1FB
+  BackgroundColor<<acceso>> #FDF1E6
+  BackgroundColor<<publicacion>> #EAF6EC
+  BackgroundColor<<reclamacion>> #F6ECF7
+  BackgroundColor<<soporte>> #F2F2F2
+}
+
+' ======================== ENUMs ========================
+enum rol_usuario {
+  USUARIO
+  MODERADOR
+  ADMIN
+}
+enum estado_cuenta {
+  ACTIVA
+  SUSPENDIDA
+  ELIMINADA
+}
+enum tipo_publicacion {
+  PERDIDO
+  ENCONTRADO
+}
+enum estado_publicacion {
+  ACTIVA
+  EN_RECLAMACION
+  ENTREGADA
+  EXPIRADA
+  RETIRADA
+}
+enum estado_reclamacion {
+  PENDIENTE
+  ACEPTADA
+  RECHAZADA
+  CANCELADA
+}
+enum tipo_token {
+  VERIFICACION
+  RECUPERACION
+}
+enum tipo_notificacion {
+  COINCIDENCIA
+  RECLAMACION
+  MENSAJE
+  ESTADO
+  MODERACION
+}
+enum estado_reporte {
+  PENDIENTE
+  RESUELTO
+  DESCARTADO
+}
+
+' ======================== Catálogos ========================
+entity categoria <<catalogo>> {
+  * id : serial [PK]
+  --
+  * nombre : varchar(60) [UNIQUE]
+  icono : varchar(60)
+  * sensible : boolean = false
+  * activa : boolean = true
+}
+
+entity sede <<catalogo>> {
+  * id : serial [PK]
+  --
+  * nombre : varchar(80) [UNIQUE]
+}
+
+entity lugar <<catalogo>> {
+  * id : serial [PK]
+  --
+  * id_sede : int [FK]
+  * edificio : varchar(100)
+  referencia : varchar(200)
+  ..
+  UNIQUE (id_sede, edificio)
+}
+
+' ======================== Acceso ========================
+entity usuario <<acceso>> {
+  * id : serial [PK]
+  --
+  nombre : varchar(120)
+  correo : varchar(160)
+  hash_contrasena : varchar(100)
+  programa : varchar(160)
+  foto_url : text
+  * rol : rol_usuario = USUARIO
+  * verificado : boolean = false
+  * estado_cuenta : estado_cuenta = ACTIVA
+  * notificar_por_correo : boolean = true
+  * intentos_fallidos : int = 0
+  bloqueado_hasta : timestamptz
+  * acepto_politica_en : timestamptz
+  * fecha_registro : timestamptz = now()
+  ..
+  UNIQUE INDEX lower(correo)
+  CHECK correo termina en @udistrital.edu.co
+  CHECK datos obligatorios si no está ELIMINADA
+}
+
+entity token_usuario <<acceso>> {
+  * id : serial [PK]
+  --
+  * id_usuario : int [FK]
+  * tipo : tipo_token
+  * token_hash : char(64) [UNIQUE]
+  * creado_en : timestamptz
+  * expira_en : timestamptz
+  usado_en : timestamptz
+  ..
+  CHECK token_hash es SHA-256 en hex
+  CHECK expira_en mayor que creado_en
+}
+
+' ======================== Publicaciones ========================
+entity publicacion <<publicacion>> {
+  * id : serial [PK]
+  --
+  * id_usuario : int [FK]
+  * id_categoria : int [FK]
+  * id_lugar : int [FK]
+  * tipo : tipo_publicacion
+  * titulo : varchar(100)
+  * descripcion : text
+  * fecha_suceso : timestamptz
+  * estado : estado_publicacion = ACTIVA
+  * oculta : boolean = false
+  * fecha_creacion : timestamptz = now()
+  * ultima_actividad : timestamptz = now()
+  busqueda : tsvector [GENERADA]
+  ..
+  CHECK titulo de 5 a 100 caracteres
+  CHECK fecha_suceso no posterior a fecha_creacion
+  INDEX GIN (busqueda)
+  INDEX (tipo, id_categoria, fecha_suceso)
+  INDEX (estado, fecha_creacion DESC)
+}
+
+entity detalle_reservado <<publicacion>> {
+  * id_publicacion : int [PK, FK]
+  --
+  * texto : text
+  ..
+  TRIGGER solo si la publicación es ENCONTRADO
+}
+
+entity imagen <<publicacion>> {
+  * id : serial [PK]
+  --
+  * id_publicacion : int [FK]
+  * url : text
+  * url_miniatura : text
+  * orden : smallint
+  ..
+  CHECK orden entre 1 y 5
+  UNIQUE (id_publicacion, orden)
+}
+
+entity historial_estado <<publicacion>> {
+  * id : serial [PK]
+  --
+  * id_publicacion : int [FK]
+  estado_anterior : estado_publicacion
+  * estado_nuevo : estado_publicacion
+  id_usuario : int [FK] (NULL = sistema)
+  motivo : varchar(300)
+  * fecha : timestamptz = now()
+  ..
+  CHECK estado_anterior distinto de estado_nuevo
+}
+
+' ======================== Reclamaciones ========================
+entity reclamacion <<reclamacion>> {
+  * id : serial [PK]
+  --
+  * id_publicacion : int [FK]
+  * id_reclamante : int [FK]
+  * respuesta_detalle : text
+  evidencia_url : text
+  * estado : estado_reclamacion = PENDIENTE
+  * fecha : timestamptz = now()
+  fecha_resolucion : timestamptz
+  ..
+  UNIQUE (id_publicacion) WHERE estado = ACEPTADA
+  UNIQUE (id_publicacion, id_reclamante) WHERE estado = PENDIENTE
+  CHECK resuelta si y solo si tiene fecha_resolucion
+}
+
+entity mensaje <<reclamacion>> {
+  * id : serial [PK]
+  --
+  * id_reclamacion : int [FK]
+  * id_emisor : int [FK]
+  * contenido : text
+  * leido : boolean = false
+  * fecha_envio : timestamptz = now()
+  ..
+  CHECK contenido de 1 a 2000 caracteres
+}
+
+entity entrega <<reclamacion>> {
+  * id : serial [PK]
+  --
+  * id_reclamacion : int [FK, UNIQUE]
+  * confirmo_autor : boolean = false
+  * confirmo_reclamante : boolean = false
+  fecha_entrega : timestamptz
+  ..
+  CHECK fecha_entrega solo si las dos partes confirmaron
+}
+
+' ======================== Notificaciones, moderación, auditoría ========================
+entity notificacion <<soporte>> {
+  * id : serial [PK]
+  --
+  * id_usuario : int [FK]
+  * tipo : tipo_notificacion
+  * mensaje : varchar(300)
+  id_referencia : int (sin FK, depende del tipo)
+  * leida : boolean = false
+  * fecha : timestamptz = now()
+}
+
+entity reporte <<soporte>> {
+  * id : serial [PK]
+  --
+  * id_publicacion : int [FK]
+  * id_reportante : int [FK]
+  * motivo : varchar(500)
+  * estado : estado_reporte = PENDIENTE
+  id_moderador : int [FK]
+  * fecha : timestamptz = now()
+  fecha_resolucion : timestamptz
+  ..
+  UNIQUE (id_publicacion, id_reportante) WHERE estado = PENDIENTE
+  CHECK pendiente si y solo si no tiene moderador ni fecha
+}
+
+entity auditoria <<soporte>> {
+  * id : bigserial [PK]
+  --
+  id_usuario : int [FK] (NULL = sistema)
+  * accion : varchar(60)
+  * entidad : varchar(60)
+  id_entidad : int
+  * detalle : jsonb (objeto vacío por defecto)
+  ip : inet
+  * fecha : timestamptz = now()
+  ..
+  TRIGGER inmutable: sin UPDATE, DELETE ni TRUNCATE
+}
+
+' ======================== Relaciones ========================
+sede ||--o{ lugar
+categoria ||--o{ publicacion
+lugar ||--o{ publicacion
+
+usuario ||--o{ token_usuario
+usuario ||--o{ publicacion : publica
+usuario ||--o{ reclamacion : reclama
+usuario ||--o{ mensaje : escribe
+usuario |o--o{ historial_estado : cambia
+usuario ||--o{ notificacion : recibe
+usuario ||--o{ reporte : reporta
+usuario |o--o{ reporte : modera
+usuario |o--o{ auditoria : hace
+
+publicacion ||--o| detalle_reservado
+publicacion ||--o{ imagen
+publicacion ||--o{ historial_estado
+publicacion ||--o{ reclamacion
+publicacion ||--o{ reporte
+
+reclamacion ||--o{ mensaje
+reclamacion ||--o| entrega
+
+@enduml
