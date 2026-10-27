@@ -93,7 +93,7 @@ Todas las respuestas de error tienen la misma forma:
 ### Límite de peticiones (rate limit)
 - General: **100 peticiones por minuto** por IP.
 - Estricto: **5 por minuto** en `registro`, `login`, `recuperar`, `reenviar-verificacion` y `restablecer`.
-- Al pasarse: `429 DEMASIADAS_SOLICITUDES`.
+- Al pasarse: `429 DEMASIADAS_SOLICITUDES`, con el encabezado **`Retry-After`** (cuántos segundos esperar): el frontend puede mostrar "intenta de nuevo en N segundos".
 - `/salud` y las imágenes públicas no tienen límite.
 
 ### Lo que NUNCA devuelve la API (regla 6.3)
@@ -177,6 +177,7 @@ Respuesta `202` **siempre igual**, exista o no el correo (para no revelar qué c
 
 ### `POST /auth/reenviar-verificacion` · público · límite estricto
 Si el correo de activación no llegó o venció. Mismo cuerpo y misma respuesta `202` que `recuperar`.
+Si el último enlace se envió hace **menos de 2 minutos**, no se manda otro (pero la respuesta es la misma `202`): conviene que el botón "Reenviar" se desactive 2 minutos.
 
 ### `POST /auth/restablecer` · público · límite estricto
 El enlace de recuperación lleva al frontend a `/restablecer/<token>`; ahí se pide la nueva contraseña.
@@ -207,7 +208,7 @@ Mis datos (es el único lugar donde la API devuelve un correo: **el propio**).
 ```
 
 ### `PUT /usuarios/me` · sesión
-Editar datos básicos y preferencias (RF-05). Todos los campos son opcionales, pero al menos uno.
+Editar datos básicos y preferencias (RF-05). Solo se pueden cambiar `nombre`, `programa` y `notificar_por_correo`; todos opcionales, pero al menos uno. **El correo no se cambia.** `notificar_por_correo` es un booleano real (`true`/`false`), no el texto `"true"`.
 ```json
 { "nombre": "Ana María Pérez", "programa": "Ing. de Sistemas", "notificar_por_correo": false }
 ```
@@ -215,7 +216,7 @@ Respuesta: el perfil actualizado (misma forma que `GET /usuarios/me`).
 
 ### `POST /usuarios/me/foto` · sesión
 `multipart/form-data` con **un** archivo en el campo `foto`. JPG, PNG o WEBP, máximo 5 MB. Se convierte a WEBP y se le quitan los metadatos (incluido el GPS).
-Respuesta: el perfil actualizado. Errores: `400 IMAGEN_INVALIDA`.
+Respuesta: el perfil actualizado. Errores: `400 IMAGEN_INVALIDA` (no es JPG/PNG/WEBP de verdad), `413 DEMASIADO_GRANDE` (más de 5 MB).
 
 ### `DELETE /usuarios/me/foto` · sesión
 Quita la foto. Respuesta: el perfil actualizado.
@@ -373,7 +374,7 @@ Errores: `409 TRANSICION_INVALIDA` (por ejemplo, si ya está ENTREGADA), `403`, 
 - Se convierten a WEBP (1600 px) y se genera una miniatura (480 px). Se eliminan los metadatos (incluido el GPS).
 
 Respuesta: la lista de imágenes de la publicación (`url`, `url_miniatura`, `orden`).
-Errores: `400 SIN_IMAGENES`, `400 IMAGEN_INVALIDA`, `409 DEMASIADAS_IMAGENES`, `409 PUBLICACION_NO_EDITABLE`, `403`, `404`.
+Errores: `400 SIN_IMAGENES`, `400 IMAGEN_INVALIDA` (no es JPG/PNG/WEBP de verdad), `413 DEMASIADO_GRANDE` (un archivo de más de 5 MB o más de 5 archivos en la petición), `409 DEMASIADAS_IMAGENES` (con las que ya tiene pasaría de 5), `409 PUBLICACION_NO_EDITABLE`, `403`, `404`.
 
 ### `DELETE /publicaciones/:id/imagenes/:orden` · autor
 Quita la imagen en esa posición (1 a 5). Respuesta: `{ "orden": 2, "borrada": true }`.
@@ -641,7 +642,7 @@ Errores: `400 PERIODO_INVALIDO` (desde ≥ hasta).
 |---|---|---|
 | 400 | `SOLICITUD_INVALIDA` | Datos mal formados; ver `detalles` |
 | 400 | `TOKEN_INVALIDO` / `TOKEN_USADO` / `TOKEN_EXPIRADO` | Enlace de activación o recuperación inválido, ya usado o vencido |
-| 400 | `IMAGEN_INVALIDA` / `SIN_IMAGENES` | Archivo que no es JPG/PNG/WEBP, demasiado grande, o ninguno |
+| 400 | `IMAGEN_INVALIDA` / `SIN_IMAGENES` | Archivo que no es JPG/PNG/WEBP de verdad, o no se envió ninguno |
 | 400 | `MENSAJE_INVALIDO` | Mensaje vacío o de más de 2000 caracteres |
 | 400 | `SEDE_NO_EXISTE` | Crear un lugar en una sede que no existe |
 | 400 | `PERIODO_INVALIDO` | Estadísticas con fechas al revés |
@@ -660,9 +661,9 @@ Errores: `400 PERIODO_INVALIDO` (desde ≥ hasta).
 | 409 | `REPORTE_PROPIO` / `REPORTE_DUPLICADO` / `REPORTE_RESUELTO` | Reglas de reportes |
 | 409 | `NOMBRE_REPETIDO` / `EN_USO` | Catálogos |
 | 409 | `ACCION_SOBRE_SI_MISMO` / `SIN_CAMBIO` / `CUENTA_ELIMINADA` | Cuentas |
-| 413 | `DEMASIADO_GRANDE` | Cuerpo demasiado grande |
+| 413 | `DEMASIADO_GRANDE` | Cuerpo o archivo demasiado grande (imágenes: más de 5 MB) |
 | 423 | `CUENTA_BLOQUEADA` | 5 intentos fallidos: espera 15 minutos |
-| 429 | `DEMASIADAS_SOLICITUDES` | Rate limit |
+| 429 | `DEMASIADAS_SOLICITUDES` | Rate limit; ver el encabezado `Retry-After` |
 | 500 | `ERROR_INTERNO` | Error inesperado (sin detalles) |
 | 503 | `BD_NO_DISPONIBLE` | La base de datos no responde |
 
