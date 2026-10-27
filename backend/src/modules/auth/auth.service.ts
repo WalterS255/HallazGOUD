@@ -25,6 +25,9 @@ const HASH_FALSO = hashSync('contrasena-que-nadie-tiene', config.bcryptCoste);
 // Mensaje único para "no existe" y "contraseña incorrecta" (regla 6.7).
 const CREDENCIALES_INVALIDAS = 'Correo o contraseña incorrectos.';
 
+// Tiempo mínimo entre dos reenvíos del correo de activación a la misma cuenta.
+const ESPERA_REENVIO_MS = 2 * 60 * 1000;
+
 export interface Contexto {
   ip: string | null;
 }
@@ -214,11 +217,30 @@ export class AuthService {
     return { mensaje: 'Tu contraseña se cambió. Ya puedes iniciar sesión.' };
   }
 
-  async perfil(id: number) {
-    const p = await this.repo.perfil(id);
-    if (!p)
-      throw new ErrorApp(HttpStatus.NOT_FOUND, 'USUARIO_NO_ENCONTRADO', 'El usuario no existe.');
-    return p;
+  // RF-02: si el primer correo no llegó (o venció), pedir otro enlace de activación.
+  // Igual que recuperar(): la respuesta es SIEMPRE la misma, exista o no la cuenta.
+  async reenviarVerificacion(datos: DatosRecuperar): Promise<{ mensaje: string }> {
+    const respuesta = {
+      mensaje: 'Si tu cuenta existe y aún no está activada, te enviamos un nuevo enlace.',
+    };
+    const cuenta = await this.repo.buscarParaLogin(datos.correo);
+    if (!cuenta || cuenta.verificado || cuenta.estado_cuenta !== 'ACTIVA') return respuesta;
+
+    // Freno por CUENTA (el rate limit es por IP): si el último enlace se envió hace
+    // menos de 2 minutos, no se manda otro. Así nadie usa este botón para llenar de
+    // correos la bandeja de otra persona, aunque cambie de IP.
+    const ahora = new Date();
+    const ultimo = await this.repo.ultimoToken(cuenta.id, 'VERIFICACION');
+    if (ultimo && ahora.getTime() - ultimo.getTime() < ESPERA_REENVIO_MS) return respuesta;
+
+    const token = generarToken('VERIFICACION', ahora);
+    await this.repo.transaccion(async (tx) => {
+      // El enlace anterior deja de servir: solo vale el más reciente.
+      await this.repo.invalidarTokens(cuenta.id, 'VERIFICACION', ahora, tx);
+      await this.repo.guardarToken(cuenta.id, 'VERIFICACION', token, tx);
+    });
+    await this.enviarSinRomper(correoVerificacion(datos.correo, cuenta.nombre ?? '', token.token));
+    return respuesta;
   }
 
   // --- piezas internas --------------------------------------------------------------

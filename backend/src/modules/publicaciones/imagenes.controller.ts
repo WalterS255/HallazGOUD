@@ -18,7 +18,7 @@ import type { UsuarioSesion } from '../../comun/autorizacion/roles.js';
 import { Autenticado, UsuarioActual } from '../../comun/autorizacion/sesion.guard.js';
 import { ValidacionZod } from '../../comun/validacion/validacion-zod.pipe.js';
 import { esquemaIdPublicacion } from './gestion.schemas.js';
-import { MAX_BYTES, MAX_IMAGENES } from './imagenes.procesar.js';
+import { MAX_BYTES, MAX_IMAGENES } from '../../lib/imagenes/procesar.js';
 import { type ArchivoSubido, ImagenesService } from './imagenes.service.js';
 
 const esquemaOrden = z.coerce.number().int().min(1).max(MAX_IMAGENES);

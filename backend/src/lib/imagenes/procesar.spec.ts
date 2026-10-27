@@ -1,6 +1,6 @@
 import sharp from 'sharp';
 import { ErrorApp } from '../../comun/errores/error-app.js';
-import { MAX_BYTES_MINIATURA, procesarImagen } from './imagenes.procesar.js';
+import { MAX_BYTES_MINIATURA, procesarAvatar, procesarImagen } from './procesar.js';
 
 // Imagen de prueba hecha en memoria: ruido aleatorio (difícil de comprimir, el peor caso).
 async function imagenDePrueba(ancho: number, alto: number, formato: 'jpeg' | 'png' = 'jpeg') {
@@ -65,5 +65,23 @@ describe('procesarImagen', () => {
     const jpeg = await imagenDePrueba(400, 300);
     const cortado = jpeg.subarray(0, 200); // conserva la firma FF D8 FF, pero está incompleto
     expect((await errorDe(procesarImagen(cortado, 'rota.jpg'))).codigo).toBe('IMAGEN_INVALIDA');
+  });
+});
+
+describe('procesarAvatar', () => {
+  it('deja una foto cuadrada de 256 px en WEBP, sin EXIF', async () => {
+    const conGps = await sharp(await imagenDePrueba(900, 600))
+      .withExif({ IFD3: { GPSLatitudeRef: 'N' } })
+      .jpeg()
+      .toBuffer();
+    const m = await sharp(await procesarAvatar(conGps, 'yo.jpg')).metadata();
+    expect([m.width, m.height, m.format]).toEqual([256, 256, 'webp']);
+    expect(m.exif).toBeUndefined();
+  });
+
+  it('rechaza lo que no es imagen', async () => {
+    expect((await errorDe(procesarAvatar(Buffer.from('hola'), 'yo.jpg'))).codigo).toBe(
+      'IMAGEN_INVALIDA',
+    );
   });
 });

@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { config } from '../../config/configuracion.js';
-import { AuthController, UsuariosController } from './auth.controller.js';
+import { AuthController, FotosPerfilController, UsuariosController } from './auth.controller.js';
+import { PerfilService } from './perfil.service.js';
 import { AuthRepository } from './auth.repository.js';
 import { AuthService } from './auth.service.js';
 
@@ -20,7 +21,7 @@ import { AuthService } from './auth.service.js';
       verifyOptions: { algorithms: ['HS256'] },
     }),
   ],
-  controllers: [AuthController, UsuariosController],
-  providers: [AuthService, AuthRepository],
+  controllers: [AuthController, UsuariosController, FotosPerfilController],
+  providers: [AuthService, AuthRepository, PerfilService],
 })
 export class AuthModule {}

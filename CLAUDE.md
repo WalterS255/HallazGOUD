@@ -328,7 +328,10 @@ Base: `/api`. Las respuestas van en JSON. Los errores tienen la forma `{ "error"
 | POST | `/auth/login` | público | Emitir JWT |
 | POST | `/auth/recuperar` | público | Enviar enlace de recuperación *(añadido, RF-04)* |
 | POST | `/auth/restablecer` | público | Nueva contraseña con token *(añadido, RF-04)* |
+| POST | `/auth/reenviar-verificacion` | público | Otro enlace de activación *(añadido, RF-02)* |
 | GET / PUT | `/usuarios/me` | sesión | Ver o editar mi perfil *(añadido, RF-05)* |
+| POST / DELETE | `/usuarios/me/foto` | sesión | Subir (multipart, campo `foto`) o quitar la foto de perfil *(añadido, RF-05)* |
+| GET | `/imagenes/usuarios/:id/:archivo` | público | Servir una foto de perfil *(añadido)* |
 | GET | `/publicaciones` | público | Listar con filtros, búsqueda, orden y paginación |
 | POST | `/publicaciones` | sesión | Crear publicación |
 | GET | `/publicaciones/:id` | público | Detalle (sin detalle reservado ni contacto) |
@@ -395,7 +398,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [x] Recuperación de contraseña (`POST /api/auth/recuperar` responde 202 igual exista o no el correo; `POST /api/auth/restablecer` invalida los demás enlaces y quita el bloqueo).
 - [x] *Guards* de Nest para sesión y roles: `SesionGuard` (JWT; sin token = visitante; token malo → 401 `SESION_INVALIDA`) y `RolesGuard`, globales en ese orden. `@Autenticado()`, `@Roles(...)` y `@UsuarioActual()`. `GET /api/usuarios/me`. Limitación conocida (RNF-15, sin estado): si se suspende una cuenta, su JWT sigue sirviendo hasta que vence (`JWT_EXPIRA_EN`).
 - [x] Pruebas unitarias e integración (`test/db/auth.db-spec.ts`: flujo HTTP completo contra `hallazgo_test`). Los tokens de un solo uso se ocultan también en las URL del log (`ocultarTokens`). El seed toma la contraseña de prueba de `CONTRASENA_SEED` (en el `.env`).
-- [ ] Editar perfil (`PUT /api/usuarios/me`, RF-05) y reenviar el correo de verificación.
+- [x] Editar perfil y reenviar el correo de verificación (`modules/auth/perfil.service.ts`). `PUT /api/usuarios/me` cambia nombre, programa y `notificar_por_correo`; **el correo no se puede cambiar** (es la identidad institucional verificada). Foto de perfil: `POST/DELETE /api/usuarios/me/foto`, cuadrada de 256 px en WEBP sin EXIF (`lib/imagenes/procesar.ts`, compartido con las publicaciones); al reemplazarla se borra la anterior. `POST /api/auth/reenviar-verificacion` responde 202 igual exista o no la cuenta, invalida el enlace anterior y **no reenvía si el último se mandó hace menos de 2 minutos** (freno por cuenta, además del rate limit por IP). Pruebas en `test/db/perfil.db-spec.ts`.
 
 ### Fase E — Publicaciones (RF-06 a RF-12)
 - [x] CRUD con la máquina de estados y el historial. **Crear, editar y retirar** (`modules/publicaciones/gestion.*`): `POST /publicaciones` (detalle reservado obligatorio en ENCONTRADO y prohibido en PERDIDO; categoría activa y lugar existente; fecha no futura; `fecha_creacion` desde Node; historial `null → ACTIVA`; `aviso_sensible` para la regla 6.6), `PUT /publicaciones/:id` (solo el autor y solo si no es final; **con reclamaciones, el detalle reservado ya no se puede cambiar**: 409 `DETALLE_BLOQUEADO`) y `DELETE /publicaciones/:id` (autor, moderador o admin; pasa por `cambiarEstado(…, 'RETIRADA')`; la fila no se borra). Pruebas HTTP en `test/db/gestion.db-spec.ts`. **Antes:** `modules/publicaciones/estados.ts` (tabla única de transiciones; prueba que recorre las 25 combinaciones) y `PublicacionesService.cambiarEstado` (estado + `historial_estado` + auditoría en una transacción, con `SELECT … FOR UPDATE`). Probado contra la BD: atomicidad (si la auditoría falla, no queda nada) y bloqueo (dos cambios simultáneos: gana uno; sin el `FOR UPDATE` ganaban los dos). `lib/auditoria/` registra con lista cerrada de acciones y recibe el `tx`.
