@@ -140,6 +140,41 @@ export class AuthRepository {
     });
   }
 
+  async actualizarPerfil(
+    id: number,
+    datos: { nombre?: string; programa?: string; notificar_por_correo?: boolean },
+  ): Promise<void> {
+    await this.prisma.usuario.update({ where: { id }, data: datos, select: { id: true } });
+  }
+
+  async fotoDe(id: number): Promise<string | null> {
+    const u = await this.prisma.usuario.findUnique({ where: { id }, select: { foto_url: true } });
+    return u?.foto_url ?? null;
+  }
+
+  async guardarFoto(id: number, foto_url: string | null): Promise<void> {
+    await this.prisma.usuario.update({ where: { id }, data: { foto_url }, select: { id: true } });
+  }
+
+  // ¿Cuándo se envió el último enlace de este tipo? (para no reenviar sin parar)
+  async ultimoToken(id_usuario: number, tipo: TipoToken): Promise<Date | null> {
+    const t = await this.prisma.token_usuario.findFirst({
+      where: { id_usuario, tipo },
+      orderBy: { creado_en: 'desc' },
+      select: { creado_en: true },
+    });
+    return t?.creado_en ?? null;
+  }
+
+  // Para servir la foto: solo de cuentas que no estén eliminadas (anonimizadas).
+  async cuentaVisible(id: number): Promise<boolean> {
+    const u = await this.prisma.usuario.findUnique({
+      where: { id },
+      select: { estado_cuenta: true },
+    });
+    return u !== null && u.estado_cuenta !== 'ELIMINADA';
+  }
+
   transaccion<T>(fn: (tx: ClienteBd) => Promise<T>): Promise<T> {
     return this.prisma.$transaction((tx) => fn(tx));
   }

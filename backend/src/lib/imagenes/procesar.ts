@@ -21,6 +21,42 @@ const rechazar = (mensaje: string) =>
   new ErrorApp(HttpStatus.BAD_REQUEST, 'IMAGEN_INVALIDA', mensaje);
 
 export async function procesarImagen(contenido: Buffer, nombre: string): Promise<ImagenProcesada> {
+  const base = await abrirImagen(contenido, nombre);
+
+  const grande = await base
+    .clone()
+    .resize(LADO_GRANDE, LADO_GRANDE, { fit: 'inside', withoutEnlargement: true })
+    .webp({ quality: 80 })
+    .toBuffer();
+
+  // Miniatura para el catálogo (RNF-02: ≤ 200 KB). Casi siempre basta la primera
+  // calidad; si una foto muy detallada se pasa, se baja la calidad hasta que quepa.
+  let miniatura = Buffer.alloc(0);
+  for (const calidad of [70, 55, 40, 25]) {
+    miniatura = await base
+      .clone()
+      .resize(LADO_MINIATURA, LADO_MINIATURA, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: calidad })
+      .toBuffer();
+    if (miniatura.length <= MAX_BYTES_MINIATURA) break;
+  }
+
+  return { grande, miniatura };
+}
+
+// Foto de perfil (RF-05): cuadrada de 256 px, recortada al centro. Mismas
+// protecciones que las fotos de publicaciones (bytes reales, sin EXIF ni GPS).
+export const LADO_AVATAR = 256;
+export async function procesarAvatar(contenido: Buffer, nombre: string): Promise<Buffer> {
+  const base = await abrirImagen(contenido, nombre);
+  return base
+    .resize(LADO_AVATAR, LADO_AVATAR, { fit: 'cover', position: 'attention' })
+    .webp({ quality: 80 })
+    .toBuffer();
+}
+
+// Revisa que sea una imagen real y la abre. Común a fotos de publicaciones y de perfil.
+async function abrirImagen(contenido: Buffer, nombre: string): Promise<ReturnType<typeof sharp>> {
   // 1) ¿QUÉ es de verdad? Se miran los primeros bytes (la "firma" del formato).
   //    La extensión (.jpg) y el tipo que manda el navegador se pueden falsificar;
   //    los bytes de un JPEG real siempre empiezan igual (FF D8 FF).
@@ -42,24 +78,5 @@ export async function procesarImagen(contenido: Buffer, nombre: string): Promise
   } catch {
     throw rechazar(`"${nombre}" está dañada o no se puede abrir.`);
   }
-
-  const grande = await base
-    .clone()
-    .resize(LADO_GRANDE, LADO_GRANDE, { fit: 'inside', withoutEnlargement: true })
-    .webp({ quality: 80 })
-    .toBuffer();
-
-  // 3) Miniatura para el catálogo (RNF-02: ≤ 200 KB). Casi siempre basta la primera
-  //    calidad; si una foto muy detallada se pasa, se baja la calidad hasta que quepa.
-  let miniatura = Buffer.alloc(0);
-  for (const calidad of [70, 55, 40, 25]) {
-    miniatura = await base
-      .clone()
-      .resize(LADO_MINIATURA, LADO_MINIATURA, { fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: calidad })
-      .toBuffer();
-    if (miniatura.length <= MAX_BYTES_MINIATURA) break;
-  }
-
-  return { grande, miniatura };
+  return base;
 }

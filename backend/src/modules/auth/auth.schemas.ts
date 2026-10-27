@@ -39,18 +39,22 @@ const contrasenaActual = z
   .min(1, { error: 'Escribe tu contraseña' })
   .refine((c) => bytes(c) <= MAX_BYTES_BCRYPT, { error: 'La contraseña es demasiado larga' });
 
+const nombre = z
+  .string({ error: 'Escribe tu nombre' })
+  .trim()
+  .min(2, { error: 'Escribe tu nombre' })
+  .max(120, { error: 'El nombre es demasiado largo' });
+
+const programa = z
+  .string({ error: 'Escribe tu programa o dependencia' })
+  .trim()
+  .min(2, { error: 'Escribe tu programa o dependencia' })
+  .max(160, { error: 'El programa es demasiado largo' });
+
 export const esquemaRegistro = z.object({
-  nombre: z
-    .string({ error: 'Escribe tu nombre' })
-    .trim()
-    .min(2, { error: 'Escribe tu nombre' })
-    .max(120, { error: 'El nombre es demasiado largo' }),
+  nombre,
   correo: correoInstitucional,
-  programa: z
-    .string({ error: 'Escribe tu programa o dependencia' })
-    .trim()
-    .min(2, { error: 'Escribe tu programa o dependencia' })
-    .max(160, { error: 'El programa es demasiado largo' }),
+  programa,
   contrasena: contrasenaNueva,
   // Ley 1581 (RNF-19): sin aceptar la política de datos no hay registro.
   aceptaPolitica: z.literal(true, {
@@ -79,7 +83,20 @@ export const esquemaRestablecer = z.object({
   contrasena: contrasenaNueva,
 });
 
+// RF-05: editar el perfil. El CORREO no se puede cambiar: es la identidad institucional
+// con la que la persona se registró y verificó. Todo opcional, pero al menos un campo.
+export const esquemaEditarPerfil = z
+  .object({
+    nombre: nombre.optional(),
+    programa: programa.optional(),
+    notificar_por_correo: z.boolean({ error: 'Indica sí o no (true o false)' }).optional(),
+  })
+  .refine((d) => Object.values(d).some((v) => v !== undefined), {
+    error: 'No hay nada que cambiar',
+  });
+
 export type DatosRegistro = z.output<typeof esquemaRegistro>;
+export type DatosEditarPerfil = z.output<typeof esquemaEditarPerfil>;
 export type DatosLogin = z.output<typeof esquemaLogin>;
 export type DatosRecuperar = z.output<typeof esquemaRecuperar>;
 export type DatosRestablecer = z.output<typeof esquemaRestablecer>;

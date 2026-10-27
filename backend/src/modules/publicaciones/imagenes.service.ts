@@ -6,7 +6,7 @@ import { esEditable } from './estados.js';
 import type { Contexto } from './gestion.service.js';
 import { GestionRepository } from './gestion.repository.js';
 import { ImagenesRepository } from './imagenes.repository.js';
-import { type ImagenProcesada, MAX_IMAGENES, procesarImagen } from './imagenes.procesar.js';
+import { type ImagenProcesada, MAX_IMAGENES, procesarImagen } from '../../lib/imagenes/procesar.js';
 
 export interface ArchivoSubido {
   buffer: Buffer;
