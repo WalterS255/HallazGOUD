@@ -163,10 +163,13 @@ Respuesta `200`:
 Errores:
 | Código | Estado | Cuándo |
 |---|---|---|
+| `SOLICITUD_INVALIDA` | 400 | Datos mal formados (por ejemplo, contraseña de más de 72 bytes) |
 | `CREDENCIALES_INVALIDAS` | 401 | Correo inexistente **o** contraseña mala (mismo mensaje a propósito) |
-| `CUENTA_BLOQUEADA` | 423 | 5 intentos fallidos: bloqueada 15 minutos |
-| `CUENTA_NO_VERIFICADA` | 403 | No ha activado la cuenta |
-| `CUENTA_SUSPENDIDA` | 403 | Un admin la suspendió |
+| `CUENTA_BLOQUEADA` | 423 | 5 intentos fallidos: bloqueada 15 minutos. Aparece **aunque la contraseña sea correcta** |
+| `CUENTA_NO_VERIFICADA` | 403 | No ha activado la cuenta. Solo con la contraseña **correcta** |
+| `CUENTA_SUSPENDIDA` | 403 | Un admin la suspendió. Solo con la contraseña **correcta** |
+
+Con una contraseña mala la respuesta es siempre `401 CREDENCIALES_INVALIDAS`, para no revelar el estado de la cuenta.
 
 ### `POST /auth/recuperar` · público · límite estricto
 Envía el enlace para restablecer la contraseña (RF-04).
@@ -176,8 +179,13 @@ Envía el enlace para restablecer la contraseña (RF-04).
 Respuesta `202` **siempre igual**, exista o no el correo (para no revelar qué correos están registrados).
 
 ### `POST /auth/reenviar-verificacion` · público · límite estricto
-Si el correo de activación no llegó o venció. Mismo cuerpo y misma respuesta `202` que `recuperar`.
-Si el último enlace se envió hace **menos de 2 minutos**, no se manda otro (pero la respuesta es la misma `202`): conviene que el botón "Reenviar" se desactive 2 minutos.
+Si el correo de activación no llegó o venció. Mismo cuerpo que `recuperar`. Respuesta `202` siempre, con su propio mensaje:
+```json
+{ "mensaje": "Si tu cuenta existe y aún no está activada, te enviamos un nuevo enlace." }
+```
+- Solo envía si la cuenta existe, **no** está verificada y está ACTIVA (la respuesta no lo revela).
+- Al enviar uno nuevo, **el enlace anterior deja de servir**.
+- Si el último enlace se envió hace **menos de 2 minutos**, no se manda otro (la respuesta es la misma): conviene que el botón "Reenviar" se desactive 2 minutos.
 
 ### `POST /auth/restablecer` · público · límite estricto
 El enlace de recuperación lleva al frontend a `/restablecer/<token>`; ahí se pide la nueva contraseña.
@@ -216,7 +224,8 @@ Respuesta: el perfil actualizado (misma forma que `GET /usuarios/me`).
 
 ### `POST /usuarios/me/foto` · sesión
 `multipart/form-data` con **un** archivo en el campo `foto`. JPG, PNG o WEBP, máximo 5 MB. Se convierte a WEBP y se le quitan los metadatos (incluido el GPS).
-Respuesta: el perfil actualizado. Errores: `400 IMAGEN_INVALIDA` (no es JPG/PNG/WEBP de verdad), `413 DEMASIADO_GRANDE` (más de 5 MB).
+Respuesta: el perfil actualizado.
+Errores: `400 SIN_IMAGENES` (no se adjuntó archivo), `400 IMAGEN_INVALIDA` (no es JPG/PNG/WEBP de verdad), `400 SOLICITUD_INVALIDA` (más de 1 archivo, o un campo con otro nombre que `foto`), `413 DEMASIADO_GRANDE` (más de 5 MB).
 
 ### `DELETE /usuarios/me/foto` · sesión
 Quita la foto. Respuesta: el perfil actualizado.
@@ -353,6 +362,7 @@ Editar (RF-10). Mismos campos que crear, todos opcionales (al menos uno). No se 
 Errores:
 | Código | Estado | Cuándo |
 |---|---|---|
+| `SOLICITUD_INVALIDA` | 400 | Datos mal formados, y dos casos no obvios: `detalle_reservado` en un PERDIDO, o una `fecha_suceso` posterior a la fecha en que **se creó** la publicación (se compara con `fecha_creacion`, no con "ahora") |
 | `PUBLICACION_NO_EDITABLE` | 409 | Está en un estado final: ENTREGADA, EXPIRADA o RETIRADA |
 | `DETALLE_BLOQUEADO` | 409 | Ya tiene reclamaciones: el detalle reservado no se puede cambiar |
 | `PROHIBIDO` | 403 | No es el autor |
@@ -374,7 +384,16 @@ Errores: `409 TRANSICION_INVALIDA` (por ejemplo, si ya está ENTREGADA), `403`, 
 - Se convierten a WEBP (1600 px) y se genera una miniatura (480 px). Se eliminan los metadatos (incluido el GPS).
 
 Respuesta: la lista de imágenes de la publicación (`url`, `url_miniatura`, `orden`).
-Errores: `400 SIN_IMAGENES`, `400 IMAGEN_INVALIDA` (no es JPG/PNG/WEBP de verdad), `413 DEMASIADO_GRANDE` (un archivo de más de 5 MB o más de 5 archivos en la petición), `409 DEMASIADAS_IMAGENES` (con las que ya tiene pasaría de 5), `409 PUBLICACION_NO_EDITABLE`, `403`, `404`.
+Errores:
+| Código | Estado | Cuándo |
+|---|---|---|
+| `SIN_IMAGENES` | 400 | No se adjuntó ningún archivo |
+| `IMAGEN_INVALIDA` | 400 | No es JPG/PNG/WEBP de verdad (se revisan los bytes) |
+| `SOLICITUD_INVALIDA` | 400 | Más de 5 archivos en la misma petición, o un campo con otro nombre que `imagenes` |
+| `DEMASIADO_GRANDE` | 413 | Un archivo de más de 5 MB |
+| `DEMASIADAS_IMAGENES` | 409 | Con las que ya tiene, pasaría de 5 |
+| `PUBLICACION_NO_EDITABLE` | 409 | Está en un estado final |
+| `PROHIBIDO` / `PUBLICACION_NO_ENCONTRADA` | 403 / 404 | |
 
 ### `DELETE /publicaciones/:id/imagenes/:orden` · autor
 Quita la imagen en esa posición (1 a 5). Respuesta: `{ "orden": 2, "borrada": true }`.
