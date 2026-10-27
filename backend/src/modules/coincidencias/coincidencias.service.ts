@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ErrorApp } from '../../comun/errores/error-app.js';
 import { NotificacionesService } from '../notificaciones/notificaciones.service.js';
 import { CoincidenciasRepository, type Publicacion } from './coincidencias.repository.js';
@@ -11,10 +11,22 @@ export interface Sugerencia {
 
 @Injectable()
 export class CoincidenciasService {
+  private readonly logger = new Logger(CoincidenciasService.name);
+
   constructor(
     private readonly repo: CoincidenciasRepository,
     private readonly notificaciones: NotificacionesService,
   ) {}
+
+  // Lo que llama GestionService.crear() DESPUÉS de guardar un ENCONTRADO. NUNCA lanza:
+  // si buscar compatibles o avisar falla, la publicación ya creada no debe responder 500.
+  async alPublicarEncontrado(idEncontrado: number): Promise<void> {
+    try {
+      await this.avisarCompatibles(idEncontrado);
+    } catch (error) {
+      this.logger.error(error, `No se pudo avisar coincidencias de la publicación ${idEncontrado}`);
+    }
+  }
 
   // RF-24: al publicar un ENCONTRADO, avisar a los autores de los PERDIDOS compatibles.
   // Se llama DESPUÉS de guardar la publicación (fuera de su transacción). Devuelve a

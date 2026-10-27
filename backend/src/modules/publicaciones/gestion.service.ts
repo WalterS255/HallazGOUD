@@ -2,6 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import type { UsuarioSesion } from '../../comun/autorizacion/roles.js';
 import { ErrorApp } from '../../comun/errores/error-app.js';
 import { AuditoriaService } from '../../lib/auditoria/auditoria.service.js';
+import { CoincidenciasService } from '../coincidencias/coincidencias.service.js';
 import { esEditable } from './estados.js';
 import type { DatosCrear, DatosEditar } from './gestion.schemas.js';
 import { GestionRepository } from './gestion.repository.js';
@@ -31,6 +32,7 @@ export class GestionService {
     private readonly repoPublicaciones: PublicacionesRepository,
     private readonly publicaciones: PublicacionesService,
     private readonly auditoria: AuditoriaService,
+    private readonly coincidencias: CoincidenciasService,
   ) {}
 
   // RF-06 / RF-07: crear un ENCONTRADO o un PERDIDO.
@@ -40,7 +42,7 @@ export class GestionService {
       throw campoInvalido('fecha_suceso', 'La fecha no puede estar en el futuro');
     }
 
-    return this.repo.enTransaccion(async (tx) => {
+    const creada = await this.repo.enTransaccion(async (tx) => {
       const sensible = await this.revisarCatalogos(tx, datos.id_categoria, datos.id_lugar);
       const { id } = await this.repo.crear(tx, {
         id_usuario: ctx.usuario.id,
@@ -77,6 +79,13 @@ export class GestionService {
       // Regla 6.6: si la categoría es sensible, el frontend muestra el aviso de tapar datos.
       return { ...publicacion, aviso_sensible: sensible };
     });
+
+    // RF-24: avisar a los autores de PERDIDOS compatibles. DESPUÉS de la transacción
+    // (no se avisa de algo que al final no se guardó) y sin poder romper la creación.
+    if (datos.tipo === 'ENCONTRADO') {
+      await this.coincidencias.alPublicarEncontrado(creada.id);
+    }
+    return creada;
   }
 
   // RF-10: el autor edita mientras la publicación no esté en un estado final.

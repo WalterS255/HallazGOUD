@@ -94,3 +94,18 @@ describe('CoincidenciasService.avisarCompatibles (RF-24)', () => {
     expect(avisados).toEqual([]);
   });
 });
+
+describe('CoincidenciasService.alPublicarEncontrado', () => {
+  it('NUNCA lanza: si buscar compatibles falla, la publicación creada no se ve afectada', async () => {
+    const repo = {
+      buscarReferencia: async () => {
+        throw new Error('la BD se cayó');
+      },
+    } as unknown as CoincidenciasRepository;
+    const servicio = new CoincidenciasService(
+      repo,
+      avisosFalsos as unknown as NotificacionesService,
+    );
+    await expect(servicio.alPublicarEncontrado(1)).resolves.toBeUndefined();
+  });
+});

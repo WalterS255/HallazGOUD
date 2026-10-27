@@ -345,6 +345,9 @@ Base: `/api`. Las respuestas van en JSON. Los errores tienen la forma `{ "error"
 | POST | `/reclamaciones/:id/entrega` | partes | Confirmar entrega |
 | GET | `/notificaciones` | sesión | Mis notificaciones |
 | PATCH | `/notificaciones/:id` | sesión | Marcar como leída *(añadido)* |
+| POST | `/notificaciones/leer-todas` | sesión | Marcar todas como leídas *(añadido)* |
+| GET | `/catalogos` | público | Categorías activas, sedes y lugares para el formulario *(añadido)* |
+| GET | `/admin/usuarios?q=` | admin | Buscar cuentas por nombre o correo exacto (sin devolver el correo) *(añadido, RF-29)* |
 | POST | `/reportes` | sesión | Reportar contenido |
 | GET / PATCH | `/admin/reportes` | moderador | Moderación *(añadido, RF-27)* |
 | CRUD | `/admin/categorias`, `/admin/sedes`, `/admin/lugares` | admin | Catálogos *(añadido, RF-28)* |
@@ -420,12 +423,12 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [ ] Frontend: Mis publicaciones y Mensajes.
 
 ### Fase H — Coincidencias y notificaciones (RF-23 a RF-25)
-- [x] Función de puntaje pura + pruebas con casos límite (día 0, día 7, día 8). `modules/coincidencias/`: `puntaje.ts` (pura), repositorio con el prefiltro SQL y servicio que sirve en los dos sentidos. Endpoint `GET /api/publicaciones/:id/coincidencias` **solo para el autor** (`sugerenciasParaAutor`; antes cualquiera con sesión podía ver las de otros). Falta llamarlo al crear publicaciones (Fase E) y notificar (RF-24).
-- [ ] Notificaciones en la app y por correo (respetando `notificar_por_correo`).
+- [x] Función de puntaje pura + pruebas con casos límite (día 0, día 7, día 8). `modules/coincidencias/`: `puntaje.ts` (pura), repositorio con el prefiltro SQL y servicio que sirve en los dos sentidos. Endpoint `GET /api/publicaciones/:id/coincidencias` **solo para el autor** (`sugerenciasParaAutor`; antes cualquiera con sesión podía ver las de otros). **RF-24:** al crear un ENCONTRADO, `GestionService.crear` llama a `alPublicarEncontrado` después de la transacción (nunca lanza): un aviso por autor de PERDIDO compatible.
+- [x] Notificaciones en la app y por correo (respetando `notificar_por_correo`). `modules/notificaciones/`: `avisar()` se llama **después** de la transacción y **nunca lanza** (un aviso fallido no deshace la acción); no escribe a cuentas suspendidas; no repite el correo si ya hay uno igual sin leer. Avisos: reclamación, aceptada/rechazada, mensaje, entrega, coincidencia (RF-24), moderación y cuenta. Los avisos y correos nunca llevan el detalle reservado ni el texto del chat.
 
 ### Fase I — Administración (RF-26 a RF-30) · *Hito: alcance completo*
-- [ ] Reportes y moderación.
-- [ ] CRUD de catálogos y suspensión de usuarios.
+- [x] Reportes y moderación (`modules/moderacion/`): `POST /reportes` (duplicado pendiente → `REPORTE_DUPLICADO` por el índice parcial), bandeja con `horas_pendiente` y `vencido` (48 h), `OCULTAR` cierra todos los pendientes de esa publicación y avisa a la autora; `FOR UPDATE` contra dos moderadores a la vez.
+- [x] CRUD de catálogos y suspensión de usuarios (`modules/admin/catalogos.*`, `usuarios-admin.service.ts`): las categorías se **desactivan** (no se borran); sede o lugar en uso → 409 `EN_USO`; buscar cuentas por nombre o correo exacto **sin devolver el correo**; suspender/reactivar con auditoría. Recordatorio (Fase D): un JWT ya emitido sigue sirviendo hasta que vence.
 - [x] Estadísticas (consultas de agregación). `GET /api/admin/estadisticas` (`@Roles('ADMIN')`, `?desde&hasta`) sobre `modules/admin/estadisticas.*`: por mes en **hora de Colombia** (probado con el 31 de enero a las 22:00), tasa de recuperación, categorías frecuentes y lugares críticos.
 
 ### Fase J — Pruebas y calidad
