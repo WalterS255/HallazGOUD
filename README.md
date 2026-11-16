@@ -146,15 +146,3 @@ backend/
 │   └── config/      ← lectura y validación de variables de entorno
 └── test/            ← pruebas e2e y de base de datos
 ```
-
-## Practicar con los scripts SQL
-
-Los scripts de `docs/sql/` crean el modelo completo con datos de prueba. Sirven para aprender y experimentar, **no** son la base de datos de la aplicación (esa la crean las migraciones de Prisma).
-
-Usa una base de datos **aparte**, `hallazgo_practica`: los scripts **borran y vuelven a crear** tablas con los mismos nombres que usa la app, así que ejecutarlos sobre `hallazgo_ud` destruiría sus datos.
-
-```bash
-docker compose exec db createdb -U hallazgo hallazgo_practica      # solo la primera vez
-docker compose exec db psql -U hallazgo -d hallazgo_practica -f /sql/01_tablas_base.sql
-docker compose exec db psql -U hallazgo -d hallazgo_practica -f /sql/02_reclamaciones.sql
-```
