@@ -8,7 +8,19 @@ Plataforma web de objetos perdidos y encontrados para la Universidad Distrital F
 - Propuesta técnica original: [`docs/propuesta/Aplicacion_Web.pdf`](docs/propuesta/Aplicacion_Web.pdf)
 - **Documentación técnica:** [`docs/`](docs/README.md): API para el frontend, arquitectura, modelo de datos y pendientes
 
-> **Estado:** el **backend está completo y probado** (todas las funciones de la propuesta). Falta el frontend (lo hace otra persona, con [`docs/api.md`](docs/api.md)), algunas decisiones de producto y el despliegue: ver [`docs/pendientes.md`](docs/pendientes.md) y la sección 9 de `CLAUDE.md`.
+> **Estado:** el **backend está completo y probado** (todas las funciones de la propuesta). Falta el frontend (carpeta [`frontend/`](frontend/README.md), con su guía), algunas decisiones de producto y el despliegue: ver [`docs/pendientes.md`](docs/pendientes.md) y la sección 9 de `CLAUDE.md`.
+
+## Estructura del repositorio
+
+```
+├── backend/             ← API REST (NestJS + Prisma). Listo y probado.
+├── frontend/            ← Aplicación web (React + Vite). Empieza aquí: frontend/README.md
+├── docs/                ← API, arquitectura, modelo de datos, pendientes, propuesta y SQL de práctica
+├── infra/               ← scripts de base de datos (roles, respaldos)
+├── docker-compose.yml   ← servicios de apoyo: db (PostgreSQL), s3 (SeaweedFS) y mailpit
+├── .env.example         ← plantilla de variables (el .env real NUNCA se sube)
+└── CLAUDE.md            ← contexto completo del proyecto (requerimientos, reglas, plan)
+```
 
 ## Tecnologías
 
@@ -19,7 +31,7 @@ Plataforma web de objetos perdidos y encontrados para la Universidad Distrital F
 | Imágenes | SeaweedFS (API compatible con S3) |
 | Correo en desarrollo | Mailpit |
 | Pruebas / calidad | Vitest + Supertest · oxlint + Prettier · husky + lint-staged |
-| Frontend *(pendiente)* | React + Vite + Tailwind CSS |
+| Frontend *(en construcción)* | React + Vite + Tailwind CSS + React Router (versiones por decidir: ver `frontend/README.md`) |
 
 ## Requisitos
 
@@ -30,6 +42,10 @@ Plataforma web de objetos perdidos y encontrados para la Universidad Distrital F
 ## Cómo levantarlo por primera vez
 
 ```bash
+# 0. Clonar el repositorio
+git clone https://github.com/WalterS255/HallazGOUD.git
+cd HallazGOUD
+
 # 1. Variables de entorno: copia la plantilla y cambia las contraseñas y llaves
 cp .env.example .env
 
@@ -52,6 +68,16 @@ Comprueba que responde:
 curl http://localhost:3000/api/salud
 # {"ok":true}
 ```
+
+Para tener datos de prueba (categorías, sedes, lugares y 3 cuentas, una por rol), con `CONTRASENA_SEED` definida en el `.env`:
+
+```bash
+cd backend
+npx prisma migrate deploy    # crea las tablas
+npm run db:seed              # carga los datos iniciales
+```
+
+El frontend se levanta aparte; las instrucciones están en [`frontend/README.md`](frontend/README.md).
 
 > **¿Ya tienes PostgreSQL instalado en Windows?** Usa el puerto 5432, así que el contenedor no podrá arrancar ("ports are not available"). En tu `.env` pon `POSTGRES_PORT=5433` y el mismo puerto en `DATABASE_URL`.
 
@@ -81,25 +107,44 @@ Se ejecutan dentro de `backend/`.
 | `npm run format` | Formatea todo con Prettier |
 | `npm run build` | Compila TypeScript a `dist/` |
 
+## Cómo trabajamos en equipo (ramas y Pull Requests)
+
+Usamos **un solo repositorio** con las dos carpetas (`backend/` y `frontend/`) y **ramas cortas** que se unen a `main` por medio de un *Pull Request* (PR): una propuesta de cambio en GitHub que la otra persona revisa antes de unirla.
+
+- **`main`** es la versión estable: siempre debe arrancar y pasar las pruebas. **Nadie trabaja directo en `main`.**
+- Cada tarea va en su propia rama, que sale de `main` y dura días, no meses:
+  - `feature/front-<tarea>`, por ejemplo `feature/front-catalogo` o `feature/front-login`;
+  - `feature/back-<tarea>`, por ejemplo `feature/back-cancelar-reclamacion`;
+  - `fix/<problema>` para arreglos.
+- Al terminar la tarea: subir la rama, abrir un PR hacia `main`, que la otra persona lo revise y unirlo. Después se borra la rama.
+
+```bash
+git switch main && git pull                  # partir siempre del main más reciente
+git switch -c feature/front-catalogo         # rama nueva para la tarea
+# …trabajar y hacer commits…
+git push -u origin feature/front-catalogo    # subirla
+# en GitHub: "Compare & pull request" → revisión → "Merge"
+```
+
+**¿Por qué no una rama `backend` y otra `frontend` que se unen al final?** Porque cuanto más tiempo viven separadas, más se alejan, y la unión final se vuelve un choque grande y difícil de revisar. Además, las carpetas ya separan el trabajo: quien hace frontend casi nunca toca `backend/`, así que los conflictos son raros. Con ramas cortas, cada PR es pequeño, se revisa en minutos y `main` siempre tiene el proyecto completo funcionando.
+
+**Mensajes de commit** con la convención semántica: `feat:` (función nueva), `fix:` (arreglo), `docs:`, `test:`, `refactor:`, `chore:`. Por ejemplo: `feat(front): catálogo con filtros y paginación`.
+
 ## Control de cada commit
 
-Antes de cada `git commit`, husky ejecuta **Prettier** (formatea) y **oxlint** (busca errores comunes) sobre los archivos `.ts` que vas a guardar. Si oxlint encuentra algo, **el commit no se hace** y la terminal dice qué corregir. No uses `--no-verify` para saltarlo: si el control molesta, es mejor ajustarlo.
+Antes de cada `git commit`, husky ejecuta **Prettier** (formatea) y **oxlint** (busca errores comunes) sobre los archivos `.ts` del backend que vas a guardar. Si oxlint encuentra algo, **el commit no se hace** y la terminal dice qué corregir. No uses `--no-verify` para saltarlo: si el control molesta, es mejor ajustarlo. (Cuando exista el frontend, se le agregará su propio control en `frontend/`.)
 
-## Estructura
+## Estructura del backend
 
 ```
-├── CLAUDE.md            ← contexto completo del proyecto
-├── docker-compose.yml   ← db, s3 (SeaweedFS) y mailpit
-├── .env.example         ← plantilla de variables (el .env real NO se sube)
-├── docs/
-│   ├── propuesta/       ← propuesta técnica
-│   └── sql/             ← modelo de datos en SQL puro (aprendizaje, Fase A)
-└── backend/
-    ├── src/
-    │   ├── modules/     ← un módulo de Nest por funcionalidad (salud, auth, publicaciones…)
-    │   ├── comun/       ← errores, logger, guards, pipes
-    │   └── config/      ← lectura de variables de entorno
-    └── test/            ← pruebas e2e
+backend/
+├── prisma/          ← schema, migraciones y seed
+├── src/
+│   ├── modules/     ← un módulo de Nest por funcionalidad (auth, publicaciones, reclamaciones…)
+│   ├── comun/       ← errores, logger, guards, pipes
+│   ├── lib/         ← prisma, correo, almacenamiento, auditoría, imágenes
+│   └── config/      ← lectura y validación de variables de entorno
+└── test/            ← pruebas e2e y de base de datos
 ```
 
 ## Practicar con los scripts SQL
