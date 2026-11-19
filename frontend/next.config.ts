@@ -2,6 +2,8 @@ import type { NextConfig } from 'next';
 
 const config: NextConfig = {
   poweredByHeader: false,
+  // Monorepo: la raíz también tiene un package-lock.json (husky). La app es esta carpeta.
+  outputFileTracingRoot: process.cwd(),
   async headers() {
     return [
       {
