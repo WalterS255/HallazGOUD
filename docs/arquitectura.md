@@ -10,7 +10,7 @@ skinparam shadowing false
 skinparam componentStyle rectangle
 
 actor "Persona\n(celular / PC)" as persona
-node "Frontend\n(React + Vite + Tailwind)\n— pendiente —" as front
+node "Frontend Next.js 15\n(React 19 + Tailwind)\nproxy /api → backend" as front
 
 node "Backend NestJS 12 (Node 24)" as back {
   [Guards: rate limit → sesión (JWT) → roles] as guards

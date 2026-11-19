@@ -8,13 +8,13 @@ Plataforma web de objetos perdidos y encontrados para la Universidad Distrital F
 - Propuesta técnica original: [`docs/propuesta/Aplicacion_Web.pdf`](docs/propuesta/Aplicacion_Web.pdf)
 - **Documentación técnica:** [`docs/`](docs/README.md): API para el frontend, arquitectura, modelo de datos y pendientes
 
-> **Estado:** el **backend está completo y probado** (todas las funciones de la propuesta). Falta el frontend (carpeta [`frontend/`](frontend/README.md), con su guía), algunas decisiones de producto y el despliegue: ver [`docs/pendientes.md`](docs/pendientes.md) y la sección 9 de `CLAUDE.md`.
+> **Estado:** el **backend está completo y probado** (todas las funciones de la propuesta). El **frontend** (carpeta [`frontend/`](frontend/README.md)) tiene las pantallas principales conectadas a la API; le faltan tres endpoints del backend ([`frontend/docs/endpoints-pendientes.md`](frontend/docs/endpoints-pendientes.md)). Quedan algunas decisiones de producto y el despliegue: ver [`docs/pendientes.md`](docs/pendientes.md) y la sección 9 de `CLAUDE.md`.
 
 ## Estructura del repositorio
 
 ```
 ├── backend/             ← API REST (NestJS + Prisma). Listo y probado.
-├── frontend/            ← Aplicación web (React + Vite). Empieza aquí: frontend/README.md
+├── frontend/            ← Aplicación web (Next.js). Empieza aquí: frontend/README.md
 ├── docs/                ← API, arquitectura, modelo de datos, pendientes, propuesta y SQL de práctica
 ├── infra/               ← scripts de base de datos (roles, respaldos)
 ├── docker-compose.yml   ← servicios de apoyo: db (PostgreSQL), s3 (SeaweedFS) y mailpit
@@ -31,7 +31,7 @@ Plataforma web de objetos perdidos y encontrados para la Universidad Distrital F
 | Imágenes | SeaweedFS (API compatible con S3) |
 | Correo en desarrollo | Mailpit |
 | Pruebas / calidad | Vitest + Supertest · oxlint + Prettier · husky + lint-staged |
-| Frontend *(en construcción)* | React + Vite + Tailwind CSS + React Router (versiones por decidir: ver `frontend/README.md`) |
+| Frontend | **Next.js 15** (App Router) + React 19 + Tailwind CSS 4 + TypeScript, sobre Node.js 24. Habla con la API por un proxy propio (sin CORS) y guarda el JWT en una cookie `httpOnly` |
 
 ## Requisitos
 
@@ -77,7 +77,16 @@ npx prisma migrate deploy    # crea las tablas
 npm run db:seed              # carga los datos iniciales
 ```
 
-El frontend se levanta aparte; las instrucciones están en [`frontend/README.md`](frontend/README.md).
+El frontend se levanta aparte, en otra terminal, con el backend encendido:
+
+```bash
+cd frontend
+cp .env.example .env
+npm install
+npm run dev                # http://localhost:3001
+```
+
+Detalles en [`frontend/README.md`](frontend/README.md). Para que los enlaces de los correos abran el frontend, en el `.env` de la raíz pon `URL_FRONTEND=http://localhost:3001`.
 
 > **¿Ya tienes PostgreSQL instalado en Windows?** Usa el puerto 5432, así que el contenedor no podrá arrancar ("ports are not available"). En tu `.env` pon `POSTGRES_PORT=5433` y el mismo puerto en `DATABASE_URL`.
 
@@ -92,6 +101,7 @@ Todos escuchan solo en `127.0.0.1`: no se ven desde otras máquinas de la red.
 | SeaweedFS · S3 | http://localhost:8333 | Donde el backend guarda las imágenes |
 | SeaweedFS · explorador | http://localhost:8888 | Ver los archivos guardados (sin contraseña: solo en local) |
 | Mailpit | http://localhost:8025 | Ver los correos que "envía" la app, sin que salgan a Internet |
+| Frontend | http://localhost:3001 | La aplicación web. En `/estado`, el diagnóstico de la conexión con la API |
 
 ## Comandos del backend
 

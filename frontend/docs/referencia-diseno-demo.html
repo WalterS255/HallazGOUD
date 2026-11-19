@@ -1,0 +1,1021 @@
+<title>HallazGO UD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112,700;112,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: encabezado fijo + contenido a una columna; catálogo con filtros laterales que se apilan en móvil.
+   Motivo: la etiqueta de cartón de "objetos perdidos" (folio, perforación, detalle reservado). */
+:root {
+  --bg: #f6f3f2;
+  --surface: #ffffff;
+  --surface-2: #efe9e7;
+  --tile: #ece4e1;
+  --fg: #1e1716;
+  --muted: #6a5f5c;
+  --line: #e0d7d4;
+  --accent: #a3161c;
+  --accent-hover: #86111a;
+  --accent-fg: #ffffff;
+  --accent-soft: #f8e4e3;
+  --tag: #f3e3c3;
+  --tag-ink: #4a3412;
+  --ok: #1d6b45; --ok-bg: #dff1e7;
+  --warn: #8a4f00; --warn-bg: #fbecd2;
+  --info: #1d4a87; --info-bg: #e1ebf8;
+  --violet: #5b2d8f; --violet-bg: #ece2f7;
+  --grey: #4f4745; --grey-bg: #e8e2e0;
+  --focus: #1d4ed8;
+  --display: 'Archivo', 'Arial Narrow', system-ui, sans-serif;
+  --body: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151110; --surface: #1f1918; --surface-2: #2a2220; --tile: #2e2523; --fg: #f2ebe9; --muted: #ab9f9b;
+    --line: #3a302e; --accent: #f0787a; --accent-hover: #f59a9b; --accent-fg: #2a0507; --accent-soft: #3d1c1d;
+    --tag: #3b3020; --tag-ink: #f1dcb1;
+    --ok: #7fd3a4; --ok-bg: #173527; --warn: #f2be6b; --warn-bg: #3a2a10; --info: #9cc0f2; --info-bg: #182a43;
+    --violet: #c9a6f2; --violet-bg: #2d1f40; --grey: #c9bfbc; --grey-bg: #332b29; --focus: #8ab4ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #151110; --surface: #1f1918; --surface-2: #2a2220; --tile: #2e2523; --fg: #f2ebe9; --muted: #ab9f9b;
+  --line: #3a302e; --accent: #f0787a; --accent-hover: #f59a9b; --accent-fg: #2a0507; --accent-soft: #3d1c1d;
+  --tag: #3b3020; --tag-ink: #f1dcb1;
+  --ok: #7fd3a4; --ok-bg: #173527; --warn: #f2be6b; --warn-bg: #3a2a10; --info: #9cc0f2; --info-bg: #182a43;
+  --violet: #c9a6f2; --violet-bg: #2d1f40; --grey: #c9bfbc; --grey-bg: #332b29; --focus: #8ab4ff;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 16px/1.55 var(--body); }
+h1, h2, h3 { font-family: var(--display); font-stretch: 112%; line-height: 1.1; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(1.9rem, 4.5vw, 3rem); font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.35rem; font-weight: 800; }
+h3 { font-size: 1.05rem; font-weight: 700; }
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.wrap { max-width: 1120px; margin-inline: auto; padding-inline: clamp(16px, 4vw, 32px); }
+.stack { display: grid; gap: 16px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.muted { color: var(--muted); }
+.small { font-size: 0.875rem; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* Barra de demo */
+.demo-bar { background: var(--tag); color: var(--tag-ink); font-size: 0.875rem; }
+.demo-bar .wrap { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; padding-block: 8px; }
+.demo-bar select { background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; }
+.demo-bar label { font-weight: 700; margin-right: 6px; }
+
+/* Encabezado */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; align-items: center; gap: 20px; padding-block: 10px; }
+.logo { background: none; border: 0; padding: 0; cursor: pointer; font-family: var(--display); font-stretch: 112%; font-weight: 800; font-size: 1.35rem; color: var(--accent); white-space: nowrap; }
+.logo b { color: var(--fg); }
+nav { display: flex; gap: 4px; overflow-x: auto; min-width: 0; flex: 1; justify-content: flex-end; scrollbar-width: none; }
+nav button { background: none; border: 0; border-radius: 8px; padding: 6px 10px; cursor: pointer; white-space: nowrap; color: var(--muted); font-weight: 700; font-size: 0.9rem; }
+nav button:hover { color: var(--fg); background: var(--surface-2); }
+nav button[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
+.count { display: inline-block; min-width: 1.3em; margin-left: 4px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--accent-fg); font-size: 0.75rem; text-align: center; font-variant-numeric: tabular-nums; }
+
+main { padding-block: 28px 56px; display: grid; gap: 40px; outline: none; }
+footer { border-top: 1px solid var(--line); background: var(--surface); }
+footer .wrap { padding-block: 18px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 0.875rem; color: var(--muted); }
+
+/* Controles */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 10px; padding: 9px 16px; font-weight: 700; font-size: 0.95rem; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--fg); transition: background .15s, border-color .15s; }
+.btn:hover { background: var(--surface-2); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-danger { color: var(--accent); border-color: var(--accent); }
+.btn-big { padding: 12px 20px; font-size: 1rem; }
+.btn[disabled] { opacity: .55; cursor: not-allowed; }
+.link { background: none; border: 0; padding: 0; color: var(--info); font-weight: 700; cursor: pointer; text-underline-offset: 3px; }
+.link:hover { text-decoration: underline; }
+.field { width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 9px 12px; }
+.field:focus { border-color: var(--focus); outline: 2px solid color-mix(in srgb, var(--focus) 30%, transparent); outline-offset: 0; }
+textarea.field { resize: vertical; }
+.label { display: block; font-weight: 700; font-size: 0.875rem; margin-bottom: 4px; }
+.err { color: var(--accent); font-size: 0.85rem; margin-top: 4px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+.note { border-radius: 10px; padding: 10px 14px; font-size: 0.9rem; }
+.note-info { background: var(--warn-bg); color: var(--warn); }
+.note-ok { background: var(--ok-bg); color: var(--ok); }
+.note-err { background: var(--accent-soft); color: var(--accent); }
+.note-lock { background: var(--tag); color: var(--tag-ink); }
+
+/* Chips de estado */
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { display: inline-block; border-radius: 999px; padding: 1px 9px; font-size: 0.75rem; font-weight: 700; letter-spacing: .02em; }
+.chip-ENCONTRADO { background: var(--ok-bg); color: var(--ok); }
+.chip-PERDIDO { background: var(--warn-bg); color: var(--warn); }
+.chip-ACTIVA { background: var(--info-bg); color: var(--info); }
+.chip-EN_RECLAMACION, .chip-PENDIENTE { background: var(--violet-bg); color: var(--violet); }
+.chip-ENTREGADA, .chip-ACEPTADA { background: var(--ok-bg); color: var(--ok); }
+.chip-EXPIRADA, .chip-RETIRADA, .chip-RECHAZADA { background: var(--grey-bg); color: var(--grey); }
+.chip-match { background: var(--accent-soft); color: var(--accent); }
+
+/* Hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 32px; align-items: center; }
+.eyebrow { text-transform: uppercase; letter-spacing: .08em; font-size: 0.78rem; font-weight: 700; color: var(--accent); margin-bottom: 10px; }
+.lead { margin-top: 14px; max-width: 58ch; color: var(--muted); font-size: 1.05rem; }
+.search { display: flex; gap: 8px; margin-block: 22px 14px; max-width: 560px; }
+.search .field { flex: 1; min-width: 0; }
+
+/* Etiqueta de objeto perdido (elemento firma) */
+.tag-wrap { display: flex; justify-content: center; padding-block: 12px; }
+.tag { position: relative; width: min(100%, 300px); background: var(--tag); color: var(--tag-ink); border-radius: 6px 22px 22px 6px; padding: 26px 24px 22px 54px; transform: rotate(-4deg); box-shadow: 0 14px 30px -18px rgba(40, 20, 10, .55); }
+.tag::before { content: ""; position: absolute; left: 18px; top: 50%; width: 18px; height: 18px; margin-top: -9px; border-radius: 50%; background: var(--bg); box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--tag-ink) 25%, transparent); }
+.tag::after { content: ""; position: absolute; left: -64px; top: 50%; width: 92px; height: 2px; background: var(--tag-ink); opacity: .5; transform: rotate(-14deg); transform-origin: right; }
+.tag .t-label { font-family: var(--mono); font-size: 0.72rem; letter-spacing: .12em; text-transform: uppercase; opacity: .8; }
+.tag .t-title { font-family: var(--display); font-stretch: 112%; font-weight: 800; font-size: 1.3rem; margin-block: 6px 10px; line-height: 1.15; }
+.tag dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0; font-size: 0.85rem; }
+.tag dt { opacity: .7; }
+.tag dd { margin: 0; }
+.tag .t-secret { margin-top: 12px; padding-top: 10px; border-top: 1px dashed color-mix(in srgb, var(--tag-ink) 40%, transparent); font-size: 0.85rem; }
+.tag .t-secret span { letter-spacing: .25em; }
+
+/* Tarjetas de publicación */
+.sec-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 14px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.pub { display: flex; flex-direction: column; text-align: left; padding: 0; cursor: pointer; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; transition: transform .15s, border-color .15s; }
+.pub:hover { border-color: var(--muted); transform: translateY(-2px); }
+.pub-media { position: relative; aspect-ratio: 4 / 3; max-width: 100%; background: var(--tile); display: grid; place-items: center; }
+.pub-media img { width: 100%; height: 100%; object-fit: cover; }
+.pub-icon { font-size: 3.2rem; }
+.folio { position: absolute; left: 10px; top: 10px; background: var(--tag); color: var(--tag-ink); font-family: var(--mono); font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; }
+.pub-body { display: grid; gap: 4px; padding: 12px 14px 14px; }
+.pub-title { font-weight: 700; line-height: 1.3; }
+.pub-meta { font-size: 0.85rem; color: var(--muted); }
+.pub-date { font-size: 0.78rem; color: var(--muted); }
+.empty { padding: 28px; text-align: center; color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 14px; }
+
+/* Pasos */
+.steps ol { list-style: none; padding: 0; margin: 14px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; counter-reset: paso; }
+.steps li { counter-increment: paso; padding-top: 14px; border-top: 3px solid var(--accent); }
+.steps li::before { content: counter(paso, decimal-leading-zero); font-family: var(--mono); color: var(--accent); font-size: 0.85rem; }
+.steps strong { display: block; margin-block: 4px; font-family: var(--display); font-stretch: 112%; }
+
+/* Catálogo */
+.cat-layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px; align-items: start; }
+.filters { display: grid; gap: 14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 72px); }
+.seg { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.seg label { flex: 1; text-align: center; padding: 7px 4px; font-size: 0.85rem; cursor: pointer; background: var(--surface); }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg input:checked + span { color: var(--accent); font-weight: 700; }
+.seg label:has(input:checked) { background: var(--accent-soft); }
+.seg label:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: -3px; }
+
+/* Detalle */
+.back { justify-self: start; }
+.detail { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.gallery-main { aspect-ratio: 4 / 3; max-width: 100%; border-radius: 14px; background: var(--tile); display: grid; place-items: center; overflow: hidden; }
+.gallery-main img { width: 100%; height: 100%; object-fit: contain; }
+.gallery-main .pub-icon { font-size: 6rem; }
+.thumbs { display: flex; gap: 8px; margin-top: 8px; overflow-x: auto; }
+.thumbs button { width: 64px; height: 64px; padding: 0; border-radius: 8px; overflow: hidden; border: 2px solid transparent; cursor: pointer; flex: none; }
+.thumbs button[aria-current="true"] { border-color: var(--accent); }
+.thumbs img { width: 100%; height: 100%; object-fit: cover; }
+.facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 16px; margin: 0; font-size: 0.95rem; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; }
+.claim { border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 8px; }
+.claim-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; font-size: 0.875rem; }
+
+/* Asistente */
+.wizard { max-width: 680px; width: 100%; margin-inline: auto; display: grid; gap: 18px; }
+.wsteps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.wsteps li { border-top: 4px solid var(--line); padding-top: 6px; font-size: 0.85rem; color: var(--muted); }
+.wsteps li.done { border-color: var(--muted); color: var(--fg); }
+.wsteps li[aria-current="step"] { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.choice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.choice button { padding: 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 700; }
+.choice button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.photos { display: flex; flex-wrap: wrap; gap: 8px; }
+.photo { position: relative; width: 92px; height: 92px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+.photo img { width: 100%; height: 100%; object-fit: cover; }
+.photo button { position: absolute; top: 4px; right: 4px; border: 0; border-radius: 999px; background: rgba(0,0,0,.7); color: #fff; width: 24px; height: 24px; cursor: pointer; }
+.add-photo { width: 92px; height: 92px; border-radius: 10px; border: 2px dashed var(--line); display: grid; place-items: center; text-align: center; font-size: 0.8rem; color: var(--muted); cursor: pointer; }
+.add-photo:hover { background: var(--surface-2); }
+.add-photo:has(input:focus-visible) { outline: 3px solid var(--focus); }
+.add-photo input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+
+/* Listas */
+.list { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.list > li + li { border-top: 1px solid var(--line); }
+.list-item { width: 100%; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 14px 16px; background: none; border: 0; text-align: left; cursor: pointer; }
+.list-item:hover { background: var(--surface-2); }
+.list-item .grow { flex: 1; min-width: 180px; display: grid; gap: 2px; }
+.unread { background: var(--accent-soft); }
+.unread .list-item:hover { background: color-mix(in srgb, var(--accent-soft) 70%, var(--surface-2)); }
+
+/* Chat */
+.chat-layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 20px; align-items: start; }
+.chat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; display: grid; }
+.chat-log { height: min(55vh, 460px); overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.bubble { max-width: 78%; padding: 8px 12px; border-radius: 16px; font-size: 0.95rem; overflow-wrap: anywhere; }
+.bubble time { display: block; font-size: 0.72rem; opacity: .75; margin-top: 2px; }
+.mine { align-self: flex-end; background: var(--accent); color: var(--accent-fg); border-bottom-right-radius: 4px; }
+.theirs { align-self: flex-start; background: var(--surface-2); border-bottom-left-radius: 4px; }
+.chat form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
+.chat form .field { flex: 1; min-width: 0; }
+.checks { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.checks li::before { content: "○ "; color: var(--muted); }
+.checks li.yes::before { content: "● "; color: var(--ok); }
+
+/* Admin */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.kpi b { display: block; font-family: var(--display); font-stretch: 112%; font-size: 2rem; font-variant-numeric: tabular-nums; }
+.bars { display: grid; gap: 10px; }
+.bar-row { display: grid; gap: 4px; font-size: 0.875rem; }
+.bar-row div { display: flex; justify-content: space-between; gap: 8px; }
+.bar { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.bar span { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+.cols3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+
+/* Aviso flotante */
+#toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); opacity: 0; background: var(--fg); color: var(--bg); padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; max-width: calc(100% - 32px); transition: opacity .2s, transform .2s; pointer-events: none; z-index: 20; }
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (max-width: 860px) {
+  .hero, .detail, .cat-layout, .chat-layout { grid-template-columns: minmax(0, 1fr); }
+  .filters { position: static; }
+  .tag-wrap { order: -1; }
+}
+@media (max-width: 520px) {
+  .two, .choice { grid-template-columns: 1fr; }
+  .top .wrap { flex-wrap: wrap; gap: 6px; }
+  nav { justify-content: flex-start; flex-basis: 100%; }
+  .search { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; }
+  .tag { transform: none; }
+}
+</style>
+
+<div class="demo-bar">
+  <div class="wrap">
+    <span><strong>Demo navegable</strong> con datos de ejemplo. Los cambios sólo duran mientras la página esté abierta.</span>
+    <span><label for="usuario">Viendo como</label><select id="usuario">
+      <option value="visitante">Visitante (sin sesión)</option>
+      <option value="luis" selected>Luis · Ing. Electrónica</option>
+      <option value="ana">Ana · Ing. de Sistemas</option>
+      <option value="sofia">Sofía · Artes Plásticas</option>
+      <option value="admin">Moderación · Bienestar</option>
+    </select></span>
+  </div>
+</div>
+<header class="top">
+  <div class="wrap">
+    <button class="logo" data-go="inicio" aria-label="HallazGO UD, inicio">HallazGO <b>UD</b></button>
+    <nav id="nav" aria-label="Principal"></nav>
+  </div>
+</header>
+<main id="main" class="wrap" tabindex="-1"></main>
+<footer>
+  <div class="wrap">
+    <span>HallazGO UD · Universidad Distrital Francisco José de Caldas</span>
+    <span>Prototipo de la aplicación en Next.js · tu correo y teléfono nunca se muestran</span>
+  </div>
+</footer>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- Utilidades ----------
+  const $ = (s, r = document) => r.querySelector(s);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const H = 3600e3;
+  const AHORA = Date.now();
+  const hace = (h) => new Date(AHORA - h * H).toISOString();
+  const fmtF = new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeZone: 'America/Bogota' });
+  const fmtFH = new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Bogota' });
+  const fecha = (iso) => fmtF.format(new Date(iso));
+  const fechaHora = (iso) => fmtFH.format(new Date(iso));
+  const hoy = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date());
+  function relativo(iso) {
+    const h = (Date.now() - new Date(iso).getTime()) / H;
+    if (h < 1) return 'hace unos minutos';
+    if (h < 24) return `hace ${Math.round(h)} h`;
+    const d = Math.round(h / 24);
+    return d === 1 ? 'ayer' : `hace ${d} días`;
+  }
+  let secuencia = 1000;
+  const nuevoId = (p) => `${p}${++secuencia}`;
+
+  // ---------- Catálogos ----------
+  const CATS = {
+    doc: { nombre: 'Documentos', icono: '🪪', sensible: true },
+    tar: { nombre: 'Tarjetas', icono: '💳', sensible: true },
+    lla: { nombre: 'Llaves', icono: '🔑', sensible: true },
+    ele: { nombre: 'Electrónica', icono: '🎧', sensible: false },
+    cal: { nombre: 'Calculadoras', icono: '🧮', sensible: false },
+    rop: { nombre: 'Ropa', icono: '🧥', sensible: false },
+    acc: { nombre: 'Accesorios', icono: '🎒', sensible: false },
+    lib: { nombre: 'Libros y útiles', icono: '📚', sensible: false },
+    otr: { nombre: 'Otros', icono: '📦', sensible: false },
+  };
+  const C40 = 'Ingeniería (Calle 40)';
+  const LUGARES = {
+    1: [C40, 'Biblioteca'], 2: [C40, 'Laboratorios'], 3: [C40, 'Cafetería'], 4: [C40, 'Bloque principal'], 5: [C40, 'Portería'],
+    6: ['Tecnológica', 'Laboratorios'], 7: ['Tecnológica', 'Biblioteca'], 8: ['Tecnológica', 'Cafetería'],
+    9: ['Macarena A', 'Biblioteca'], 10: ['Macarena A', 'Portería'], 11: ['Macarena B', 'Cafetería'],
+    12: ['Vivero', 'Laboratorios'], 13: ['ASAB', 'Auditorio'], 14: ['Aduanilla de Paiba', 'Biblioteca'],
+  };
+  const lugar = (id) => ({ sede: LUGARES[id][0], edificio: LUGARES[id][1] });
+  const SEDES = [...new Set(Object.values(LUGARES).map((l) => l[0]))];
+  const USUARIOS = {
+    luis: { nombre: 'Luis', rol: 'USUARIO' },
+    ana: { nombre: 'Ana', rol: 'USUARIO' },
+    sofia: { nombre: 'Sofía', rol: 'USUARIO' },
+    admin: { nombre: 'Moderación', rol: 'ADMIN' },
+  };
+  const ETQ_ESTADO = { ACTIVA: 'Activa', EN_RECLAMACION: 'En reclamación', ENTREGADA: 'Entregada', EXPIRADA: 'Expirada', RETIRADA: 'Retirada' };
+  const ETQ_RECL = { PENDIENTE: 'Pendiente', ACEPTADA: 'Aceptada', RECHAZADA: 'Rechazada' };
+
+  // ---------- Datos de ejemplo ----------
+  const pubs = [
+    { id: 'p1', folio: 'HG-0141', tipo: 'ENCONTRADO', titulo: 'Calculadora Casio fx-991LA negra', desc: 'La encontré en una mesa del segundo piso de la biblioteca, al final de la tarde.', cat: 'cal', lugar: 1, ref: 'Segundo piso, mesas junto a la ventana', fecha: hace(26), autor: 'ana', estado: 'ACTIVA', oculta: false, reservado: 'Tiene un sticker de un gato en la tapa trasera', fotos: [], creada: hace(25) },
+    { id: 'p2', folio: 'HG-0142', tipo: 'PERDIDO', titulo: 'Perdí mi calculadora científica Casio', desc: 'Calculadora Casio negra con tapa. La dejé en la biblioteca después de la clase de cálculo.', cat: 'cal', lugar: 1, ref: '', fecha: hace(28), autor: 'luis', estado: 'ACTIVA', oculta: false, reservado: null, fotos: [], creada: hace(22) },
+    { id: 'p3', folio: 'HG-0138', tipo: 'ENCONTRADO', titulo: 'Chaqueta de jean azul talla M', desc: 'Olvidada en una silla de la cafetería a la hora del almuerzo.', cat: 'rop', lugar: 3, ref: 'Silla cerca de la caja', fecha: hace(50), autor: 'ana', estado: 'EN_RECLAMACION', oculta: false, reservado: 'Llavero de Totoro en el bolsillo interior', fotos: [], creada: hace(48) },
+    { id: 'p4', folio: 'HG-0139', tipo: 'ENCONTRADO', titulo: 'Carné estudiantil', desc: 'Lo dejé también registrado en la portería. En la foto tapé el número del documento.', cat: 'doc', lugar: 10, ref: 'Torniquete de entrada', fecha: hace(30), autor: 'sofia', estado: 'ACTIVA', oculta: false, reservado: 'El apellido empieza por R', fotos: [], creada: hace(29) },
+    { id: 'p5', folio: 'HG-0140', tipo: 'PERDIDO', titulo: 'Audífonos inalámbricos blancos', desc: 'Estuche blanco con una calcomanía de luna. Creo que quedaron en el laboratorio 3.', cat: 'ele', lugar: 6, ref: 'Laboratorio 3', fecha: hace(20), autor: 'sofia', estado: 'ACTIVA', oculta: false, reservado: null, fotos: [], creada: hace(19) },
+    { id: 'p6', folio: 'HG-0135', tipo: 'ENCONTRADO', titulo: 'Memoria USB Kingston 64 GB', desc: 'Estaba conectada en uno de los computadores de la sala de cómputo.', cat: 'ele', lugar: 2, ref: 'Sala de cómputo 2', fecha: hace(96), autor: 'luis', estado: 'EN_RECLAMACION', oculta: false, reservado: 'Tiene una carpeta llamada Tesis_final_v3', fotos: [], creada: hace(95) },
+    { id: 'p7', folio: 'HG-0129', tipo: 'PERDIDO', titulo: 'Llaves con llavero de la UD', desc: 'Tres llaves y un llavero rojo de la Distrital.', cat: 'lla', lugar: 4, ref: '', fecha: hace(140), autor: 'ana', estado: 'ACTIVA', oculta: false, reservado: null, fotos: [], creada: hace(138) },
+    { id: 'p8', folio: 'HG-0121', tipo: 'ENCONTRADO', titulo: 'Termo metálico verde', desc: 'Encontrado junto a las mesas del laboratorio de suelos.', cat: 'acc', lugar: 12, ref: '', fecha: hace(240), autor: 'sofia', estado: 'ENTREGADA', oculta: false, reservado: 'Raspón en la base', fotos: [], creada: hace(238) },
+    { id: 'p9', folio: 'HG-0143', tipo: 'ENCONTRADO', titulo: 'Cuaderno de Cálculo Integral', desc: 'Cuaderno argollado de cuadros, con apuntes hasta integrales por partes.', cat: 'lib', lugar: 9, ref: 'Sala de estudio', fecha: hace(6), autor: 'sofia', estado: 'ACTIVA', oculta: false, reservado: 'Hay un nombre escrito en la última página', fotos: [], creada: hace(5) },
+  ];
+  let folio = 143;
+  const recls = [
+    { id: 'r1', pub: 'p3', por: 'sofia', resp: 'Tiene un llavero de Totoro adentro', evid: '', estado: 'PENDIENTE', fecha: hace(10), entrega: null },
+    { id: 'r2', pub: 'p6', por: 'ana', resp: 'Hay una carpeta de tesis con varias versiones', evid: 'Puedo mostrar los archivos desde mi correo', estado: 'ACEPTADA', fecha: hace(40), entrega: { autor: false, recl: false, fecha: null } },
+    { id: 'r3', pub: 'p8', por: 'luis', resp: 'Tiene un raspón en la base', evid: '', estado: 'ACEPTADA', fecha: hace(230), entrega: { autor: true, recl: true, fecha: hace(200) } },
+  ];
+  const msgs = [
+    { id: 'm1', rec: 'r2', de: 'luis', texto: 'Hola, sí, la tengo yo. ¿Te queda bien mañana?', fecha: hace(30), leido: true },
+    { id: 'm2', rec: 'r2', de: 'ana', texto: '¡Gracias! Mañana tengo clase a las 10 en el bloque principal.', fecha: hace(29), leido: true },
+    { id: 'm3', rec: 'r2', de: 'luis', texto: 'Listo, nos vemos a las 9:45 en la entrada del bloque.', fecha: hace(28), leido: false },
+    { id: 'm4', rec: 'r3', de: 'sofia', texto: 'Te lo dejo en la portería del Vivero a tu nombre.', fecha: hace(210), leido: true },
+  ];
+  const notifs = [
+    { id: 'n1', para: 'luis', texto: 'Alguien encontró un objeto parecido a lo que perdiste («Perdí mi calculadora científica Casio»): «Calculadora Casio fx-991LA negra».', ir: ['detalle', 'p1'], leida: false, fecha: hace(25) },
+    { id: 'n2', para: 'ana', texto: 'Alguien reclamó «Chaqueta de jean azul talla M». Revisa si su respuesta coincide con el detalle reservado.', ir: ['detalle', 'p3'], leida: false, fecha: hace(10) },
+    { id: 'n3', para: 'ana', texto: 'Tu reclamación de «Memoria USB Kingston 64 GB» fue aceptada. Ya puedes coordinar la entrega por el chat.', ir: ['chat', 'r2'], leida: true, fecha: hace(39) },
+    { id: 'n4', para: 'admin', texto: 'Hay un reporte nuevo sobre «Carné estudiantil».', ir: ['admin'], leida: false, fecha: hace(8) },
+  ];
+  const reportes = [
+    { id: 'x1', pub: 'p4', por: 'luis', motivo: 'En la foto se alcanza a leer parte del número del documento.', estado: 'PENDIENTE', fecha: hace(8) },
+  ];
+
+  // ---------- Estado de la interfaz ----------
+  const S = {
+    yo: 'luis', vista: 'inicio', p: null,
+    filtros: { q: '', tipo: '', cat: '', sede: '', estado: '', orden: 'recientes' },
+    ui: {}, wizard: null,
+  };
+  const yo = () => (S.yo === 'visitante' ? null : S.yo);
+  const esAdmin = () => S.yo === 'admin';
+  const pubDe = (id) => pubs.find((p) => p.id === id);
+  const reclDe = (id) => recls.find((r) => r.id === id);
+  const abierta = (p) => p.estado === 'ACTIVA' || p.estado === 'EN_RECLAMACION';
+  const visibles = () => pubs.filter((p) => !p.oculta && p.estado !== 'RETIRADA');
+
+  function toast(texto) {
+    const t = $('#toast');
+    t.textContent = texto;
+    t.classList.add('show');
+    clearTimeout(toast.t);
+    toast.t = setTimeout(() => t.classList.remove('show'), 3200);
+  }
+  function notificar(para, texto, ir) {
+    notifs.unshift({ id: nuevoId('n'), para, texto, ir, leida: false, fecha: new Date().toISOString() });
+  }
+
+  // ---------- Motor de coincidencias (igual que src/server/coincidencias/puntaje.ts) ----------
+  const VACIAS = new Set(['de', 'del', 'la', 'las', 'el', 'los', 'un', 'una', 'unos', 'unas', 'en', 'con', 'por', 'para', 'que', 'mi', 'mis', 'se', 'al', 'lo', 'su', 'sus', 'es', 'muy', 'sin', 'color', 'perdi', 'encontre', 'objeto']);
+  const normalizar = (t) => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const tokens = (t) => new Set(normalizar(t).split(/[^a-z0-9]+/).filter((w) => w.length > 2 && !VACIAS.has(w)));
+  function similitud(a, b) {
+    const ta = tokens(a), tb = tokens(b);
+    if (!ta.size || !tb.size) return 0;
+    let n = 0;
+    for (const w of ta) if (tb.has(w)) n++;
+    return (2 * n) / (ta.size + tb.size);
+  }
+  function puntaje(a, b) {
+    let s = 0;
+    if (a.cat === b.cat) s += 0.35;
+    const la = lugar(a.lugar), lb = lugar(b.lugar);
+    if (la.sede === lb.sede) s += 0.2;
+    else if (normalizar(la.edificio) === normalizar(lb.edificio)) s += 0.1;
+    const dias = Math.abs(new Date(a.fecha) - new Date(b.fecha)) / (24 * H);
+    s += 0.25 * Math.max(0, 1 - dias / 7);
+    s += 0.2 * similitud(`${a.titulo} ${a.desc}`, `${b.titulo} ${b.desc}`);
+    return Math.round(s * 100) / 100;
+  }
+  function coincidencias(base) {
+    return pubs
+      .filter((c) => c.id !== base.id && c.autor !== base.autor && c.tipo !== base.tipo && !c.oculta && abierta(c)
+        && Math.abs(new Date(c.fecha) - new Date(base.fecha)) <= 7 * 24 * H)
+      .map((c) => ({ p: c, s: puntaje(base, c) }))
+      .filter((c) => c.s > 0.5)
+      .sort((a, b) => b.s - a.s);
+  }
+
+  // ---------- Piezas de interfaz ----------
+  const chip = (clase, texto) => `<span class="chip chip-${clase}">${esc(texto)}</span>`;
+  const chipTipo = (t) => chip(t, t === 'ENCONTRADO' ? 'Encontrado' : 'Perdido');
+  const chipEstado = (e) => chip(e, ETQ_ESTADO[e]);
+
+  function tarjeta(p, s) {
+    const c = CATS[p.cat], l = lugar(p.lugar);
+    return `<button class="pub" data-go="detalle" data-id="${p.id}">
+      <span class="pub-media">${p.fotos[0] ? `<img src="${p.fotos[0]}" alt="">` : `<span class="pub-icon" aria-hidden="true">${c.icono}</span>`}<span class="folio">${p.folio}</span></span>
+      <span class="pub-body">
+        <span class="chips">${chipTipo(p.tipo)}${chipEstado(p.estado)}${s != null ? chip('match', `${Math.round(s * 100)} % similar`) : ''}</span>
+        <span class="pub-title">${esc(p.titulo)}</span>
+        <span class="pub-meta">${esc(c.nombre)} · ${esc(l.sede)}, ${esc(l.edificio)}</span>
+        <span class="pub-date">${p.tipo === 'ENCONTRADO' ? 'Encontrado' : 'Perdido'} ${relativo(p.fecha)}</span>
+      </span></button>`;
+  }
+  const grilla = (items, vacio = 'No hay publicaciones que coincidan con estos filtros.') =>
+    items.length ? `<div class="grid">${items.map((i) => (i.p ? tarjeta(i.p, i.s) : tarjeta(i))).join('')}</div>` : `<p class="empty">${vacio}</p>`;
+
+  const pedirSesion = (accion) => `<div class="panel stack" style="max-width:520px">
+      <h2>Necesitas una cuenta</h2>
+      <p class="muted">En la aplicación real se ingresa con el correo institucional @udistrital.edu.co. En esta demo, elige un usuario arriba para ${esc(accion)}.</p>
+      <button class="btn btn-primary" data-act="elegir-usuario">Elegir usuario</button></div>`;
+
+  // ---------- Vistas ----------
+  function vInicio() {
+    const recientes = visibles().filter(abierta).sort((a, b) => new Date(b.creada) - new Date(a.creada)).slice(0, 4);
+    return `
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Objetos perdidos y encontrados · Universidad Distrital</p>
+        <h1>Lo que se pierde en la U, en la U aparece.</h1>
+        <p class="lead">Publica lo que encontraste o lo que perdiste en el campus. Te avisamos cuando aparezca algo parecido y coordinas la entrega por un chat interno, sin compartir tu correo ni tu teléfono.</p>
+        <form id="buscar" class="search" role="search">
+          <label for="q-inicio" class="sr">Buscar objetos</label>
+          <input id="q-inicio" class="field" type="search" placeholder="Calculadora, carné, chaqueta…">
+          <button class="btn btn-primary" type="submit">Buscar</button>
+        </form>
+        <div class="row">
+          <button class="btn btn-big btn-primary" data-go="publicar" data-tipo="ENCONTRADO">Encontré algo</button>
+          <button class="btn btn-big" data-go="publicar" data-tipo="PERDIDO">Perdí algo</button>
+        </div>
+      </div>
+      <div class="tag-wrap" aria-hidden="true">
+        <div class="tag">
+          <div class="t-label">Hallazgo · HG-0141</div>
+          <div class="t-title">Calculadora Casio fx-991LA</div>
+          <dl><dt>Sede</dt><dd>Calle 40</dd><dt>Lugar</dt><dd>Biblioteca, 2.º piso</dd><dt>Fecha</dt><dd>${fecha(hace(26))}</dd></dl>
+          <div class="t-secret">Detalle reservado 🔒 <span>●●●●●●●●</span></div>
+        </div>
+      </div>
+    </section>
+    <section>
+      <div class="sec-head"><h2>Publicaciones recientes</h2><button class="link" data-go="catalogo">Ver todo el catálogo →</button></div>
+      ${grilla(recientes)}
+    </section>
+    <section class="steps">
+      <h2>Cómo se recupera un objeto</h2>
+      <ol>
+        <li><strong>Se publica</strong><span class="muted small">Quien lo encuentra sube fotos, lugar y hora, y guarda un detalle que no se muestra.</span></li>
+        <li><strong>Aparece la coincidencia</strong><span class="muted small">El sistema compara categoría, sede, fecha y texto, y avisa a quien lo perdió.</span></li>
+        <li><strong>Se reclama</strong><span class="muted small">El dueño describe el detalle reservado. Quien lo encontró acepta o rechaza.</span></li>
+        <li><strong>Se entrega</strong><span class="muted small">Coordinan por chat y ambos confirman. La publicación queda como entregada.</span></li>
+      </ol>
+    </section>`;
+  }
+
+  function filtrar() {
+    const f = S.filtros;
+    const q = normalizar(f.q.trim());
+    let items = visibles().filter((p) => (f.estado ? p.estado === f.estado : abierta(p)));
+    if (f.tipo) items = items.filter((p) => p.tipo === f.tipo);
+    if (f.cat) items = items.filter((p) => p.cat === f.cat);
+    if (f.sede) items = items.filter((p) => lugar(p.lugar).sede === f.sede);
+    if (q) items = items.filter((p) => normalizar(`${p.titulo} ${p.desc}`).includes(q));
+    const t = (p) => new Date(p.creada).getTime();
+    if (f.orden === 'antiguos') items.sort((a, b) => t(a) - t(b));
+    else if (f.orden === 'relevancia' && q) items.sort((a, b) => similitud(q, `${b.titulo} ${b.desc}`) - similitud(q, `${a.titulo} ${a.desc}`));
+    else items.sort((a, b) => t(b) - t(a));
+    return items;
+  }
+  function resultados() {
+    const items = filtrar();
+    return `<p class="muted small" aria-live="polite">${items.length} resultado${items.length === 1 ? '' : 's'}</p>${grilla(items)}`;
+  }
+  function vCatalogo() {
+    const f = S.filtros;
+    const seg = (valor, texto) => `<label><input type="radio" name="f-tipo" data-f="tipo" value="${valor}" ${f.tipo === valor ? 'checked' : ''}><span>${texto}</span></label>`;
+    const opts = (lista, actual) => lista.map(([v, t]) => `<option value="${esc(v)}" ${actual === v ? 'selected' : ''}>${esc(t)}</option>`).join('');
+    return `
+    <div class="sec-head" style="margin:0"><h1 style="font-size:2rem">Catálogo</h1><button class="btn btn-primary" data-go="publicar">Publicar</button></div>
+    <div class="cat-layout">
+      <aside class="panel filters" aria-label="Filtros">
+        <div><label class="label" for="f-q">Palabras clave</label><input id="f-q" class="field" type="search" data-f="q" value="${esc(f.q)}" placeholder="Ej.: casio"></div>
+        <fieldset style="border:0;padding:0;margin:0"><legend class="label">Tipo</legend><div class="seg">${seg('', 'Todos')}${seg('ENCONTRADO', 'Encontrados')}${seg('PERDIDO', 'Perdidos')}</div></fieldset>
+        <div><label class="label" for="f-cat">Categoría</label><select id="f-cat" class="field" data-f="cat"><option value="">Todas</option>${opts(Object.entries(CATS).map(([k, c]) => [k, `${c.icono} ${c.nombre}`]), f.cat)}</select></div>
+        <div><label class="label" for="f-sede">Sede</label><select id="f-sede" class="field" data-f="sede"><option value="">Todas</option>${opts(SEDES.map((s) => [s, s]), f.sede)}</select></div>
+        <div><label class="label" for="f-estado">Estado</label><select id="f-estado" class="field" data-f="estado"><option value="">Activas y en reclamación</option>${opts(['ACTIVA', 'EN_RECLAMACION', 'ENTREGADA', 'EXPIRADA'].map((e) => [e, ETQ_ESTADO[e]]), f.estado)}</select></div>
+        <div><label class="label" for="f-orden">Ordenar por</label><select id="f-orden" class="field" data-f="orden">${opts([['recientes', 'Más recientes'], ['antiguos', 'Más antiguos'], ['relevancia', 'Mayor relevancia']], f.orden)}</select></div>
+        <button class="btn" data-act="limpiar-filtros">Limpiar filtros</button>
+      </aside>
+      <section id="resultados" class="stack">${resultados()}</section>
+    </div>`;
+  }
+
+  function vDetalle() {
+    const p = pubDe(S.p);
+    const u = yo();
+    const esAutor = u === p.autor;
+    if ((p.oculta || p.estado === 'RETIRADA') && !esAutor && !esAdmin()) {
+      return `<div class="empty">Esta publicación ya no está disponible. <button class="link" data-go="catalogo">Volver al catálogo</button></div>`;
+    }
+    const c = CATS[p.cat], l = lugar(p.lugar);
+    const foto = S.ui.foto || 0;
+    const mia = u && !esAutor ? recls.find((r) => r.pub === p.id && r.por === u) : null;
+
+    const galeria = `<div>
+      <div class="gallery-main">${p.fotos.length ? `<img src="${p.fotos[foto]}" alt="${esc(p.titulo)}, foto ${foto + 1} de ${p.fotos.length}">` : `<span class="pub-icon" aria-hidden="true">${c.icono}</span>`}</div>
+      ${p.fotos.length > 1 ? `<div class="thumbs">${p.fotos.map((f, i) => `<button data-act="foto" data-i="${i}" aria-label="Ver foto ${i + 1}" aria-current="${i === foto}"><img src="${f}" alt=""></button>`).join('')}</div>` : ''}
+      ${!p.fotos.length ? '<p class="muted small" style="margin-top:6px">Sin fotos. En la demo puedes subir las tuyas al publicar.</p>' : ''}
+    </div>`;
+
+    let acciones = '';
+    if (!u && abierta(p)) acciones = `<div class="panel small">Para ${p.tipo === 'ENCONTRADO' ? 'reclamar este objeto' : 'ayudar'} necesitas ingresar. <button class="link" data-act="elegir-usuario">Elegir un usuario de la demo</button></div>`;
+    if (u && !esAutor && p.tipo === 'ENCONTRADO') {
+      if (mia) {
+        acciones = `<div class="panel stack"><p>Tu reclamación está ${chip(mia.estado, ETQ_RECL[mia.estado])}</p>${mia.estado === 'ACEPTADA' ? `<button class="btn btn-primary" data-go="chat" data-id="${mia.id}">Ir al chat de entrega</button>` : ''}${mia.estado === 'PENDIENTE' ? `<p class="muted small">Cambia a ${esc(USUARIOS[p.autor].nombre)} en la barra superior para ver cómo la revisa.</p>` : ''}</div>`;
+      } else if (abierta(p)) {
+        acciones = S.ui.reclamo ? `<form id="form-reclamar" class="panel stack" novalidate>
+          <h3>Reclamar este objeto</h3>
+          <p class="muted small">Quien lo encontró guardó un detalle que no aparece en la publicación. Descríbelo para demostrar que es tuyo.</p>
+          <div><label class="label" for="r-resp">Detalle distintivo</label><textarea id="r-resp" class="field" rows="3" maxlength="300" placeholder="Ej.: tiene un sticker en la parte de atrás"></textarea><p class="err" id="r-err" hidden></p></div>
+          <div><label class="label" for="r-evid">Evidencia adicional (opcional)</label><textarea id="r-evid" class="field" rows="2" maxlength="500" placeholder="Ej.: el serial empieza por 12AB"></textarea></div>
+          <div class="row"><button class="btn btn-primary" type="submit">Enviar reclamación</button><button class="btn" type="button" data-act="cancelar-reclamo">Cancelar</button></div>
+          ${p.id === 'p1' ? '<p class="note note-lock small">Pista para la demo: el detalle reservado de esta calculadora es un sticker de un gato.</p>' : ''}
+        </form>` : `<button class="btn btn-primary btn-big" data-act="abrir-reclamo">Es mío, quiero reclamarlo</button>`;
+      }
+    }
+    if (u && !esAutor && p.tipo === 'PERDIDO' && abierta(p)) {
+      acciones = `<div class="panel small">¿Lo encontraste? <button class="link" data-go="publicar" data-tipo="ENCONTRADO">Publica el hallazgo</button> y el sistema le avisará a ${esc(USUARIOS[p.autor].nombre)}.</div>`;
+    }
+    let reporte = '';
+    if (u && !esAutor && !esAdmin()) {
+      reporte = S.ui.reporte ? `<form id="form-reportar" class="stack" novalidate>
+        <div><label class="label" for="rep-motivo">¿Por qué la reportas?</label><textarea id="rep-motivo" class="field" rows="2" maxlength="500" placeholder="Contenido inadecuado, sospecha de fraude, datos personales visibles…"></textarea><p class="err" id="rep-err" hidden></p></div>
+        <div class="row"><button class="btn btn-danger" type="submit">Enviar reporte</button><button class="btn" type="button" data-act="cerrar-reporte">Cancelar</button></div></form>`
+        : `<button class="link small" style="color:var(--muted)" data-act="abrir-reporte">Reportar publicación</button>`;
+    }
+
+    let autor = '';
+    if (esAutor) {
+      const rs = recls.filter((r) => r.pub === p.id);
+      const cs = abierta(p) ? coincidencias(p) : [];
+      autor = `
+      <section class="panel stack">
+        <div class="sec-head" style="margin:0"><h2>Tu publicación</h2>
+          ${abierta(p) ? (S.ui.retirar ? `<div class="row"><span class="small">¿Retirarla del catálogo?</span><button class="btn btn-danger" data-act="retirar-si">Sí, retirar</button><button class="btn" data-act="retirar-no">No</button></div>` : `<button class="btn btn-danger" data-act="retirar">Retirar publicación</button>`) : ''}
+        </div>
+        ${p.oculta ? '<p class="note note-err">Un moderador ocultó esta publicación. Otros usuarios ya no la ven.</p>' : ''}
+        ${p.tipo === 'ENCONTRADO' ? `
+          <p class="note note-lock"><strong>Tu detalle reservado:</strong> ${esc(p.reservado)}<br><span class="small">Sólo tú lo ves. Compáralo con cada reclamación.</span></p>
+          <h3>Reclamaciones (${rs.length})</h3>
+          ${rs.length ? rs.map((r) => `<div class="claim">
+            <div class="claim-head"><strong>${esc(USUARIOS[r.por].nombre)}</strong><span class="muted">${fechaHora(r.fecha)} · ${chip(r.estado, ETQ_RECL[r.estado])}</span></div>
+            <p><strong>Respuesta:</strong> ${esc(r.resp)}</p>
+            ${r.evid ? `<p class="small"><strong>Evidencia:</strong> ${esc(r.evid)}</p>` : ''}
+            ${r.estado === 'PENDIENTE' ? `<div class="row"><button class="btn btn-primary" data-act="aceptar" data-id="${r.id}">Aceptar y abrir chat</button><button class="btn" data-act="rechazar" data-id="${r.id}">Rechazar</button></div>` : ''}
+            ${r.estado === 'ACEPTADA' ? `<div><button class="btn" data-go="chat" data-id="${r.id}">Abrir chat de entrega</button></div>` : ''}
+          </div>`).join('') : '<p class="muted small">Todavía nadie lo ha reclamado.</p>'}` : ''}
+      </section>
+      ${abierta(p) ? `<section><div class="sec-head"><h2>Posibles coincidencias</h2><span class="muted small">Categoría 35 % · sede 20 % · fecha ±7 días 25 % · texto 20 %</span></div>
+        ${grilla(cs, 'Aún no hay publicaciones parecidas. Te avisaremos cuando aparezca alguna.')}</section>` : ''}`;
+    }
+
+    return `
+    <button class="link back" data-go="catalogo">← Volver al catálogo</button>
+    <div class="detail">
+      ${galeria}
+      <div class="stack">
+        <div class="chips">${chipTipo(p.tipo)}${chipEstado(p.estado)}<span class="chip mono" style="background:var(--tag);color:var(--tag-ink)">${p.folio}</span></div>
+        <h1 style="font-size:clamp(1.6rem,3.5vw,2.2rem)">${esc(p.titulo)}</h1>
+        <dl class="facts">
+          <dt>Categoría</dt><dd>${c.icono} ${esc(c.nombre)}</dd>
+          <dt>Lugar</dt><dd>${esc(l.sede)} · ${esc(l.edificio)}${p.ref ? ` · ${esc(p.ref)}` : ''}</dd>
+          <dt>${p.tipo === 'ENCONTRADO' ? 'Encontrado' : 'Perdido'}</dt><dd>${fechaHora(p.fecha)}</dd>
+          <dt>Publicado por</dt><dd>${esc(USUARIOS[p.autor].nombre)} · ${fecha(p.creada)}</dd>
+        </dl>
+        <p>${esc(p.desc)}</p>
+        ${c.sensible && p.tipo === 'ENCONTRADO' ? '<p class="note note-info">Objeto sensible: se recomienda hacer la entrega en la oficina de seguridad de la facultad.</p>' : ''}
+        ${acciones}
+        ${reporte}
+      </div>
+    </div>
+    ${autor}`;
+  }
+
+  const PASOS = ['¿Qué?', '¿Dónde y cuándo?', 'Fotos y verificación'];
+  function nuevoWizard(tipo) {
+    return { paso: 0, errores: {}, fotos: [], d: { tipo: tipo || 'ENCONTRADO', titulo: '', cat: '', desc: '', lugar: '', ref: '', fecha: hoy(), hora: '', reservado: '' } };
+  }
+  function vPublicar() {
+    if (!yo()) return pedirSesion('publicar un objeto');
+    if (esAdmin()) return `<p class="empty">La cuenta de moderación no publica objetos. Cambia a un estudiante en la barra superior.</p>`;
+    const w = S.wizard;
+    const d = w.d, e = w.errores;
+    const err = (k) => (e[k] ? `<p class="err" id="e-${k}">${esc(e[k])}</p>` : '');
+    const inv = (k) => (e[k] ? `aria-invalid="true" aria-describedby="e-${k}"` : '');
+    const hallazgo = d.tipo === 'ENCONTRADO';
+    let cuerpo = '';
+    if (w.paso === 0) {
+      cuerpo = `
+        <div><span class="label">¿Qué quieres publicar?</span><div class="choice">
+          <button type="button" data-act="w-tipo" data-tipo="ENCONTRADO" aria-pressed="${hallazgo}">Encontré algo</button>
+          <button type="button" data-act="w-tipo" data-tipo="PERDIDO" aria-pressed="${!hallazgo}">Perdí algo</button></div></div>
+        <div><label class="label" for="w-titulo">Título</label><input id="w-titulo" class="field" data-w="titulo" maxlength="120" value="${esc(d.titulo)}" placeholder="Ej.: Calculadora Casio fx-991 negra" ${inv('titulo')}>${err('titulo')}</div>
+        <div><label class="label" for="w-cat">Categoría</label><select id="w-cat" class="field" data-w="cat" ${inv('cat')}><option value="">Selecciona…</option>${Object.entries(CATS).map(([k, c]) => `<option value="${k}" ${d.cat === k ? 'selected' : ''}>${c.icono} ${c.nombre}</option>`).join('')}</select>${err('cat')}</div>
+        <div><label class="label" for="w-desc">Descripción</label><textarea id="w-desc" class="field" rows="4" maxlength="2000" data-w="desc" placeholder="Color, marca, tamaño, estado… No incluyas el detalle que servirá para verificar al dueño." ${inv('desc')}>${esc(d.desc)}</textarea>${err('desc')}</div>`;
+    } else if (w.paso === 1) {
+      const porSede = SEDES.map((s) => `<optgroup label="${esc(s)}">${Object.entries(LUGARES).filter(([, l]) => l[0] === s).map(([id, l]) => `<option value="${id}" ${String(d.lugar) === id ? 'selected' : ''}>${esc(l[1])}</option>`).join('')}</optgroup>`).join('');
+      cuerpo = `
+        <div><label class="label" for="w-lugar">Sede y lugar</label><select id="w-lugar" class="field" data-w="lugar" ${inv('lugar')}><option value="">Selecciona…</option>${porSede}</select>${err('lugar')}</div>
+        <div><label class="label" for="w-ref">Referencia exacta (opcional)</label><input id="w-ref" class="field" data-w="ref" maxlength="120" value="${esc(d.ref)}" placeholder="Ej.: Salón 305, segunda fila"></div>
+        <div class="two">
+          <div><label class="label" for="w-fecha">Fecha</label><input id="w-fecha" type="date" class="field" data-w="fecha" max="${hoy()}" value="${esc(d.fecha)}" ${inv('fecha')}>${err('fecha')}</div>
+          <div><label class="label" for="w-hora">Hora aproximada</label><input id="w-hora" type="time" class="field" data-w="hora" value="${esc(d.hora)}" ${inv('hora')}>${err('hora')}</div>
+        </div>`;
+    } else {
+      cuerpo = `
+        ${d.cat && CATS[d.cat].sensible ? '<p class="note note-info"><strong>Objeto sensible.</strong> Tapa números de documento, tarjetas o datos personales antes de tomar la foto. Se recomienda entregarlo en la oficina de seguridad de la facultad.</p>' : ''}
+        <div><span class="label">Fotos ${hallazgo ? '' : '(opcional)'} · hasta 5, JPG, PNG o WEBP de máximo 5 MB</span>
+          <div class="photos">${w.fotos.map((f, i) => `<div class="photo"><img src="${f}" alt="Foto ${i + 1}"><button type="button" data-act="w-quitar" data-i="${i}" aria-label="Quitar foto ${i + 1}">✕</button></div>`).join('')}
+          ${w.fotos.length < 5 ? `<label class="add-photo">+ Agregar<input type="file" id="w-fotos" accept="image/jpeg,image/png,image/webp" multiple></label>` : ''}</div>${err('fotos')}</div>
+        ${hallazgo ? `<div><label class="label" for="w-reservado">Detalle reservado</label><textarea id="w-reservado" class="field" rows="2" maxlength="300" data-w="reservado" placeholder="Un rasgo que no se ve en las fotos: un sticker, una marca, lo que tenía adentro…" ${inv('reservado')}>${esc(d.reservado)}</textarea>
+          <p class="muted small" style="margin-top:4px">🔒 Nadie más lo verá. Quien reclame deberá describirlo para demostrar que es suyo.</p>${err('reservado')}</div>` : ''}`;
+    }
+    return `
+    <div class="wizard">
+      <h1 style="font-size:2rem">Nueva publicación</h1>
+      <ol class="wsteps" aria-label="Pasos">${PASOS.map((n, i) => `<li ${i === w.paso ? 'aria-current="step"' : ''} class="${i < w.paso ? 'done' : ''}">${i + 1}. ${n}</li>`).join('')}</ol>
+      <div class="panel stack">
+        ${cuerpo}
+        <div class="row" style="justify-content:space-between">
+          ${w.paso > 0 ? '<button class="btn" data-act="w-ant">← Atrás</button>' : '<span></span>'}
+          ${w.paso < 2 ? '<button class="btn btn-primary" data-act="w-sig">Siguiente →</button>' : '<button class="btn btn-primary" data-act="w-publicar">Publicar</button>'}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function vMis() {
+    const u = yo();
+    if (!u) return pedirSesion('ver tus publicaciones');
+    const mias = pubs.filter((p) => p.autor === u).sort((a, b) => new Date(b.creada) - new Date(a.creada));
+    const rs = recls.filter((r) => r.por === u);
+    return `
+    <section class="stack">
+      <div class="sec-head" style="margin:0"><h1 style="font-size:2rem">Mis publicaciones</h1><button class="btn btn-primary" data-go="publicar">Nueva publicación</button></div>
+      ${mias.length ? `<ul class="list">${mias.map((p) => {
+        const pend = recls.filter((r) => r.pub === p.id && r.estado === 'PENDIENTE').length;
+        return `<li><button class="list-item" data-go="detalle" data-id="${p.id}"><span style="font-size:1.6rem" aria-hidden="true">${CATS[p.cat].icono}</span>
+          <span class="grow"><strong>${esc(p.titulo)}</strong><span class="muted small"><span class="mono">${p.folio}</span> · ${esc(lugar(p.lugar).sede)} · ${fecha(p.creada)}</span></span>
+          <span class="chips">${chipTipo(p.tipo)}${chipEstado(p.estado)}${p.oculta ? chip('RECHAZADA', 'Oculta') : ''}${pend ? chip('match', `${pend} por revisar`) : ''}</span></button></li>`;
+      }).join('')}</ul>` : '<p class="empty">Todavía no has publicado nada.</p>'}
+    </section>
+    <section class="stack">
+      <h2>Mis reclamaciones</h2>
+      ${rs.length ? `<ul class="list">${rs.map((r) => {
+        const p = pubDe(r.pub);
+        return `<li><button class="list-item" data-go="${r.estado === 'ACEPTADA' ? 'chat' : 'detalle'}" data-id="${r.estado === 'ACEPTADA' ? r.id : p.id}">
+          <span class="grow"><strong>${esc(p.titulo)}</strong><span class="muted small">${fecha(r.fecha)}</span></span>
+          <span class="chips">${chip(r.estado, ETQ_RECL[r.estado])}${r.estado === 'ACEPTADA' ? chip('ACTIVA', 'Abrir chat') : ''}</span></button></li>`;
+      }).join('')}</ul>` : '<p class="empty">No has reclamado ningún objeto.</p>'}
+    </section>`;
+  }
+
+  const misConversaciones = (u) => recls.filter((r) => r.estado === 'ACEPTADA' && (r.por === u || pubDe(r.pub).autor === u));
+  const otraParte = (r, u) => (r.por === u ? pubDe(r.pub).autor : r.por);
+  const noLeidosDe = (r, u) => msgs.filter((m) => m.rec === r.id && m.de !== u && !m.leido).length;
+
+  function vMensajes() {
+    const u = yo();
+    if (!u) return pedirSesion('ver tus mensajes');
+    const cs = misConversaciones(u);
+    return `<section class="stack" style="max-width:760px;width:100%;margin-inline:auto">
+      <h1 style="font-size:2rem">Mensajes</h1>
+      ${cs.length ? `<ul class="list">${cs.map((r) => {
+        const ult = msgs.filter((m) => m.rec === r.id).at(-1);
+        const n = noLeidosDe(r, u);
+        return `<li><button class="list-item" data-go="chat" data-id="${r.id}">
+          <span class="grow"><strong>${esc(pubDe(r.pub).titulo)}</strong><span class="muted small">${esc(USUARIOS[otraParte(r, u)].nombre)}: ${ult ? esc(ult.texto) : 'Sin mensajes todavía'}</span></span>
+          <span class="small muted">${ult ? relativo(ult.fecha) : ''} ${n ? `<span class="count">${n}</span>` : ''}</span></button></li>`;
+      }).join('')}</ul>` : '<p class="empty">Aún no tienes conversaciones. El chat se habilita cuando se acepta una reclamación.</p>'}
+    </section>`;
+  }
+
+  function vChat() {
+    const u = yo();
+    if (!u) return pedirSesion('abrir el chat');
+    const r = reclDe(S.p);
+    const p = pubDe(r.pub);
+    const esAutor = p.autor === u;
+    if (!esAutor && r.por !== u) return `<p class="empty">No participas en esta conversación. <button class="link" data-go="mensajes">Volver a mensajes</button></p>`;
+    msgs.forEach((m) => { if (m.rec === r.id && m.de !== u) m.leido = true; });
+    const otro = USUARIOS[otraParte(r, u)].nombre;
+    const lista = msgs.filter((m) => m.rec === r.id);
+    const e = r.entrega;
+    const yoConf = esAutor ? e.autor : e.recl;
+    const otroConf = esAutor ? e.recl : e.autor;
+    return `
+    <button class="link back" data-go="mensajes">← Mensajes</button>
+    <div class="stack" style="gap:6px"><h1 style="font-size:2rem">Chat con ${esc(otro)}</h1>
+      <p class="muted">Sobre <button class="link" data-go="detalle" data-id="${p.id}">${esc(p.titulo)}</button>. Tu correo y teléfono nunca se muestran a la otra persona.</p></div>
+    <div class="chat-layout">
+      <div class="chat">
+        <div class="chat-log" id="chat-log" aria-live="polite" aria-label="Conversación con ${esc(otro)}">
+          ${lista.length ? lista.map((m) => `<div class="bubble ${m.de === u ? 'mine' : 'theirs'}">${esc(m.texto)}<time>${fechaHora(m.fecha)}${m.de === u && m.leido ? ' · Leído' : ''}</time></div>`).join('') : '<p class="muted small" style="text-align:center">Escribe el primer mensaje. Acuerden un lugar dentro del campus.</p>'}
+        </div>
+        ${e.fecha ? '' : `<form id="form-chat"><label for="chat-txt" class="sr">Mensaje</label><input id="chat-txt" class="field" maxlength="1000" autocomplete="off" placeholder="Escribe un mensaje…"><button class="btn btn-primary" type="submit">Enviar</button></form>`}
+      </div>
+      <aside class="panel stack">
+        <h2>Entrega</h2>
+        ${e.fecha ? `<p class="note note-ok">Entrega confirmada por ambas partes el ${fechaHora(e.fecha)}.</p>` : `
+          <p class="muted small">Cuando el objeto esté en manos de su dueño, ambos confirman. Con la doble confirmación la publicación pasa a «Entregada».</p>
+          <ul class="checks"><li class="${yoConf ? 'yes' : ''}">Tú</li><li class="${otroConf ? 'yes' : ''}">${esc(otro)}</li></ul>
+          ${yoConf ? `<p class="small muted">Esperando a ${esc(otro)}. Cámbiate a su usuario arriba para confirmar.</p>` : '<button class="btn btn-primary" data-act="entrega">Confirmar entrega</button>'}`}
+      </aside>
+    </div>`;
+  }
+
+  function vNotificaciones() {
+    const u = yo();
+    if (!u) return pedirSesion('ver tus notificaciones');
+    const ns = notifs.filter((n) => n.para === u);
+    const html = `<section class="stack" style="max-width:760px;width:100%;margin-inline:auto">
+      <h1 style="font-size:2rem">Notificaciones</h1>
+      ${ns.length ? `<ul class="list">${ns.map((n) => `<li class="${n.leida ? '' : 'unread'}"><button class="list-item" data-go="${n.ir[0]}" data-id="${n.ir[1] || ''}">
+        <span class="grow">${n.leida ? '' : '<span class="sr">Nueva: </span>'}<span${n.leida ? '' : ' style="font-weight:700"'}>${esc(n.texto)}</span><span class="muted small">${relativo(n.fecha)}</span></span></button></li>`).join('')}</ul>`
+      : '<p class="empty">No tienes notificaciones.</p>'}
+      <p class="muted small">En la aplicación real también llegan por correo, si lo activas en tu perfil.</p>
+    </section>`;
+    ns.forEach((n) => { n.leida = true; });
+    return html;
+  }
+
+  function vAdmin() {
+    if (!esAdmin()) return `<p class="empty">Esta sección es sólo para moderadores. Elige «Moderación · Bienestar» en la barra superior.</p>`;
+    const total = pubs.length;
+    const entregadas = pubs.filter((p) => p.estado === 'ENTREGADA').length;
+    const contar = (fn) => Object.entries(pubs.reduce((acc, p) => { const k = fn(p); acc[k] = (acc[k] || 0) + 1; return acc; }, {})).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const barras = (filas) => { const max = Math.max(1, ...filas.map((f) => f[1])); return `<div class="bars">${filas.map(([n, v]) => `<div class="bar-row"><div><span>${esc(n)}</span><strong class="mono">${v}</strong></div><span class="bar"><span style="width:${(v / max) * 100}%"></span></span></div>`).join('')}</div>`; };
+    const pend = reportes.filter((r) => r.estado === 'PENDIENTE');
+    return `
+    <h1 style="font-size:2rem">Administración</h1>
+    <section class="kpis" aria-label="Indicadores">
+      <div class="kpi"><span class="muted small">Publicaciones</span><b>${total}</b></div>
+      <div class="kpi"><span class="muted small">Entregadas</span><b>${entregadas}</b></div>
+      <div class="kpi"><span class="muted small">Tasa de recuperación</span><b>${Math.round((entregadas / total) * 100)} %</b><span class="muted small">Meta del semestre: ≥ 35 %</span></div>
+      <div class="kpi"><span class="muted small">Reportes pendientes</span><b>${pend.length}</b></div>
+    </section>
+    <section class="cols3">
+      <div class="panel stack"><h3>Por tipo</h3>${barras(contar((p) => (p.tipo === 'ENCONTRADO' ? 'Encontrados' : 'Perdidos')))}</div>
+      <div class="panel stack"><h3>Categorías más frecuentes</h3>${barras(contar((p) => CATS[p.cat].nombre))}</div>
+      <div class="panel stack"><h3>Lugares críticos</h3>${barras(contar((p) => `${lugar(p.lugar).sede} · ${lugar(p.lugar).edificio}`))}</div>
+    </section>
+    <section class="stack">
+      <h2>Reportes pendientes (${pend.length})</h2>
+      ${pend.length ? pend.map((r) => { const p = pubDe(r.pub); return `<div class="panel stack">
+        <div class="claim-head"><button class="link" data-go="detalle" data-id="${p.id}">${esc(p.titulo)}</button><span class="muted">Reportado por ${esc(USUARIOS[r.por].nombre)} · ${fechaHora(r.fecha)}</span></div>
+        <p><strong>Motivo:</strong> ${esc(r.motivo)}</p>
+        <div class="row"><button class="btn btn-danger" data-act="ocultar" data-id="${r.id}">Ocultar publicación</button><button class="btn" data-act="descartar" data-id="${r.id}">Descartar reporte</button></div></div>`; }).join('')
+        : '<p class="empty">No hay reportes pendientes.</p>'}
+    </section>`;
+  }
+
+  const VISTAS = { inicio: vInicio, catalogo: vCatalogo, detalle: vDetalle, publicar: vPublicar, mis: vMis, mensajes: vMensajes, chat: vChat, notificaciones: vNotificaciones, admin: vAdmin };
+
+  // ---------- Render ----------
+  function renderNav() {
+    const u = yo();
+    const nNot = u ? notifs.filter((n) => n.para === u && !n.leida).length : 0;
+    const nMsg = u ? misConversaciones(u).reduce((s, r) => s + noLeidosDe(r, u), 0) : 0;
+    const activo = { detalle: 'catalogo', chat: 'mensajes' }[S.vista] || S.vista;
+    const item = (v, t, n) => `<button data-go="${v}" ${activo === v ? 'aria-current="page"' : ''}>${t}${n ? `<span class="count">${n}<span class="sr"> sin leer</span></span>` : ''}</button>`;
+    $('#nav').innerHTML = [
+      item('catalogo', 'Catálogo'), item('publicar', 'Publicar'),
+      u && !esAdmin() ? item('mis', 'Mis publicaciones') : '',
+      u && !esAdmin() ? item('mensajes', 'Mensajes', nMsg) : '',
+      u ? item('notificaciones', 'Notificaciones', nNot) : '',
+      esAdmin() ? item('admin', 'Administración') : '',
+    ].join('');
+  }
+  function render() {
+    $('#main').innerHTML = VISTAS[S.vista]();
+    renderNav();
+    const log = $('#chat-log');
+    if (log) log.scrollTop = log.scrollHeight;
+  }
+  function ir(vista, id, extra) {
+    S.vista = vista;
+    S.p = id || null;
+    S.ui = {};
+    if (vista === 'publicar') S.wizard = nuevoWizard(extra);
+    render();
+    window.scrollTo(0, 0);
+    $('#main').focus({ preventScroll: true });
+  }
+
+  // ---------- Acciones ----------
+  function validarPaso(w) {
+    const d = w.d, e = {};
+    if (w.paso === 0) {
+      if (d.titulo.trim().length < 4) e.titulo = 'Escribe un título de al menos 4 caracteres.';
+      if (!d.cat) e.cat = 'Selecciona una categoría.';
+      if (d.desc.trim().length < 10) e.desc = 'Describe el objeto con al menos 10 caracteres.';
+    } else if (w.paso === 1) {
+      if (!d.lugar) e.lugar = 'Selecciona dónde ocurrió.';
+      if (!d.fecha) e.fecha = 'Indica la fecha.';
+      if (!d.hora) e.hora = 'Indica la hora aproximada.';
+      if (d.fecha && d.hora && new Date(`${d.fecha}T${d.hora}:00-05:00`) > new Date()) e.fecha = 'La fecha no puede estar en el futuro.';
+    } else {
+      if (d.tipo === 'ENCONTRADO' && d.reservado.trim().length < 3) e.reservado = 'Registra un detalle que sólo el dueño conocería.';
+      if (d.tipo === 'ENCONTRADO' && !w.fotos.length) e.fotos = 'Agrega al menos una foto del objeto.';
+    }
+    w.errores = e;
+    return !Object.keys(e).length;
+  }
+  function publicar() {
+    const w = S.wizard, d = w.d, u = yo();
+    if (!validarPaso(w)) { render(); return; }
+    const p = {
+      id: nuevoId('p'), folio: `HG-${String(++folio).padStart(4, '0')}`, tipo: d.tipo, titulo: d.titulo.trim(), desc: d.desc.trim(),
+      cat: d.cat, lugar: Number(d.lugar), ref: d.ref.trim(), fecha: new Date(`${d.fecha}T${d.hora}:00-05:00`).toISOString(),
+      autor: u, estado: 'ACTIVA', oculta: false, reservado: d.tipo === 'ENCONTRADO' ? d.reservado.trim() : null, fotos: w.fotos.slice(), creada: new Date().toISOString(),
+    };
+    pubs.unshift(p);
+    const cs = coincidencias(p);
+    if (p.tipo === 'ENCONTRADO') {
+      new Set(cs.map((c) => c.p.autor)).forEach((autor) => {
+        const suya = cs.find((c) => c.p.autor === autor).p;
+        notificar(autor, `Alguien encontró un objeto parecido a lo que perdiste («${suya.titulo}»): «${p.titulo}».`, ['detalle', p.id]);
+      });
+    } else if (cs.length) {
+      notificar(u, `Encontramos ${cs.length} posible(s) coincidencia(s) para «${p.titulo}».`, ['detalle', p.id]);
+    }
+    ir('detalle', p.id);
+    toast(cs.length ? `Publicado. Hay ${cs.length} posible(s) coincidencia(s).` : 'Publicado en el catálogo.');
+  }
+
+  document.addEventListener('click', (ev) => {
+    const go = ev.target.closest('[data-go]');
+    if (go) { ir(go.dataset.go, go.dataset.id, go.dataset.tipo); return; }
+    const el = ev.target.closest('[data-act]');
+    if (!el) return;
+    const act = el.dataset.act, id = el.dataset.id, u = yo();
+    const p = S.p ? pubDe(S.p) : null;
+    switch (act) {
+      case 'elegir-usuario': $('#usuario').focus(); toast('Elige un usuario en la barra superior.'); return;
+      case 'abrir-reclamo': S.ui.reclamo = true; render(); $('#r-resp').focus(); return;
+      case 'cancelar-reclamo': S.ui.reclamo = false; render(); return;
+      case 'abrir-reporte': S.ui.reporte = true; render(); $('#rep-motivo').focus(); return;
+      case 'cerrar-reporte': S.ui.reporte = false; render(); return;
+      case 'foto': S.ui.foto = Number(el.dataset.i); render(); return;
+      case 'retirar': S.ui.retirar = true; render(); return;
+      case 'retirar-no': S.ui.retirar = false; render(); return;
+      case 'retirar-si':
+        p.estado = 'RETIRADA';
+        recls.filter((r) => r.pub === p.id && r.estado === 'PENDIENTE').forEach((r) => { r.estado = 'RECHAZADA'; });
+        ir('mis'); toast('Publicación retirada del catálogo.'); return;
+      case 'aceptar': {
+        const r = reclDe(id);
+        if (recls.some((x) => x.pub === r.pub && x.estado === 'ACEPTADA')) { toast('Ya aceptaste otra reclamación para este objeto.'); return; }
+        r.estado = 'ACEPTADA'; r.entrega = { autor: false, recl: false, fecha: null };
+        notificar(r.por, `Tu reclamación de «${pubDe(r.pub).titulo}» fue aceptada. Ya puedes coordinar la entrega por el chat.`, ['chat', r.id]);
+        ir('chat', r.id); toast('Reclamación aceptada. El chat quedó habilitado.'); return;
+      }
+      case 'rechazar': {
+        const r = reclDe(id);
+        r.estado = 'RECHAZADA';
+        const pr = pubDe(r.pub);
+        if (!recls.some((x) => x.pub === pr.id && (x.estado === 'PENDIENTE' || x.estado === 'ACEPTADA')) && pr.estado === 'EN_RECLAMACION') pr.estado = 'ACTIVA';
+        notificar(r.por, `Tu reclamación de «${pr.titulo}» fue rechazada: la descripción no coincidió.`, ['detalle', pr.id]);
+        render(); toast('Reclamación rechazada.'); return;
+      }
+      case 'entrega': {
+        const r = reclDe(S.p), pr = pubDe(r.pub), esAutor = pr.autor === u;
+        r.entrega[esAutor ? 'autor' : 'recl'] = true;
+        const otro = otraParte(r, u);
+        if (r.entrega.autor && r.entrega.recl) {
+          r.entrega.fecha = new Date().toISOString();
+          pr.estado = 'ENTREGADA';
+          recls.filter((x) => x.pub === pr.id && x.estado === 'PENDIENTE').forEach((x) => { x.estado = 'RECHAZADA'; });
+          [u, otro].forEach((q) => notificar(q, `La entrega de «${pr.titulo}» quedó confirmada. ¡Gracias por usar HallazGO UD!`, ['detalle', pr.id]));
+          toast('Entrega confirmada por ambas partes.');
+        } else {
+          notificar(otro, `La otra parte confirmó la entrega de «${pr.titulo}». Confírmala tú también.`, ['chat', r.id]);
+          toast('Confirmaste la entrega. Falta la otra parte.');
+        }
+        render(); return;
+      }
+      case 'ocultar': case 'descartar': {
+        const rep = reportes.find((x) => x.id === id);
+        if (act === 'ocultar') {
+          const pr = pubDe(rep.pub);
+          pr.oculta = true;
+          reportes.filter((x) => x.pub === pr.id && x.estado === 'PENDIENTE').forEach((x) => { x.estado = 'RESUELTO'; });
+          notificar(pr.autor, `Tu publicación «${pr.titulo}» fue ocultada por moderación.`, ['detalle', pr.id]);
+          toast('Publicación ocultada. Se notificó a su autor.');
+        } else { rep.estado = 'DESCARTADO'; toast('Reporte descartado.'); }
+        render(); return;
+      }
+      case 'limpiar-filtros': S.filtros = { q: '', tipo: '', cat: '', sede: '', estado: '', orden: 'recientes' }; render(); return;
+      case 'w-tipo': S.wizard.d.tipo = el.dataset.tipo; render(); return;
+      case 'w-sig': if (validarPaso(S.wizard)) S.wizard.paso++; render(); return;
+      case 'w-ant': S.wizard.errores = {}; S.wizard.paso--; render(); return;
+      case 'w-quitar': S.wizard.fotos.splice(Number(el.dataset.i), 1); render(); return;
+      case 'w-publicar': publicar(); return;
+    }
+  });
+
+  document.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const f = ev.target, u = yo();
+    if (f.id === 'buscar') { S.filtros.q = $('#q-inicio').value; ir('catalogo'); return; }
+    if (f.id === 'form-reclamar') {
+      const resp = $('#r-resp').value.trim();
+      if (resp.length < 3) { const e = $('#r-err'); e.textContent = 'Describe el detalle con al menos 3 caracteres.'; e.hidden = false; $('#r-resp').focus(); return; }
+      const p = pubDe(S.p);
+      recls.push({ id: nuevoId('r'), pub: p.id, por: u, resp, evid: $('#r-evid').value.trim(), estado: 'PENDIENTE', fecha: new Date().toISOString(), entrega: null });
+      p.estado = 'EN_RECLAMACION';
+      notificar(p.autor, `Alguien reclamó «${p.titulo}». Revisa si su respuesta coincide con el detalle reservado.`, ['detalle', p.id]);
+      S.ui = {}; render(); toast(`Reclamación enviada. ${USUARIOS[p.autor].nombre} recibirá una notificación.`); return;
+    }
+    if (f.id === 'form-reportar') {
+      const motivo = $('#rep-motivo').value.trim();
+      if (motivo.length < 5) { const e = $('#rep-err'); e.textContent = 'Cuéntanos el motivo con al menos 5 caracteres.'; e.hidden = false; return; }
+      reportes.push({ id: nuevoId('x'), pub: S.p, por: u, motivo, estado: 'PENDIENTE', fecha: new Date().toISOString() });
+      notificar('admin', `Hay un reporte nuevo sobre «${pubDe(S.p).titulo}».`, ['admin']);
+      S.ui.reporte = false; render(); toast('Gracias. Un moderador revisará la publicación.'); return;
+    }
+    if (f.id === 'form-chat') {
+      const txt = $('#chat-txt').value.trim();
+      if (!txt) return;
+      const r = reclDe(S.p);
+      msgs.push({ id: nuevoId('m'), rec: r.id, de: u, texto: txt, fecha: new Date().toISOString(), leido: false });
+      const otro = otraParte(r, u);
+      if (!notifs.some((n) => n.para === otro && !n.leida && n.ir[0] === 'chat' && n.ir[1] === r.id)) {
+        notificar(otro, `Tienes mensajes nuevos sobre «${pubDe(r.pub).titulo}».`, ['chat', r.id]);
+      }
+      render(); $('#chat-txt').focus(); return;
+    }
+  });
+
+  document.addEventListener('input', (ev) => {
+    const t = ev.target;
+    if (t.dataset.f) {
+      S.filtros[t.dataset.f] = t.value;
+      $('#resultados').innerHTML = resultados();
+    } else if (t.dataset.w && S.wizard) {
+      S.wizard.d[t.dataset.w] = t.value;
+    }
+  });
+
+  document.addEventListener('change', (ev) => {
+    const t = ev.target;
+    if (t.id === 'usuario') {
+      S.yo = t.value;
+      const privada = ['publicar', 'mis', 'mensajes', 'chat', 'notificaciones', 'admin'].includes(S.vista);
+      if (privada && S.vista !== 'publicar') ir(S.vista === 'chat' ? 'mensajes' : S.vista);
+      else if (S.vista === 'publicar') ir('publicar', null, S.wizard ? S.wizard.d.tipo : undefined);
+      else { S.ui = {}; render(); }
+      toast(t.value === 'visitante' ? 'Ahora navegas como visitante.' : `Ahora navegas como ${USUARIOS[t.value].nombre}.`);
+      return;
+    }
+    if (t.id === 'w-fotos') {
+      const w = S.wizard;
+      const archivos = Array.from(t.files || []);
+      const malo = archivos.find((a) => !['image/jpeg', 'image/png', 'image/webp'].includes(a.type) || a.size > 5 * 1024 * 1024);
+      if (malo) { w.errores = { fotos: `«${malo.name}» debe ser JPG, PNG o WEBP de máximo 5 MB.` }; render(); return; }
+      const cupo = archivos.slice(0, 5 - w.fotos.length);
+      Promise.all(cupo.map((a) => new Promise((ok, fallo) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fallo; r.readAsDataURL(a); })))
+        .then((urls) => { w.fotos.push(...urls); w.errores = {}; render(); })
+        .catch(() => { w.errores = { fotos: 'No se pudo leer la imagen.' }; render(); });
+    }
+  });
+
+  render();
+})();
+</script>
