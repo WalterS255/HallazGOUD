@@ -13,6 +13,8 @@ const MS_POR_DIA = 86_400_000;
 export interface DatosCoincidencia {
   id_categoria: number;
   id_sede: number;
+  // Clase de lugar (biblioteca, cafetería…). null = sin clasificar: nunca es "análogo".
+  tipo_lugar: string | null;
   fecha_suceso: Date;
   // Lexemas del tsvector `busqueda`: palabras ya en minúscula, en raíz y sin palabras vacías.
   palabras: string[];
@@ -26,13 +28,22 @@ export interface Desglose {
   total: number;
 }
 
+// Pregunta 13.2 (decidida 2026-11-21): dos lugares de sedes distintas son "análogos" si
+// son de la misma clase (biblioteca con biblioteca…). OTRO o sin clasificar, nunca.
+export const esAnalogo = (a: string | null, b: string | null): boolean =>
+  a !== null && a === b && a !== 'OTRO';
+
 const redondear = (n: number): number => Math.round(n * 10) / 10;
 
 export function calcularPuntaje(ref: DatosCoincidencia, cand: DatosCoincidencia): Desglose {
   const categoria = ref.id_categoria === cand.id_categoria ? PESOS.categoria : 0;
 
-  // "Edificio análogo en otra sede" (10 %) queda en 0 hasta resolver la pregunta abierta 13.2.
-  const sede = ref.id_sede === cand.id_sede ? PESOS.sede : 0;
+  const sede =
+    ref.id_sede === cand.id_sede
+      ? PESOS.sede
+      : esAnalogo(ref.tipo_lugar, cand.tipo_lugar)
+        ? PESOS.sede / 2 // "edificio análogo" en otra sede (pregunta 13.2)
+        : 0;
 
   const dias = Math.abs(cand.fecha_suceso.getTime() - ref.fecha_suceso.getTime()) / MS_POR_DIA;
   const tiempo = PESOS.tiempo * Math.max(0, 1 - dias / VENTANA_DIAS);

@@ -23,7 +23,7 @@ Base de datos **`hallazgo_ud`** en PostgreSQL 18, un solo esquema (`public`), 15
 |---|---|---|
 | `categoria` | Tipos de objeto (Electrónicos, Documentos…) | `nombre` único. `sensible` = aviso de tapar datos (regla 6.6). `activa`: no se borran, se desactivan |
 | `sede` | Sedes de la UD | `nombre` único |
-| `lugar` | Edificios o zonas de cada sede | FK a `sede`; `(id_sede, edificio)` único |
+| `lugar` | Edificios o zonas de cada sede | FK a `sede`; `(id_sede, edificio)` único; `tipo` (biblioteca, cafetería…) para el "edificio análogo" del motor de coincidencias |
 
 ### Acceso
 | Tabla | Para qué | Claves y reglas |

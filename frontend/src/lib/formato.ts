@@ -74,6 +74,7 @@ export const ETIQUETA_RECLAMACION: Record<EstadoReclamacion, string> = {
   PENDIENTE: 'Pendiente',
   ACEPTADA: 'Aceptada',
   RECHAZADA: 'Rechazada',
+  CANCELADA: 'Cancelada',
 };
 
 /** A dónde lleva cada aviso según su tipo (tabla de api.md §11). */

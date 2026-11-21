@@ -13,7 +13,11 @@ export const esquemaReclamar = z.object({
 export type DatosReclamar = z.output<typeof esquemaReclamar>;
 
 export const esquemaResolver = z.object({
-  decision: z.enum(['ACEPTAR', 'RECHAZAR'], { error: 'La decisión debe ser ACEPTAR o RECHAZAR' }),
+  // ACEPTAR y RECHAZAR: el autor, sobre una PENDIENTE. CANCELAR: cualquiera de las dos
+  // partes, sobre una ACEPTADA cuya entrega no se completó (pregunta 13.4).
+  decision: z.enum(['ACEPTAR', 'RECHAZAR', 'CANCELAR'], {
+    error: 'La decisión debe ser ACEPTAR, RECHAZAR o CANCELAR',
+  }),
 });
 export type DatosResolver = z.output<typeof esquemaResolver>;
 

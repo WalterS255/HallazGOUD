@@ -10,6 +10,7 @@ const pub = (cambios: Partial<Publicacion>): Publicacion => ({
   id_usuario: 10,
   id_categoria: 5,
   id_sede: 1,
+  tipo_lugar: null,
   fecha_suceso: fecha,
   palabras: ['calcul', 'gris'],
   ...cambios,

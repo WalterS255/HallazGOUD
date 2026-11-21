@@ -1,7 +1,11 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ErrorApp } from '../../comun/errores/error-app.js';
 import { Prisma } from '../../generated/prisma/client.js';
-import { CatalogosRepository, type DatosCategoria } from './catalogos.repository.js';
+import {
+  CatalogosRepository,
+  type DatosCategoria,
+  type DatosLugar,
+} from './catalogos.repository.js';
 
 // Traduce los errores de la BD a respuestas claras. Los códigos de Prisma:
 //   P2002 = choca con un UNIQUE (nombre de categoría o sede, edificio dentro de la sede)
@@ -66,7 +70,7 @@ export class CatalogosService {
     await traducir(this.repo.borrarSede(id), 'esa sede');
   }
 
-  crearLugar(d: { id_sede: number; edificio: string; referencia?: string | null }) {
+  crearLugar(d: DatosLugar & { id_sede: number; edificio: string }) {
     // P2003 aquí significa "la sede no existe": el mensaje genérico de EN_USO no aplica.
     return traducir(this.repo.crearLugar(d), 'un lugar').catch((e: unknown) => {
       if (e instanceof ErrorApp && e.codigo === 'EN_USO') {
@@ -75,7 +79,7 @@ export class CatalogosService {
       throw e;
     });
   }
-  editarLugar(id: number, d: { edificio?: string; referencia?: string | null }) {
+  editarLugar(id: number, d: DatosLugar) {
     return traducir(this.repo.editarLugar(id, d), 'ese lugar');
   }
   async borrarLugar(id: number): Promise<void> {

@@ -1,4 +1,4 @@
-import { calcularPuntaje, type DatosCoincidencia, seMuestra } from './puntaje.js';
+import { calcularPuntaje, type DatosCoincidencia, esAnalogo, seMuestra } from './puntaje.js';
 
 const DIA = 86_400_000;
 const base = new Date('2026-10-01T15:00:00Z');
@@ -7,6 +7,7 @@ const base = new Date('2026-10-01T15:00:00Z');
 const ref: DatosCoincidencia = {
   id_categoria: 5,
   id_sede: 1,
+  tipo_lugar: 'BIBLIOTECA',
   fecha_suceso: base,
   palabras: ['calcul', 'casi', 'cientif', 'gris', 'bibliotec'],
 };
@@ -46,8 +47,25 @@ describe('calcularPuntaje', () => {
     expect(calcularPuntaje(ref, cand({ id_categoria: 9 })).categoria).toBe(0);
   });
 
-  it('otra sede pierde los 20 puntos (edificio análogo: pendiente 13.2)', () => {
-    expect(calcularPuntaje(ref, cand({ id_sede: 2 })).sede).toBe(0);
+  it('otra sede y otra clase de lugar pierde los 20 puntos', () => {
+    expect(calcularPuntaje(ref, cand({ id_sede: 2, tipo_lugar: 'CAFETERIA' })).sede).toBe(0);
+  });
+
+  it('otra sede pero "edificio análogo" (biblioteca con biblioteca) = 10 de 20 (13.2)', () => {
+    expect(calcularPuntaje(ref, cand({ id_sede: 2, tipo_lugar: 'BIBLIOTECA' })).sede).toBe(10);
+  });
+
+  it('OTRO o sin clasificar nunca cuenta como análogo', () => {
+    expect(esAnalogo('OTRO', 'OTRO')).toBe(false);
+    expect(esAnalogo(null, null)).toBe(false);
+    expect(esAnalogo('BIBLIOTECA', null)).toBe(false);
+    expect(
+      calcularPuntaje({ ...ref, tipo_lugar: null }, cand({ id_sede: 2, tipo_lugar: null })).sede,
+    ).toBe(0);
+  });
+
+  it('en la misma sede el tipo de lugar no importa: 20', () => {
+    expect(calcularPuntaje(ref, cand({ tipo_lugar: 'CAFETERIA' })).sede).toBe(20);
   });
 
   it('texto = porcentaje de palabras de la referencia que aparecen en el candidato', () => {
@@ -83,9 +101,11 @@ describe('calcularPuntaje', () => {
 // (lexemas tomados de la salida de 04b_comparar_similitud.sql) deben dar los mismos totales.
 // Si el SQL y el código dejan de coincidir, alguno de los dos cambió la fórmula.
 describe('paridad con docs/sql/04_coincidencias.sql', () => {
+  // La práctica en SQL no tiene clase de lugar: tipo_lugar null en los dos lados.
   const refSql: DatosCoincidencia = {
     id_categoria: 5,
     id_sede: 1,
+    tipo_lugar: null,
     fecha_suceso: base,
     palabras: [
       '-570',
@@ -133,7 +153,7 @@ describe('paridad con docs/sql/04_coincidencias.sql', () => {
       43.2,
     ],
   ])('%s → %d', (_nombre, c, total) => {
-    const cand = { ...c, fecha_suceso: enDias(c.dias) };
+    const cand = { ...c, tipo_lugar: null, fecha_suceso: enDias(c.dias) };
     expect(calcularPuntaje(refSql, cand).total).toBe(total);
   });
 });

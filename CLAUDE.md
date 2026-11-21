@@ -134,7 +134,7 @@ En la base de datos solo existen tres roles fijos: `USUARIO`, `MODERADOR`, `ADMI
 | RNF-12 | Respaldo diario, 30 días de retención | `pg_dump` programado (fase de despliegue) |
 | RNF-13 | Capas + linter | oxlint (con reglas que usan los tipos de TypeScript) + Prettier + estructura de la sección 10 |
 | RNF-14 | Cobertura ≥ 60 % en los `*.service.ts` del backend | Vitest con `coverage.thresholds` configurado sobre `src/modules/**/*.service.ts` |
-| RNF-15 | Backend sin estado | JWT; nada de sesiones en memoria del servidor |
+| RNF-15 | Backend sin estado | JWT; nada de sesiones en memoria del servidor. El `SesionGuard` sí consulta la cuenta (estado y rol) en la BD en cada petición con token: suspender corta el acceso al instante |
 | RNF-16 | Contenedores | Docker + Docker Compose |
 | RNF-18 | Auditoría de acciones críticas | Tabla `auditoria` (inmutable) |
 | RNF-19 | Ley 1581 de 2012 | Casilla de consentimiento obligatoria en el registro; borrado de cuenta por anonimización |
@@ -197,7 +197,7 @@ Convenciones: nombres en español, en `snake_case` y en singular. `id` es la lla
 **Catálogos**
 - `categoria` (id, nombre UNIQUE, icono, **sensible** bool, activa bool). `sensible = true` para Documentos, Tarjetas y Llaves (ver regla 6.6).
 - `sede` (id, nombre UNIQUE).
-- `lugar` (id, id_sede → sede, edificio, referencia; UNIQUE(id_sede, edificio)).
+- `lugar` (id, id_sede → sede, edificio, referencia, **tipo** `tipo_lugar` opcional {BIBLIOTECA, CAFETERIA, LABORATORIO, AUDITORIO, AULAS, EDIFICIO_PRINCIPAL, ADMINISTRATIVO, OTRO}; UNIQUE(id_sede, edificio)). `tipo` da el "edificio análogo" del §7.
 
 **Acceso**
 - `usuario` (id, nombre, correo único **sin distinguir mayúsculas** (índice `UNIQUE (lower(correo))`) + CHECK de dominio, hash_contrasena, programa, foto_url, rol `rol_usuario`, verificado, **estado_cuenta** {ACTIVA, SUSPENDIDA, ELIMINADA}, **notificar_por_correo** bool, **intentos_fallidos** int, **bloqueado_hasta** timestamptz, **acepto_politica_en** timestamptz NOT NULL, fecha_registro).
@@ -269,6 +269,7 @@ Estas reglas van en los `*.service.ts` de cada módulo (`backend/src/modules/<mo
 - El autor no puede reclamar su propia publicación.
 - Al **aceptar** una reclamación: esa queda `ACEPTADA`, la publicación pasa a `EN_RECLAMACION`, se crea la fila de `entrega` vacía y se habilita el chat.
 - Las demás reclamaciones pendientes siguen `PENDIENTE` (por si la aceptada no resulta).
+- **Cancelar una ACEPTADA** (13.4, decidido 2026-11-21): cualquiera de las dos partes, mientras la entrega no se complete (`PATCH /reclamaciones/:id` con `CANCELAR`). La reclamación queda `CANCELADA`, la publicación vuelve a `ACTIVA`, el chat se cierra y se avisa a la otra parte; todo en una transacción. La autora puede aceptar después otra pendiente.
 
 ### 6.3 Detalle reservado y datos de contacto (lo más delicado)
 - `detalle_reservado` **solo** lo lee el servicio de reclamaciones, y **solo** cuando el que pregunta es el autor de la publicación.
@@ -304,7 +305,7 @@ Puntaje ponderado entre un `PERDIDO` y cada `ENCONTRADO` en estado `ACTIVA`:
 | Criterio | Peso | Regla |
 |---|---|---|
 | Misma categoría | 35 % | `id_categoria` igual |
-| Misma sede | 20 % | `id_sede` igual → 20 %; *edificio análogo* en otra sede → 10 % |
+| Misma sede | 20 % | `id_sede` igual → 20 %; *edificio análogo* en otra sede (mismo `lugar.tipo`, que no sea `OTRO` ni vacío) → 10 % |
 | Proximidad temporal | 25 % | `25 × (1 − |Δdías| / 7)`; 0 si pasa de 7 días |
 | Similitud textual | 20 % | `20 × (palabras del PERDIDO que aparecen en el ENCONTRADO / total de palabras del PERDIDO)`. Las palabras son los lexemas del `tsvector` `busqueda` |
 
@@ -345,7 +346,7 @@ Base: `/api`. Las respuestas van en JSON. Los errores tienen la forma `{ "error"
 | POST | `/publicaciones/:id/reclamaciones` | sesión | Reclamar |
 | GET | `/publicaciones/:id/reclamaciones` | autor | Ver reclamaciones de mi publicación *(añadido, RF-19)* |
 | GET | `/reclamaciones/:id` | partes | Ficha para el chat: quién es quién (`soy`) y en qué va la entrega *(añadido, para el frontend)* |
-| PATCH | `/reclamaciones/:id` | autor | Aceptar o rechazar |
+| PATCH | `/reclamaciones/:id` | autor / partes | `ACEPTAR` o `RECHAZAR` (autor, sobre una PENDIENTE); `CANCELAR` (cualquiera de las partes, sobre una ACEPTADA sin entrega completa) |
 | GET / POST | `/reclamaciones/:id/mensajes` | partes | Hilo de chat |
 | POST | `/reclamaciones/:id/entrega` | partes | Confirmar entrega |
 | GET | `/notificaciones` | sesión | Mis notificaciones |
@@ -401,13 +402,13 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [x] Verificación por correo, visible en Mailpit (`lib/correo/`: nodemailer; en `NODE_ENV=test` los correos se guardan en memoria; el nombre se escapa en el HTML). `GET /api/auth/verificar/:token`.
 - [x] Login con JWT, bloqueo por intentos y rate limit (`POST /api/auth/login`, HS256, `sub` + `rol`). Mismo mensaje si el correo no existe o la clave está mal, y bcrypt corre igual contra un hash falso para que el tiempo no lo delate. Bloqueada → 423, suspendida/sin verificar → 403.
 - [x] Recuperación de contraseña (`POST /api/auth/recuperar` responde 202 igual exista o no el correo; `POST /api/auth/restablecer` invalida los demás enlaces y quita el bloqueo).
-- [x] *Guards* de Nest para sesión y roles: `SesionGuard` (JWT; sin token = visitante; token malo → 401 `SESION_INVALIDA`) y `RolesGuard`, globales en ese orden. `@Autenticado()`, `@Roles(...)` y `@UsuarioActual()`. `GET /api/usuarios/me`. Limitación conocida (RNF-15, sin estado): si se suspende una cuenta, su JWT sigue sirviendo hasta que vence (`JWT_EXPIRA_EN`).
+- [x] *Guards* de Nest para sesión y roles: `SesionGuard` (JWT; sin token = visitante; token malo → 401 `SESION_INVALIDA`) y `RolesGuard`, globales en ese orden. `@Autenticado()`, `@Roles(...)` y `@UsuarioActual()`. `GET /api/usuarios/me`. **Suspensión al instante (decidido 2026-11-21):** el guard consulta `estado_cuenta` y `rol` en la BD en cada petición con token; una cuenta suspendida recibe 401 `CUENTA_SUSPENDIDA` aunque su JWT no haya vencido, y el rol vigente es el de la BD (no el del token). Probado en `admin.db-spec.ts`.
 - [x] Pruebas unitarias e integración (`test/db/auth.db-spec.ts`: flujo HTTP completo contra `hallazgo_test`). Los tokens de un solo uso se ocultan también en las URL del log (`ocultarTokens`). El seed toma la contraseña de prueba de `CONTRASENA_SEED` (en el `.env`).
 - [x] Editar perfil y reenviar el correo de verificación (`modules/auth/perfil.service.ts`). `PUT /api/usuarios/me` cambia nombre, programa y `notificar_por_correo`; **el correo no se puede cambiar** (es la identidad institucional verificada). Foto de perfil: `POST/DELETE /api/usuarios/me/foto`, cuadrada de 256 px en WEBP sin EXIF (`lib/imagenes/procesar.ts`, compartido con las publicaciones); al reemplazarla se borra la anterior. `POST /api/auth/reenviar-verificacion` responde 202 igual exista o no la cuenta, invalida el enlace anterior y **no reenvía si el último se mandó hace menos de 2 minutos** (freno por cuenta, además del rate limit por IP). Pruebas en `test/db/perfil.db-spec.ts`.
 
 ### Fase E — Publicaciones (RF-06 a RF-12)
 - [x] CRUD con la máquina de estados y el historial. **Crear, editar y retirar** (`modules/publicaciones/gestion.*`): `POST /publicaciones` (detalle reservado obligatorio en ENCONTRADO y prohibido en PERDIDO; categoría activa y lugar existente; fecha no futura; `fecha_creacion` desde Node; historial `null → ACTIVA`; `aviso_sensible` para la regla 6.6), `PUT /publicaciones/:id` (solo el autor y solo si no es final; **con reclamaciones, el detalle reservado ya no se puede cambiar**: 409 `DETALLE_BLOQUEADO`) y `DELETE /publicaciones/:id` (autor, moderador o admin; pasa por `cambiarEstado(…, 'RETIRADA')`; la fila no se borra). Pruebas HTTP en `test/db/gestion.db-spec.ts`. **Antes:** `modules/publicaciones/estados.ts` (tabla única de transiciones; prueba que recorre las 25 combinaciones) y `PublicacionesService.cambiarEstado` (estado + `historial_estado` + auditoría en una transacción, con `SELECT … FOR UPDATE`). Probado contra la BD: atomicidad (si la auditoría falla, no queda nada) y bloqueo (dos cambios simultáneos: gana uno; sin el `FOR UPDATE` ganaban los dos). `lib/auditoria/` registra con lista cerrada de acciones y recibe el `tx`.
-- [x] Subida de imágenes: validación, Sharp (miniatura ≤ 200 KB), SeaweedFS (S3). `modules/publicaciones/imagenes.*` + `lib/almacenamiento/` (SDK de AWS con `forcePathStyle`; en `NODE_ENV=test`, en memoria; crea el bucket en desarrollo si falta). El tipo real se revisa por los **bytes** con `file-type` (no por la extensión); todo se reconvierte a WEBP (1600 px y miniatura de 480 px) y **se pierden los metadatos EXIF, incluido el GPS**. Máximo 5 por publicación con `FOR UPDATE`; si algo falla después de subir a S3, se borran los archivos (S3 no participa de la transacción). El bucket es privado: las imágenes se sirven por `GET /api/imagenes/…`, que no muestra las de publicaciones ocultas. Pendiente: pregunta abierta 13.6 (¿imágenes opcionales en PERDIDO?) y el desenfoque opcional de la regla 6.6.
+- [x] Subida de imágenes: validación, Sharp (miniatura ≤ 200 KB), SeaweedFS (S3). `modules/publicaciones/imagenes.*` + `lib/almacenamiento/` (SDK de AWS con `forcePathStyle`; en `NODE_ENV=test`, en memoria; crea el bucket en desarrollo si falta). El tipo real se revisa por los **bytes** con `file-type` (no por la extensión); todo se reconvierte a WEBP (1600 px y miniatura de 480 px) y **se pierden los metadatos EXIF, incluido el GPS**. Máximo 5 por publicación con `FOR UPDATE`; si algo falla después de subir a S3, se borran los archivos (S3 no participa de la transacción). El bucket es privado: las imágenes se sirven por `GET /api/imagenes/…`, que no muestra las de publicaciones ocultas. Pendiente: el desenfoque opcional de la regla 6.6 (las fotos ya son obligatorias también en PERDIDO, 13.6).
 - [x] Detalle reservado protegido + prueba anti-fuga (6.3). `test/db/api.db-spec.ts` guarda **todas** las respuestas del flujo completo y al final falla si alguna trae `correo`, `hash_contrasena`, `token_hash` o el detalle reservado (salvo `GET /publicaciones/:id/reclamaciones` para la autora).
 - [ ] Cron de expiración a 90 días. **Lógica lista:** `jobs/expiracion.service.ts` (`expirarInactivas`: ACTIVAS con `ultima_actividad < now() - 90 días`, en lotes de 500, una transacción por publicación vía `cambiarEstado`; cuenta como "omitida" la que otra petición cambió antes). Probado con 89, 91 y 200 días y con una EN_RECLAMACION quieta (esa no expira). **Falta:** el programador diario (`node-cron` o `@nestjs/schedule`): dependencia nueva, pendiente de aprobar.
 
@@ -424,7 +425,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
   - `confirmarEntrega` guarda las dos marcas y `fecha_entrega` en un solo `UPDATE`.
   - Bloqueos `FOR UPDATE` en la reclamación y la entrega. Probado: dos aceptaciones simultáneas (gana una y la otra se deshace entera) y dos confirmaciones simultáneas (sin los bloqueos la entrega quedaba abierta para siempre).
   - Chat (`MensajesService`): solo con la reclamación `ACEPTADA` y solo las dos partes; al abrir el hilo se marca como leído lo de la otra parte; solo lectura después de la entrega.
-  - **Falta:** cancelar una reclamación aceptada (pregunta 13.4).
+  - Cancelar una reclamación aceptada (13.4): `ReclamacionesService.cancelar` + botón en el chat con doble confirmación. Probado en `api.db-spec.ts`.
 - [x] Frontend: Mis publicaciones y Mensajes. **Backend:** `modules/mi-cuenta/` con `GET /api/usuarios/me/publicaciones`, `/reclamaciones` y `/conversaciones` (todo sale del id del token; `contraparte` siempre es la otra parte; `no_leidos` = mensajes de la otra parte sin abrir). Probado en `api.db-spec.ts`, dentro de la revisión anti-fuga.
 
 ### Fase H — Coincidencias y notificaciones (RF-23 a RF-25)
@@ -433,11 +434,11 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 
 ### Fase I — Administración (RF-26 a RF-30) · *Hito: alcance completo*
 - [x] Reportes y moderación (`modules/moderacion/`): `POST /reportes` (duplicado pendiente → `REPORTE_DUPLICADO` por el índice parcial), bandeja con `horas_pendiente` y `vencido` (48 h), `OCULTAR` cierra todos los pendientes de esa publicación y avisa a la autora; `FOR UPDATE` contra dos moderadores a la vez.
-- [x] CRUD de catálogos y suspensión de usuarios (`modules/admin/catalogos.*`, `usuarios-admin.service.ts`): las categorías se **desactivan** (no se borran); sede o lugar en uso → 409 `EN_USO`; buscar cuentas por nombre o correo exacto **sin devolver el correo**; suspender/reactivar con auditoría. Recordatorio (Fase D): un JWT ya emitido sigue sirviendo hasta que vence.
+- [x] CRUD de catálogos y suspensión de usuarios (`modules/admin/catalogos.*`, `usuarios-admin.service.ts`): las categorías se **desactivan** (no se borran); sede o lugar en uso → 409 `EN_USO`; buscar cuentas por nombre o correo exacto **sin devolver el correo**; suspender/reactivar con auditoría. Suspender corta la sesión al instante (ver Fase D).
 - [x] Estadísticas (consultas de agregación). `GET /api/admin/estadisticas` (`@Roles('ADMIN')`, `?desde&hasta`) sobre `modules/admin/estadisticas.*`: por mes en **hora de Colombia** (probado con el 31 de enero a las 22:00), tasa de recuperación, categorías frecuentes y lugares críticos.
 
 ### Fase J — Pruebas y calidad
-- [ ] Cobertura ≥ 60 % en los `*.service.ts` del backend (Vitest).
+- [x] Cobertura ≥ 60 % en los `*.service.ts` del backend (Vitest). **87 % de líneas** (2026-11-21) con 270 pruebas unitarias: se agregaron las de `auth`, `gestion`, `imagenes` y `perfil` (antes en 0 %: solo tenían pruebas contra la BD). El límite está en `vitest.config.ts` (`coverage.thresholds`, con `include` para que cuenten también los servicios sin pruebas): `npm run test:cov` falla si baja del 60 %.
 - [ ] Playwright: publicar → reclamar → conversar → entregar.
 - [ ] k6 con 200 usuarios virtuales sobre el listado (RNF-01).
 - [ ] OWASP ZAP + revisión manual de control de acceso.
@@ -463,7 +464,8 @@ hallazgo-ud/
 ├── docs/
 │   ├── propuesta/Aplicacion_Web.pdf
 │   ├── sql/                   ← scripts de aprendizaje (Fase A)
-│   └── api.md
+│   ├── api.md
+│   └── pruebas.md             ← las tres baterías de pruebas, cobertura y cómo escribir una
 ├── backend/
 │   ├── prisma/
 │   │   ├── schema.prisma
@@ -531,6 +533,7 @@ npm run db:seed                      # datos iniciales (se puede repetir sin dup
 npm run db:status                    # qué migraciones están aplicadas
 npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script   # debe salir vacío
 npm test                             # pruebas unitarias (sin BD)
+npm run test:cov                     # unitarias + cobertura de los servicios; falla si baja del 60 % (RNF-14)
 npm run test:db                      # pruebas contra PostgreSQL: cada corrida crea y borra su propia BD (hallazgo_test_<carpeta>_<pid>)
 bash infra/respaldo/respaldar.sh     # (desde la raíz) respaldo de hallazgo_ud en respaldos/
 bash infra/respaldo/restaurar.sh respaldos/<archivo>.dump   # restaura en hallazgo_restaurada para comprobarlo
@@ -547,13 +550,13 @@ cd frontend && npm run build         # compilación de producción. APAGA antes 
 
 ## 13. Preguntas abiertas (resolver con Walter antes de implementar esa parte)
 
-1. **PERDIDO sin flujo de contacto.** La propuesta solo define reclamación sobre ENCONTRADO. Si alguien ve un PERDIDO y *tiene* el objeto, ¿qué hace? Propuesta: un botón "Lo tengo" que lo lleve a crear un ENCONTRADO ya prellenado y vinculado, para que entre al flujo normal.
-2. **"Edificio análogo" (10 % del puntaje de sede).** No está definido. Opción simple: un campo `tipo_lugar` en `lugar` (cafetería, biblioteca, laboratorio…) y comparar ese campo entre sedes.
-3. **¿Quién publica lo que llega a portería?** El personal de vigilancia aparece como usuario objetivo, pero no tiene rol propio. ¿Usan una cuenta normal?
-4. **Revertir una reclamación aceptada.** Si el reclamante no aparece, ¿el autor puede cancelarla y volver a `ACTIVA`? Se asume que sí (sección 6.1), pero hay que confirmarlo.
+1. ~~**PERDIDO sin flujo de contacto.**~~ **Resuelta (2026-11-21):** en la ficha de un PERDIDO, el botón "¡Lo tengo!" abre el asistente de ENCONTRADO con categoría, título y lugar copiados (`/publicar?lo_tengo=<id>`); al publicar, el motor de coincidencias le avisa al dueño (RF-24).
+2. ~~**"Edificio análogo".**~~ **Resuelta (2026-11-21):** columna `lugar.tipo` (enum `tipo_lugar`); misma clase en otra sede = 10 puntos (`puntaje.ts`, `esAnalogo`). La migración `tipo_lugar` clasifica los lugares existentes por su nombre.
+3. ~~**¿Quién publica lo que llega a portería?**~~ **Resuelta (2026-11-21):** una cuenta normal con correo institucional; sin rol propio.
+4. ~~**Revertir una reclamación aceptada.**~~ **Resuelta (2026-11-21):** sí, cualquiera de las partes puede cancelarla (ver §6.2).
 5. ~~**Visitante "lectura limitada".**~~ **Resuelta (2026-11-21):** el visitante ve el catálogo, busca y abre la ficha completa (sin contacto ni detalle reservado), pero no publica, reclama, reporta ni chatea: esas acciones le piden ingresar. Ver sección 2.
-6. **Imágenes en publicaciones PERDIDO.** RF-08 pide "entre una y cinco" imágenes. Para un objeto perdido muchas veces no hay foto. ¿Se vuelven opcionales en ese caso?
-7. **`fecha_suceso` con el reloj del celular.** El CHECK exige `fecha_suceso <= fecha_creacion` (reloj de la BD). Si el celular del usuario va adelantado y reporta "ahora mismo", la publicación se rechaza. Propuesta: el servicio recorta `fecha_suceso` a `min(fecha_suceso, ahora)` antes de guardar y envía `fecha_creacion` desde el mismo reloj (ver la regla de fechas de la Fase C).
+6. ~~**Imágenes en publicaciones PERDIDO.**~~ **Resuelta (2026-11-21):** obligatorias también (al menos una). El asistente sugiere subir la foto de uno igual o parecido. Se exige en el frontend: el backend crea la publicación y recibe las fotos en un segundo paso.
+7. ~~**`fecha_suceso` con el reloj del celular.**~~ **Resuelta (2026-11-21):** hasta 10 minutos en el futuro se toma como "ahora"; más que eso se rechaza (`publicaciones/fecha-suceso.ts`). Todo se guarda en UTC y se muestra en hora de Colombia.
 
 ---
 

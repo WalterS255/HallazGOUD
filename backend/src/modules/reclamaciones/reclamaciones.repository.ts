@@ -122,7 +122,11 @@ export class ReclamacionesRepository {
 
   // fecha_resolucion = now() de la BD: se compara con `fecha` (también de la BD)
   // en chk_reclamacion_fechas. Mismo reloj (regla de fechas).
-  async resolver(tx: Tx, id: number, estado: 'ACEPTADA' | 'RECHAZADA'): Promise<void> {
+  async resolver(
+    tx: Tx,
+    id: number,
+    estado: 'ACEPTADA' | 'RECHAZADA' | 'CANCELADA',
+  ): Promise<void> {
     await tx.$executeRaw`
       UPDATE reclamacion
       SET estado = ${estado}::estado_reclamacion, fecha_resolucion = now()

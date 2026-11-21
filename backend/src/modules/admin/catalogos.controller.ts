@@ -15,6 +15,7 @@ import { z } from 'zod';
 import { Roles, type UsuarioSesion } from '../../comun/autorizacion/roles.js';
 import { UsuarioActual } from '../../comun/autorizacion/sesion.guard.js';
 import { ValidacionZod } from '../../comun/validacion/validacion-zod.pipe.js';
+import { tipo_lugar } from '../../generated/prisma/enums.js';
 import { esquemaId } from '../publicaciones/publicaciones.schemas.js';
 import { CatalogosService } from './catalogos.service.js';
 import { UsuariosAdminService } from './usuarios-admin.service.js';
@@ -36,11 +37,17 @@ const esquemaEditarCategoria = esquemaCategoria
   .partial()
   .extend({ activa: z.boolean().optional() })
   .refine((d) => Object.keys(d).length > 0, { error: 'No enviaste nada para cambiar' });
+const TIPOS_LUGAR = Object.values(tipo_lugar);
 const esquemaSede = z.object({ nombre: texto(80, 'el nombre') });
 const esquemaLugar = z.object({
   id_sede: esquemaId,
   edificio: texto(100, 'el edificio'),
   referencia: z.string().trim().max(200).optional(),
+  // Clase de lugar para el "edificio análogo" del motor de coincidencias (pregunta 13.2).
+  tipo: z
+    .enum(TIPOS_LUGAR, { error: `El tipo debe ser uno de: ${TIPOS_LUGAR.join(', ')}` })
+    .nullable()
+    .optional(),
 });
 const esquemaEditarLugar = esquemaLugar
   .omit({ id_sede: true })

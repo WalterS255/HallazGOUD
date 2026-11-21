@@ -123,6 +123,18 @@ describe('POST /api/publicaciones', () => {
     ]);
   });
 
+  it('reloj del celular 3 min adelantado → se publica con fecha_suceso = fecha_creacion', async () => {
+    const adelantada = new Date(Date.now() + 3 * 60_000).toISOString();
+    const res = await crearComo(await persona(), encontrado({ fecha_suceso: adelantada }));
+    expect(res.status).toBe(201);
+    // Sin el ajuste, el CHECK fecha_suceso <= fecha_creacion la habría rechazado.
+    const p = await prisma.publicacion.findUniqueOrThrow({
+      where: { id: res.body.id },
+      select: { fecha_suceso: true, fecha_creacion: true },
+    });
+    expect(p.fecha_suceso.getTime()).toBe(p.fecha_creacion.getTime());
+  });
+
   it('categoría inactiva o lugar inexistente → 400 con el campo marcado', async () => {
     const inactiva = await prisma.categoria.create({
       data: { nombre: unico('Vieja '), activa: false },

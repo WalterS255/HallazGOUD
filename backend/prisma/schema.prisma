@@ -46,6 +46,19 @@ enum estado_publicacion {
   RETIRADA
 }
 
+// Qué clase de lugar es: permite reconocer un "edificio análogo" en otra sede
+// (motor de coincidencias, 10 de los 20 puntos de sede; pregunta 13.2).
+enum tipo_lugar {
+  BIBLIOTECA
+  CAFETERIA
+  LABORATORIO
+  AUDITORIO
+  AULAS
+  EDIFICIO_PRINCIPAL
+  ADMINISTRATIVO
+  OTRO
+}
+
 enum estado_reclamacion {
   PENDIENTE
   ACEPTADA
@@ -137,10 +150,11 @@ model sede {
 }
 
 model lugar {
-  id         Int     @id @default(autoincrement())
+  id         Int         @id @default(autoincrement())
   id_sede    Int
-  edificio   String  @db.VarChar(100)
-  referencia String? @db.VarChar(200)
+  edificio   String      @db.VarChar(100)
+  referencia String?     @db.VarChar(200)
+  tipo       tipo_lugar?
 
   sede          sede          @relation(fields: [id_sede], references: [id])
   publicaciones publicacion[]

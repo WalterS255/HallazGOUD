@@ -28,15 +28,26 @@ type Datos = {
 };
 
 // Asistente en 3 pasos (sección 7.6 de la propuesta, RNF-03). Crea la publicación y después sube las fotos.
-export function AsistentePublicacion({ tipoInicial, catalogos }: { tipoInicial: TipoPublicacion; catalogos: Catalogos }) {
+/** "¡Lo tengo!" (pregunta 13.1): datos copiados del PERDIDO para no escribirlos de nuevo. */
+export type Prellenado = { desde: { id: number; titulo: string }; titulo: string; id_categoria: number; id_lugar: number | null };
+
+export function AsistentePublicacion({
+  tipoInicial,
+  catalogos,
+  prellenado,
+}: {
+  tipoInicial: TipoPublicacion;
+  catalogos: Catalogos;
+  prellenado?: Prellenado;
+}) {
   const router = useRouter();
   const [paso, setPaso] = useState(0);
   const [d, setD] = useState<Datos>({
     tipo: tipoInicial,
-    titulo: '',
-    id_categoria: '',
+    titulo: prellenado?.titulo ?? '',
+    id_categoria: prellenado ? String(prellenado.id_categoria) : '',
     descripcion: '',
-    id_lugar: '',
+    id_lugar: prellenado?.id_lugar ? String(prellenado.id_lugar) : '',
     fecha: hoyColombia(),
     hora: '',
     detalle_reservado: '',
@@ -73,7 +84,9 @@ export function AsistentePublicacion({ tipoInicial, catalogos }: { tipoInicial: 
       if (d.fecha && d.hora && new Date(aFechaSuceso(d.fecha, d.hora)) > new Date()) e.fecha = 'La fecha no puede estar en el futuro';
     } else {
       if (hallazgo && d.detalle_reservado.trim().length < 3) e.detalle_reservado = 'Registra un detalle que sólo el dueño conocería';
-      if (hallazgo && fotos.length === 0) e.imagenes = 'Agrega al menos una foto del objeto';
+      // RF-08 · pregunta 13.6 (2026-11-21): al menos una foto también en un PERDIDO.
+      if (fotos.length === 0)
+        e.imagenes = hallazgo ? 'Agrega al menos una foto del objeto' : 'Agrega al menos una foto: del objeto o de uno parecido';
     }
     setErrores(e);
     return Object.keys(e).length === 0;
@@ -145,6 +158,12 @@ export function AsistentePublicacion({ tipoInicial, catalogos }: { tipoInicial: 
   return (
     <div className="wizard">
       <h1 className="titulo-pagina">Nueva publicación</h1>
+      {prellenado && (
+        <p className="note note-info">
+          Estás publicando el hallazgo de «{prellenado.desde.titulo}». Copiamos la categoría, el título y el lugar:
+          revísalos, agrega una foto y el detalle reservado. Al publicar, le avisamos a quien lo perdió.
+        </p>
+      )}
       <ol className="wsteps" aria-label="Pasos">
         {PASOS.map((n, i) => (
           <li key={n} aria-current={i === paso ? 'step' : undefined} className={i < paso ? 'done' : ''}>
@@ -255,8 +274,13 @@ export function AsistentePublicacion({ tipoInicial, catalogos }: { tipoInicial: 
             )}
             <div>
               <span className="label">
-                Fotos {hallazgo ? '' : '(opcional)'} · hasta {MAX_IMAGENES}, JPG, PNG o WEBP de máximo 5 MB
+                Fotos · hasta {MAX_IMAGENES}, JPG, PNG o WEBP de máximo 5 MB
               </span>
+              {!hallazgo && (
+                <p className="muted small">
+                  ¿No tienes una foto de tu objeto? Sube una de uno igual o parecido: ayuda a que quien lo encuentre lo reconozca.
+                </p>
+              )}
               <div className="photos">
                 {vistas.map((src, i) => (
                   <div key={src} className="photo">

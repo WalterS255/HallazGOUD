@@ -153,6 +153,53 @@ export class ReclamacionesService {
     });
   }
 
+  // Pregunta 13.4 (decidida 2026-11-21): cualquiera de las dos partes cancela una
+  // reclamación ACEPTADA cuya entrega no se completó (p. ej., el reclamante no aparece).
+  // La publicación vuelve a ACTIVA (§6.1), el chat se cierra (§6.4: solo existe con
+  // ACEPTADA) y las demás reclamaciones pendientes siguen esperando. Una transacción.
+  async cancelar(id_reclamacion: number, id_usuario: number, ip?: string | null): Promise<void> {
+    const { r, otraParte } = await this.repo.enTransaccion(async (tx) => {
+      const r = await this.repo.bloquear(tx, id_reclamacion);
+      const esParte = !!r && (id_usuario === r.id_autor || id_usuario === r.id_reclamante);
+      if (!r || !esParte) {
+        throw prohibido('Solo las dos partes pueden cancelar esta reclamación.');
+      }
+      if (r.estado !== 'ACEPTADA') {
+        throw conflicto('SIN_ENTREGA', 'Solo se puede cancelar una reclamación aceptada.');
+      }
+      const entrega = await this.repo.bloquearEntrega(tx, r.id);
+      if (entrega?.fecha_entrega) {
+        throw conflicto('ENTREGA_CERRADA', 'La entrega ya se confirmó: no se puede cancelar.');
+      }
+
+      await this.repo.resolver(tx, r.id, 'CANCELADA');
+      await this.publicaciones.cambiarEstadoEn(tx, r.id_publicacion, 'ACTIVA', {
+        id_usuario,
+        ip,
+      });
+      await this.auditoria.registrar(
+        {
+          accion: 'RECLAMACION_CANCELADA',
+          entidad: 'reclamacion',
+          id_entidad: r.id,
+          id_usuario,
+          detalle: { id_publicacion: r.id_publicacion, id_reclamante: r.id_reclamante },
+          ip,
+        },
+        tx,
+      );
+      return { r, otraParte: id_usuario === r.id_autor ? r.id_reclamante : r.id_autor };
+    });
+
+    await this.notificaciones.avisar({
+      id_usuario: otraParte,
+      tipo: 'ESTADO',
+      mensaje: `La reclamación sobre «${r.titulo}» se canceló: la entrega ya no sigue en curso.`,
+      id_referencia: r.id,
+      ruta: `/publicaciones/${r.id_publicacion}`,
+    });
+  }
+
   // RF-21 · §6.5: cada parte confirma; con las dos, la publicación pasa a ENTREGADA.
   async confirmarEntrega(
     id_reclamacion: number,

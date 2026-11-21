@@ -3,7 +3,7 @@
 
 export type TipoPublicacion = 'PERDIDO' | 'ENCONTRADO';
 export type EstadoPublicacion = 'ACTIVA' | 'EN_RECLAMACION' | 'ENTREGADA' | 'EXPIRADA' | 'RETIRADA';
-export type EstadoReclamacion = 'PENDIENTE' | 'ACEPTADA' | 'RECHAZADA';
+export type EstadoReclamacion = 'PENDIENTE' | 'ACEPTADA' | 'RECHAZADA' | 'CANCELADA';
 export type Rol = 'USUARIO' | 'MODERADOR' | 'ADMIN';
 /** Fecha ISO 8601 tal como llega en el JSON. */
 export type FechaISO = string;

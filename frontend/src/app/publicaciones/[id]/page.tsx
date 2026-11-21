@@ -127,13 +127,13 @@ export default async function DetallePublicacionPage({ params }: Props) {
               p.estado === 'ACTIVA' && <FormReclamar publicacionId={p.id} autor={p.usuario.nombre} />
             ))}
 
-          {usuario && !esAutor && p.tipo === 'PERDIDO' && abierta && (
-            <div className="panel small">
-              ¿Lo encontraste?{' '}
-              <Link href="/publicar?tipo=ENCONTRADO" className="link">
-                Publica el hallazgo
-              </Link>{' '}
-              y el sistema le avisará a {p.usuario.nombre}.
+          {/* "¡Lo tengo!" (pregunta 13.1): abre el asistente de hallazgo ya prellenado. */}
+          {usuario && !esAutor && p.tipo === 'PERDIDO' && p.estado === 'ACTIVA' && (
+            <div className="panel stack">
+              <p className="small">¿Tienes este objeto? Publica el hallazgo y le avisaremos a {p.usuario.nombre}.</p>
+              <Link href={`/publicar?lo_tengo=${p.id}`} className="btn btn-primary">
+                ¡Lo tengo!
+              </Link>
             </div>
           )}
 

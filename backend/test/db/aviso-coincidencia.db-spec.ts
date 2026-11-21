@@ -91,3 +91,48 @@ describe('aviso de coincidencia al publicar (RF-24)', () => {
     expect((await avisosDe('beto')).length).toBe(antes);
   });
 });
+
+describe('edificio análogo en otra sede (pregunta 13.2)', () => {
+  it('biblioteca de otra sede suma 10 de los 20 puntos de sede; una cafetería, 0', async () => {
+    // Clase de lugar BIBLIOTECA en dos sedes distintas, y una cafetería.
+    const crearLugar = async (edificio: string, tipo: 'BIBLIOTECA' | 'CAFETERIA') => {
+      const sede = await prisma.sede.create({ data: { nombre: unico('Sede 13.2 ') } });
+      return (await prisma.lugar.create({ data: { id_sede: sede.id, edificio, tipo } })).id;
+    };
+    const bibliotecaA = await crearLugar('Biblioteca', 'BIBLIOTECA');
+    const bibliotecaB = await crearLugar('Biblioteca central', 'BIBLIOTECA');
+    const cafeteriaC = await crearLugar('Cafetería', 'CAFETERIA');
+
+    const perdido = await publicar('ana', {
+      tipo: 'PERDIDO',
+      id_lugar: bibliotecaA,
+      titulo: 'Perdí mi termo plateado',
+      descripcion: 'Termo plateado con tapa azul',
+    }).expect(201);
+    const enBiblioteca = await publicar('beto', {
+      tipo: 'ENCONTRADO',
+      id_lugar: bibliotecaB,
+      titulo: 'Termo plateado encontrado',
+      descripcion: 'Termo plateado con tapa azul',
+      detalle_reservado: 'tiene un rayón',
+    }).expect(201);
+    const enCafeteria = await publicar('beto', {
+      tipo: 'ENCONTRADO',
+      id_lugar: cafeteriaC,
+      titulo: 'Termo plateado encontrado',
+      descripcion: 'Termo plateado con tapa azul',
+      detalle_reservado: 'tiene un rayón',
+    }).expect(201);
+
+    const res = await http
+      .get(`/api/publicaciones/${perdido.body.id}/coincidencias`)
+      .set('Authorization', `Bearer ${tokens.ana}`)
+      .expect(200);
+    const sedeDe = (id: number) =>
+      (res.body as { id_publicacion: number; puntaje: { sede: number } }[]).find(
+        (c) => c.id_publicacion === id,
+      )?.puntaje.sede;
+    expect(sedeDe(enBiblioteca.body.id)).toBe(10);
+    expect(sedeDe(enCafeteria.body.id)).toBe(0);
+  });
+});

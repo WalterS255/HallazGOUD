@@ -18,7 +18,7 @@ export class CoincidenciasRepository {
     // SQL a mano porque Prisma no sabe leer columnas tsvector (Unsupported):
     // tsvector_to_array convierte los lexemas en un arreglo de texto.
     const filas = await this.prisma.$queryRaw<Publicacion[]>`
-      SELECT p.id, p.tipo::text AS tipo, p.id_usuario, p.id_categoria, l.id_sede,
+      SELECT p.id, p.tipo::text AS tipo, p.id_usuario, p.id_categoria, l.id_sede, l.tipo::text AS tipo_lugar,
              p.fecha_suceso, tsvector_to_array(p.busqueda) AS palabras
       FROM publicacion p
       JOIN lugar l ON l.id = p.id_lugar
@@ -30,7 +30,7 @@ export class CoincidenciasRepository {
   // idx_publicacion_coincidencias. El puntaje se calcula después, solo sobre estos.
   async buscarCandidatos(ref: Publicacion): Promise<Publicacion[]> {
     return this.prisma.$queryRaw<Publicacion[]>`
-      SELECT c.id, c.tipo::text AS tipo, c.id_usuario, c.id_categoria, l.id_sede,
+      SELECT c.id, c.tipo::text AS tipo, c.id_usuario, c.id_categoria, l.id_sede, l.tipo::text AS tipo_lugar,
              c.fecha_suceso, tsvector_to_array(c.busqueda) AS palabras
       FROM publicacion c
       JOIN lugar l ON l.id = c.id_lugar
