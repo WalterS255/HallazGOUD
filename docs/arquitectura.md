@@ -78,7 +78,7 @@ Cada pieza recibe la siguiente por el **constructor** (inyección de dependencia
 | `modules/notificaciones` | Avisos en la app y por correo (global) |
 | `modules/moderacion` | Reportes y bandeja del moderador |
 | `modules/admin` | Catálogos, cuentas y estadísticas |
-| `jobs` | Expiración a 90 días (lógica lista; falta el programador diario) |
+| `jobs` | Expiración a 90 días (`expiracion.service.ts`) y el reloj que la dispara cada día a las 3:00 a. m. hora de Colombia (`programador.service.ts`, con `node-cron`) |
 | `lib/prisma` | Cliente de Prisma como provider global |
 | `lib/auditoria` | Registro en `auditoria`, dentro de la misma transacción |
 | `lib/correo` | Envío de correos y plantillas |
@@ -139,7 +139,7 @@ Ejemplo: `PATCH /api/reclamaciones/7` con `{ "decision": "ACEPTAR" }`.
 | `npm run test:e2e` | La app completa por HTTP (salud, errores, roles, límites) | La de desarrollo, solo lectura |
 | `npm run test:db` | Flujos completos por HTTP y restricciones, contra PostgreSQL real | Crea `hallazgo_test_<carpeta>_<pid>` y la **borra al terminar** |
 
-Estado (2026-11-21): **270 unitarias, 26 e2e y 142 contra la base**, todas en verde; cobertura de los servicios: 87 % (mínimo 60 %, `npm run test:cov`). Detalle de cada archivo y cómo escribir una prueba: [`pruebas.md`](pruebas.md).
+Estado (2026-11-21): **276 unitarias, 26 e2e y 142 contra la base**, todas en verde; cobertura de los servicios: 87 % (mínimo 60 %, `npm run test:cov`). Detalle de cada archivo y cómo escribir una prueba: [`pruebas.md`](pruebas.md).
 
 Para que dos corridas no se pisen, cada una usa su propia base. Pero `npm install` y las pruebas **no deben correr a la vez en la misma carpeta**: se pisan `node_modules` y el cliente de Prisma queda a medias (síntoma: *"Property '$queryRaw' does not exist"*; arreglo: `npx prisma generate`).
 
