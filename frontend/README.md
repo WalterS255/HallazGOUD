@@ -81,12 +81,12 @@ src/lib/formato.ts       Fechas, folios, íconos de categoría y enlaces de los 
 | Detalle: galería, reclamar, reportar; para el autor: reclamaciones, coincidencias, fotos, retirar | `/publicaciones/[id]` | ✅ |
 | Asistente de publicación en 3 pasos | `/publicar` | ✅ |
 | Registro, ingreso, activación, recuperación | `/registro`, `/login`, `/verificar/[token]`, `/recuperar`, `/restablecer/[token]` | ✅ |
-| Chat y doble confirmación de entrega | `/mensajes/[id]` | ✅ |
+| Chat y doble confirmación de entrega (sabe quién ya confirmó, con `GET /reclamaciones/:id`) | `/mensajes/[id]` | ✅ |
 | Notificaciones | `/notificaciones` | ✅ |
 | Perfil con foto | `/perfil` | ✅ |
 | Moderación y estadísticas | `/admin` | ✅ (falta la gestión de catálogos y cuentas) |
-| Mis publicaciones y mis reclamaciones | `/mis-publicaciones` | ⏳ espera `GET /usuarios/me/publicaciones` y `/reclamaciones` |
-| Lista de chats | `/mensajes` | ⏳ espera `GET /usuarios/me/conversaciones` |
+| Mis publicaciones y mis reclamaciones | `/mis-publicaciones` | ✅ |
+| Lista de chats | `/mensajes` | ✅ |
 | Editar publicación | — | ⬜ |
 
 ## Reglas que respeta

@@ -83,6 +83,19 @@ export type ReclamacionRecibida = {
   fecha_resolucion: FechaISO | null;
   reclamante: Persona;
 };
+/** GET /reclamaciones/:id (partes): ficha para el chat. */
+export type ReclamacionDetalle = {
+  id: number;
+  estado: EstadoReclamacion;
+  fecha: FechaISO;
+  fecha_resolucion: FechaISO | null;
+  publicacion: { id: number; titulo: string; estado: EstadoPublicacion };
+  autor: Persona;
+  reclamante: Persona;
+  soy: 'AUTOR' | 'RECLAMANTE';
+  entrega: { confirmo_autor: boolean; confirmo_reclamante: boolean; fecha_entrega: FechaISO | null } | null;
+};
+
 export type ReclamacionesDePublicacion = { detalle_reservado: string | null; reclamaciones: ReclamacionRecibida[] };
 
 export type Mensaje = { id: number; contenido: string; leido: boolean; fecha_envio: FechaISO; emisor: Persona };

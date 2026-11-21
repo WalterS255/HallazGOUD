@@ -413,8 +413,8 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 
 ### Fase F — Consulta (RF-13 a RF-17) · *Hito: demostración funcional*
 - [x] Listado con filtros combinados, búsqueda de texto, orden por relevancia y paginación. `GET /api/publicaciones` (público, `?…` validado con Zod) y `GET /api/publicaciones/:id` sobre `CatalogoService` (Prisma.sql parametrizado, lista cerrada de campos públicos). Pendiente: qué ve exactamente un visitante (pregunta 13.5).
-- [ ] Frontend: Inicio, Catálogo, Detalle y asistente de publicación en 3 pasos.
-- [ ] **Hito:** un usuario puede publicar y encontrar un objeto de punta a punta.
+- [x] Frontend: Inicio, Catálogo, Detalle y asistente de publicación en 3 pasos (Next.js, `frontend/`).
+- [x] **Hito:** un usuario puede publicar y encontrar un objeto de punta a punta. Recorrido hecho en el navegador a 340 px (2026-11-21): publicar con foto → buscar → reclamar → aceptar → chatear → doble confirmación → ENTREGADA, con avisos en la app y por correo. Arreglado en ese recorrido: el chat leía mal quién ya confirmó (ahora usa `GET /reclamaciones/:id`) y el texto oculto "sin leer" del menú estiraba la página en el celular (`.nav { position: relative }`).
 
 ### Fase G — Reclamación, chat y entrega (RF-18 a RF-22)
 - [x] Reclamar, aceptar o rechazar, chat y doble confirmación. Rutas: `POST/GET /api/publicaciones/:id/reclamaciones`, `PATCH /api/reclamaciones/:id`, `GET/POST /api/reclamaciones/:id/mensajes`, `POST /api/reclamaciones/:id/entrega`. Servicios en `modules/reclamaciones/`:
@@ -425,7 +425,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
   - Bloqueos `FOR UPDATE` en la reclamación y la entrega. Probado: dos aceptaciones simultáneas (gana una y la otra se deshace entera) y dos confirmaciones simultáneas (sin los bloqueos la entrega quedaba abierta para siempre).
   - Chat (`MensajesService`): solo con la reclamación `ACEPTADA` y solo las dos partes; al abrir el hilo se marca como leído lo de la otra parte; solo lectura después de la entrega.
   - **Falta:** cancelar una reclamación aceptada (pregunta 13.4).
-- [ ] Frontend: Mis publicaciones y Mensajes. **Backend listo:** `modules/mi-cuenta/` con `GET /api/usuarios/me/publicaciones`, `/reclamaciones` y `/conversaciones` (todo sale del id del token; `contraparte` siempre es la otra parte; `no_leidos` = mensajes de la otra parte sin abrir). Probado en `api.db-spec.ts`, dentro de la revisión anti-fuga.
+- [x] Frontend: Mis publicaciones y Mensajes. **Backend:** `modules/mi-cuenta/` con `GET /api/usuarios/me/publicaciones`, `/reclamaciones` y `/conversaciones` (todo sale del id del token; `contraparte` siempre es la otra parte; `no_leidos` = mensajes de la otra parte sin abrir). Probado en `api.db-spec.ts`, dentro de la revisión anti-fuga.
 
 ### Fase H — Coincidencias y notificaciones (RF-23 a RF-25)
 - [x] Función de puntaje pura + pruebas con casos límite (día 0, día 7, día 8). `modules/coincidencias/`: `puntaje.ts` (pura), repositorio con el prefiltro SQL y servicio que sirve en los dos sentidos. Endpoint `GET /api/publicaciones/:id/coincidencias` **solo para el autor** (`sugerenciasParaAutor`; antes cualquiera con sesión podía ver las de otros). **RF-24:** al crear un ENCONTRADO, `GestionService.crear` llama a `alPublicarEncontrado` después de la transacción (nunca lanza): un aviso por autor de PERDIDO compatible.

@@ -160,6 +160,10 @@
     color: var(--fg);
   }
   .nav {
+    /* relative: el texto oculto "sin leer" del contador usa sr-only (position: absolute).
+       Sin esto se ubicaba respecto a la página, escapaba del recorte del menú y en el
+       celular estiraba TODA la página hacia la derecha (scroll horizontal, RNF-04). */
+    position: relative;
     display: flex;
     gap: 4px;
     overflow-x: auto;
