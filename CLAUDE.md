@@ -464,7 +464,8 @@ hallazgo-ud/
 ├── docs/
 │   ├── propuesta/Aplicacion_Web.pdf
 │   ├── sql/                   ← scripts de aprendizaje (Fase A)
-│   └── api.md
+│   ├── api.md
+│   └── pruebas.md             ← las tres baterías de pruebas, cobertura y cómo escribir una
 ├── backend/
 │   ├── prisma/
 │   │   ├── schema.prisma

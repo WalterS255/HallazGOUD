@@ -112,10 +112,13 @@ Se ejecutan dentro de `backend/`.
 | `npm run start:dev` | Arranca en modo desarrollo |
 | `npm test` | Pruebas unitarias (`*.spec.ts`) |
 | `npm run test:e2e` | Pruebas de punta a punta (`test/*.e2e-spec.ts`) |
-| `npm run test:cov` | Pruebas con reporte de cobertura |
+| `npm run test:db` | Pruebas contra PostgreSQL real (necesita `docker compose up -d`) |
+| `npm run test:cov` | Unitarias + cobertura de los servicios; **falla si baja del 60 %** (RNF-14) |
 | `npm run lint` | Lint completo, revisando tipos (~20 s) |
 | `npm run format` | Formatea todo con Prettier |
 | `npm run build` | Compila TypeScript a `dist/` |
+
+Qué prueba cada archivo y cómo escribir una prueba nueva: [`docs/pruebas.md`](docs/pruebas.md).
 
 ## Cómo trabajamos en equipo (ramas y Pull Requests)
 
