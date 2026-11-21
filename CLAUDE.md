@@ -149,7 +149,7 @@ No cambiar sin preguntar.
 | Tema | Decisión | Por qué |
 |---|---|---|
 | Arquitectura | **Monolito modular en capas**, cliente-servidor, API REST | Volumen bajo (decenas de miles de registros); los microservicios serían sobreingeniería |
-| Frontend | React 18 + Vite + Tailwind CSS + React Router | Ecosistema maduro y diseño responsivo rápido |
+| Frontend | **Next.js 15** (App Router) + React 19 + Tailwind CSS 4 + TypeScript | **Cambio propuesto (2026-11-18), pendiente de aprobación de Walter en el PR:** antes era React 18 + Vite + React Router. Next.js sigue siendo React, trae el enrutamiento por carpetas (reemplaza a React Router) y un servidor propio que hace de proxy hacia la API: sin CORS y con el JWT en una cookie `httpOnly` que el JavaScript del navegador no puede leer. Las páginas se arman en el servidor, lo que ayuda en celulares lentos (RNF-01, RNF-04). TypeScript, igual que el backend |
 | Backend | **NestJS 12 + TypeScript** sobre Node.js 24 LTS (por debajo usa Express 5). ES modules: los `import` locales terminan en `.js` aunque el archivo sea `.ts` | **Cambio (2026-10-25):** antes era Express "a mano". Nest trae de fábrica módulos, inyección de dependencias y capas, que encajan con el monolito modular. TypeScript porque es lo que usan la documentación y la CLI de Nest |
 | Validación | Zod, aplicado con un *Pipe* de Nest (no class-validator) | Valida la entrada de cada endpoint con un esquema; el mismo esquema puede reusarse en el frontend |
 | ORM | Prisma | Migraciones versionadas y protección contra inyección SQL |
@@ -531,7 +531,7 @@ bash infra/respaldo/restaurar.sh respaldos/<archivo>.dump   # restaura en hallaz
 npm run lint                         # lint completo con tipos (~23 s)
 npm run format:check                 # ¿todo está formateado? (no cambia nada)
 npm install                          # en la RAÍZ: instala husky y activa el hook de pre-commit
-cd frontend && npm run dev           # frontend en http://localhost:5173
+cd frontend && npm run dev           # frontend (Next.js) en http://localhost:3001
 ```
 
 ---

@@ -1,0 +1,4 @@
+# Específico de Next.js (el .gitignore de la raíz ya cubre node_modules y .env)
+.next/
+out/
+next-env.d.ts
