@@ -31,10 +31,13 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
+    // Inicia sesión una vez por usuario y la guarda (e2e/sesiones.setup.ts).
+    { name: 'sesiones', testMatch: 'sesiones.setup.ts' },
     {
       // Mobile first (RNF-04): la pantalla de un celular pequeño, 360 px de ancho.
       name: 'celular',
       use: { ...devices['Desktop Chrome'], viewport: { width: 360, height: 780 }, isMobile: false },
+      dependencies: ['sesiones'],
     },
   ],
   // Si el backend y el frontend ya están encendidos, los usa; si no, los arranca.

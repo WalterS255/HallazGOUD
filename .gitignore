@@ -30,6 +30,7 @@ infra/seguridad/informes/
 
 # Pruebas E2E (Playwright)
 playwright-report/
+frontend/e2e/.auth/
 test-results/
 
 # Respaldos de la BD: contienen datos personales, nunca al repositorio

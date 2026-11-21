@@ -26,6 +26,21 @@ export function aFechaSuceso(fecha: string, hora: string) {
   return `${fecha}T${hora}:00-05:00`;
 }
 
+/** Lo contrario de aFechaSuceso: un ISO (UTC) → fecha AAAA-MM-DD y hora HH:MM de Colombia. */
+export function aFechaYHoraColombia(iso: string): { fecha: string; hora: string } {
+  const partes = new Intl.DateTimeFormat('en-CA', {
+    timeZone: ZONA,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date(iso));
+  const v = (t: string) => partes.find((p) => p.type === t)?.value ?? '';
+  return { fecha: `${v('year')}-${v('month')}-${v('day')}`, hora: `${v('hour')}:${v('minute')}` };
+}
+
 /** Hoy en Colombia como AAAA-MM-DD (atributo max de los input date). */
 export function hoyColombia() {
   return new Intl.DateTimeFormat('en-CA', { timeZone: ZONA }).format(new Date());
@@ -40,8 +55,9 @@ export function folio(id: number) {
   return `HG-${String(id).padStart(4, '0')}`;
 }
 
-/** El backend guarda el ícono como un nombre (p. ej. "id-card"); aquí se muestra como emoji. */
-const ICONOS: Record<string, string> = {
+/** El backend guarda el ícono como un nombre (p. ej. "id-card"); aquí se muestra como emoji.
+ *  También es la lista de íconos que ofrece el admin al crear una categoría. */
+export const ICONOS_CATEGORIA: Record<string, string> = {
   laptop: '💻',
   'id-card': '🪪',
   'credit-card': '💳',
@@ -52,7 +68,7 @@ const ICONOS: Record<string, string> = {
   box: '📦',
 };
 export function iconoCategoria(icono: string | null | undefined) {
-  return (icono && ICONOS[icono]) || '📦';
+  return (icono && ICONOS_CATEGORIA[icono]) || '📦';
 }
 
 /** Nombre de categoría → emoji. El catálogo de publicaciones trae la categoría sólo por nombre. */

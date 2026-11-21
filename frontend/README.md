@@ -84,10 +84,12 @@ src/lib/formato.ts       Fechas, folios, íconos de categoría y enlaces de los 
 | Chat y doble confirmación de entrega (sabe quién ya confirmó, con `GET /reclamaciones/:id`) | `/mensajes/[id]` | ✅ |
 | Notificaciones | `/notificaciones` | ✅ |
 | Perfil con foto | `/perfil` | ✅ |
-| Moderación y estadísticas | `/admin` | ✅ (falta la gestión de catálogos y cuentas) |
+| Moderación y estadísticas | `/admin` | ✅ |
+| Catálogos: categorías, sedes y lugares (con tipo de lugar) — solo ADMIN | `/admin/catalogos` | ✅ |
+| Cuentas: buscar, suspender y reactivar — solo ADMIN | `/admin/cuentas` | ✅ |
 | Mis publicaciones y mis reclamaciones | `/mis-publicaciones` | ✅ |
 | Lista de chats | `/mensajes` | ✅ |
-| Editar publicación | — | ⬜ |
+| Editar publicación (el detalle reservado se bloquea si ya hay reclamaciones) | `/publicaciones/[id]/editar` | ✅ |
 
 ## Reglas que respeta
 

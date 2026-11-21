@@ -31,9 +31,31 @@ export type Perfil = {
 
 // §5 Catálogos
 export type Categoria = { id: number; nombre: string; icono: string | null; sensible: boolean };
-export type LugarCatalogo = { id: number; edificio: string; referencia: string | null };
+/** Clase de lugar: da el "edificio análogo" del motor de coincidencias (pregunta 13.2). */
+export type TipoLugar =
+  | 'BIBLIOTECA'
+  | 'CAFETERIA'
+  | 'LABORATORIO'
+  | 'AUDITORIO'
+  | 'AULAS'
+  | 'EDIFICIO_PRINCIPAL'
+  | 'ADMINISTRATIVO'
+  | 'OTRO';
+export type LugarCatalogo = { id: number; edificio: string; referencia: string | null; tipo: TipoLugar | null };
 export type Sede = { id: number; nombre: string; lugares: LugarCatalogo[] };
 export type Catalogos = { categorias: Categoria[]; sedes: Sede[] };
+/** GET /admin/categorias: todas, también las desactivadas (RF-28). */
+export type CategoriaAdmin = Categoria & { activa: boolean };
+/** GET /admin/usuarios?q= (RF-29). Sin correo, a propósito. */
+export type CuentaAdmin = {
+  id: number;
+  nombre: string | null;
+  programa: string | null;
+  rol: Rol;
+  estado_cuenta: 'ACTIVA' | 'SUSPENDIDA' | 'ELIMINADA';
+  verificado: boolean;
+  fecha_registro: FechaISO;
+};
 
 // §6 Publicaciones
 /** Fila del catálogo (GET /publicaciones). */

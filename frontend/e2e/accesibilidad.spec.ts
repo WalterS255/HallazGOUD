@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type Browser, type BrowserContext, expect, type Page, test } from '@playwright/test';
-import { AUTORA, iniciarSesion, RECLAMANTE } from './ayudas';
+import { ADMIN, archivoSesion, AUTORA, RECLAMANTE } from './ayudas';
 
 // Fase J · RNF-05 (WCAG 2.1 AA) y RNF-04 (responsivo desde 360 px).
 // axe-core revisa cada pantalla con las reglas automáticas de WCAG 2.1 A y AA:
@@ -12,9 +12,14 @@ import { AUTORA, iniciarSesion, RECLAMANTE } from './ayudas';
 const REGLAS_WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const TEMAS = ['dark', 'light'] as const;
 
-type Pantalla = { nombre: string; ruta: string | (() => string); quien: 'visitante' | 'usuario' | 'moderador' };
+type Pantalla = {
+  nombre: string;
+  ruta: string | (() => string);
+  quien: 'visitante' | 'usuario' | 'moderador' | 'admin';
+};
 
 let idPublicacion = 0;
+let idEditable = 0; // una publicación ACTIVA de la autora, para la pantalla de edición
 const PANTALLAS: Pantalla[] = [
   { nombre: 'Inicio', ruta: '/', quien: 'visitante' },
   { nombre: 'Catálogo', ruta: '/publicaciones', quien: 'visitante' },
@@ -29,30 +34,35 @@ const PANTALLAS: Pantalla[] = [
   { nombre: 'Mensajes', ruta: '/mensajes', quien: 'usuario' },
   { nombre: 'Notificaciones', ruta: '/notificaciones', quien: 'usuario' },
   { nombre: 'Perfil', ruta: '/perfil', quien: 'usuario' },
+  { nombre: 'Editar publicación', ruta: () => `/publicaciones/${idEditable}/editar`, quien: 'usuario' },
   { nombre: 'Administración', ruta: '/admin', quien: 'moderador' },
+  { nombre: 'Catálogos (admin)', ruta: '/admin/catalogos', quien: 'admin' },
+  { nombre: 'Cuentas (admin)', ruta: '/admin/cuentas?q=Prueba', quien: 'admin' },
 ];
 
-// Una sesión por persona para TODA la revisión (el login permite 5 por minuto).
+// Una sesión por persona para TODA la revisión, tomada de e2e/sesiones.setup.ts.
 // Sin modo 'serial': ese modo se salta todas las pruebas que siguen a un fallo.
 // Las sesiones se comparten igual porque hay un solo trabajador (playwright.config.ts).
 const contextos: Partial<Record<Pantalla['quien'], BrowserContext>> = {};
 
 async function contextoDe(browser: Browser, quien: Pantalla['quien']): Promise<BrowserContext> {
   if (!contextos[quien]) {
-    const ctx = await browser.newContext();
-    if (quien !== 'visitante') {
-      await iniciarSesion(await ctx.newPage(), quien === 'usuario' ? AUTORA : RECLAMANTE);
-    }
-    contextos[quien] = ctx;
+    const correo = quien === 'visitante' ? null : { usuario: AUTORA, moderador: RECLAMANTE, admin: ADMIN }[quien];
+    // Sesión ya iniciada por e2e/sesiones.setup.ts; el visitante entra sin sesión.
+    contextos[quien] = await browser.newContext(correo ? { storageState: archivoSesion(correo) } : {});
   }
   return contextos[quien]!;
 }
 
-test.beforeAll(async ({ request }) => {
+test.beforeAll(async ({ request, browser }) => {
   // Una publicación cualquiera para revisar la ficha.
   const res = await request.get('/api/publicaciones?limite=1');
   idPublicacion = (await res.json()).datos[0]?.id;
   expect(idPublicacion, 'Hace falta al menos una publicación ACTIVA (corre el recorrido)').toBeTruthy();
+  const usuario = await contextoDe(browser, 'usuario');
+  const mias = (await (await usuario.request.get('/api/usuarios/me/publicaciones')).json()) as { id: number; estado: string }[];
+  idEditable = mias.find((p) => p.estado === 'ACTIVA')?.id ?? 0;
+  expect(idEditable, 'La autora necesita una publicación ACTIVA (corre editar.spec)').toBeTruthy();
 });
 
 test.afterAll(async () => {

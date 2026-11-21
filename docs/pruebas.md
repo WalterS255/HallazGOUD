@@ -2,7 +2,7 @@
 
 Cómo están organizadas las pruebas de HallazGO UD, cómo se corren, qué prueba cada archivo y cómo escribir una nueva. Para la arquitectura general ver [`arquitectura.md`](arquitectura.md).
 
-**Estado (2026-11-21):** 280 pruebas unitarias, 26 e2e y 142 contra PostgreSQL, todas en verde. Cobertura de los servicios: **87 % de líneas** (el mínimo exigido es 60 %, RNF-14).
+**Estado (2026-11-21):** 282 pruebas unitarias, 27 e2e, 144 contra PostgreSQL y 48 de Playwright, todas en verde. Cobertura de los servicios: **87 % de líneas** (el mínimo exigido es 60 %, RNF-14).
 
 ---
 
@@ -76,7 +76,7 @@ auth.service.ts    |     100 |    96.15 |     100 |     100 | 194,242
 
 ## 4. Qué prueba cada archivo
 
-### Unitarias (280)
+### Unitarias (282)
 
 | Área | Archivos (pruebas) | Qué cubren |
 |---|---|---|
@@ -85,7 +85,7 @@ auth.service.ts    |     100 |    96.15 |     100 |     100 | 194,242
 | Reclamaciones y chat | `reclamaciones.service` (12), `mensajes.service` (7) | Reglas de §6.2 y §6.4: quién reclama, quién acepta, solo las dos partes en el chat, ficha de la reclamación |
 | Coincidencias | `puntaje` (19), `coincidencias.service` (8) | La fórmula del §7 (día 0, 7 y 8; edificio análogo; paridad con `docs/sql/04_coincidencias.sql`) y los avisos RF-24 |
 | Otros módulos | `moderacion.service` (8), `notificaciones.service` (6), `catalogos.service` (10), `estadisticas.service` (2), `mi-cuenta.service` (4), `salud` (4) | Moderación con plazo de 48 h, avisos que nunca lanzan, catálogos en uso, la contraparte del chat |
-| Piezas comunes | `filtro-errores` (5), `validacion-zod.pipe` (5), `configuracion` (6), `opciones-logger` (2), `plantillas` (4), `procesar` (8), `expiracion.service` (2), `programador.service` (6) | Forma de los errores, mensajes de Zod en español, el servidor no arranca con un `.env` malo, secretos ocultos en el log, correos sin HTML inyectado, imágenes a WEBP sin GPS, el cron a las 3:00 a. m. de Colombia que nunca tumba el servidor |
+| Piezas comunes | `filtro-errores` (5), `validacion-zod.pipe` (5), `configuracion` (6), `opciones-logger` (2), `plantillas` (4), `procesar` (8), `expiracion.service` (2), `programador.service` (8) | Forma de los errores, mensajes de Zod en español, el servidor no arranca con un `.env` malo, secretos ocultos en el log, correos sin HTML inyectado, imágenes a WEBP sin GPS, el cron a las 3:00 a. m. de Colombia que nunca tumba el servidor |
 
 ### E2E (27)
 
@@ -96,7 +96,7 @@ auth.service.ts    |     100 |    96.15 |     100 |     100 | 194,242
 | `roles.e2e-spec.ts` (7) | `RolesGuard`: sin sesión → 401, USUARIO o MODERADOR en una ruta de ADMIN → 403, ADMIN → 200 (los tokens vencidos o alterados se prueban en `auth.db-spec.ts`) |
 | `limites.e2e-spec.ts` (6) | Rate limit: 5/min en login, rutas exentas y **que una IP inventada en `X-Forwarded-For` no salta el límite** |
 
-### Contra PostgreSQL (142)
+### Contra PostgreSQL (144)
 
 | Archivo | Qué cubre |
 |---|---|
@@ -108,6 +108,7 @@ auth.service.ts    |     100 |    96.15 |     100 |     100 | 194,242
 | `coincidencias` (5), `aviso-coincidencia` (3) | El prefiltro SQL (±7 días), el aviso RF-24 y el edificio análogo |
 | `admin` (14), `moderacion` (6), `estadisticas` (4) | Catálogos, suspensión **al instante**, el rol que manda es el de la BD, moderación, estadísticas en hora de Colombia |
 | `expiracion` (3) | Expiración a 90 días (89, 91 y 200 días) |
+| `limpieza-imagenes` (2) | Fotos de entregas de hace más de 90 días: se borran (BD y S3, auditado) con 91 y 120 días, no con 89 ni sin entrega; repetir no hace nada nuevo (§6.5) |
 
 ## 5. Cómo escribir una prueba unitaria
 
@@ -170,6 +171,9 @@ Consejos:
 |---|---|
 | `frontend/playwright.config.ts` | Pantalla de **celular de 360 px** (RNF-04), hora de Colombia, un solo trabajador; arranca el backend y el frontend si no están encendidos |
 | `frontend/e2e/ayudas.ts` | Usuarios del seed, inicio de sesión por el formulario y una foto PNG de prueba |
+| `frontend/e2e/sesiones.setup.ts` | Paso previo: inicia sesión **una vez** por usuario del seed y guarda la sesión en `e2e/.auth/` (fuera del repositorio). Las demás pruebas abren el navegador ya con esa sesión |
+| `frontend/e2e/editar.spec.ts` | La autora edita título y hora desde la ficha; "sin cambios" avisa; otra persona no puede editar; con una reclamación, el detalle reservado queda bloqueado (RF-10) |
+| `frontend/e2e/admin.spec.ts` | Catálogos (crear categoría sensible, desactivarla y que salga del formulario de publicar; sede y lugar con tipo; no borrar lo que está en uso) y cuentas (buscar sin ver el correo, suspender con motivo, reactivar; el admin no se suspende a sí mismo) |
 | `frontend/e2e/recorrido.spec.ts` | **Dos personas a la vez**, cada una en su propio navegador: la autora publica con foto (asistente de 3 pasos), el reclamante lo busca y lo reclama, la autora acepta, conversan y los dos confirman la entrega. Comprueba también que el detalle reservado **no** le aparece al reclamante |
 
 Desde `frontend/` (necesita `docker compose up -d` y el seed del backend):
@@ -183,12 +187,13 @@ npx playwright show-report   # informe HTML de la última corrida
 - Busca los elementos **como los ve una persona**: por su etiqueta (`getByLabel('Contraseña')`), su rol y su texto (`getByRole('button', { name: 'Publicar' })`). Si una etiqueta se pierde, la prueba falla, y eso también es un problema de accesibilidad.
 - Cada corrida usa un título único, así no se confunde con datos de corridas anteriores. Deja esos datos en `hallazgo_ud` (es tu base de desarrollo).
 - Si falla, guarda una **grabación paso a paso** (`trace`) con capturas: `npx playwright show-trace test-results/…/trace.zip`.
-- Cada corrida inicia sesión 2 veces. El login permite 5 por minuto, así que **no la corras más de 2 veces en el mismo minuto**.
+- **Sesiones guardadas:** cada corrida inicia sesión 3 veces (una por usuario, en `sesiones.setup.ts`). Antes cada prueba iniciaba sesión por su cuenta (~10 por corrida) y el límite del login (5 por minuto) cortaba la corrida con 429. Ahora se puede correr dos veces seguidas.
+- Si una pantalla se carga con un formulario GET (recarga completa), espera `networkidle` antes de pulsar botones: si no, el clic cae sobre HTML que React todavía no "hidrató" y no hace nada.
 - Estable: pasó 3 corridas seguidas (2026-11-21).
 
 ## 9. Accesibilidad (RNF-05) y responsivo (RNF-04)
 
-`frontend/e2e/accesibilidad.spec.ts` corre con `npm run test:e2e`, junto al recorrido (33 pruebas en total con la de seguridad, ~2 min).
+`frontend/e2e/accesibilidad.spec.ts` corre con `npm run test:e2e`, junto al recorrido (48 pruebas en total con la seguridad, la edición y el admin, ~3 min).
 
 **Automático con axe-core** (`@axe-core/playwright`): en cada pantalla se aplican las reglas de **WCAG 2.1 nivel A y AA** (contraste de colores, etiquetas de los campos, nombres de botones y enlaces, idioma de la página, títulos, uso correcto de ARIA…) y se comprueba que **nada se salga por el costado a 360 px**.
 
@@ -223,7 +228,7 @@ Para que 200 usuarios simulados desde un PC no choquen con el límite de 100 pet
 Dos escaneos con OWASP ZAP (pasivo sobre el frontend, activo con ataques sobre la API pública contra la base de carga) y una revisión manual de quién puede usar cada ruta. Resultado: **0 fallos**. Lo que encontró se corrigió y quedó vigilado por pruebas:
 
 - `frontend/e2e/seguridad.spec.ts`: con el **JavaScript apagado**, enviar el login o el registro no deja la contraseña en la URL (antes sí: `/login?contrasena=…`), y las páginas envían CSP, `Permissions-Policy`, COOP, `X-Frame-Options` y `nosniff`. Contraprueba hecha: sin el arreglo, falla.
-- `validacion-zod.pipe.spec.ts`: el carácter nulo (` `) en cualquier entrada → 400 (antes, 500 desde PostgreSQL).
+- `validacion-zod.pipe.spec.ts`: el carácter nulo (`\u0000`) en cualquier entrada → 400 (antes, 500 desde PostgreSQL).
 - `salud.e2e-spec.ts`: la API envía `nosniff` y `Cross-Origin-Resource-Policy`.
 
 Detalle, avisos aceptados y la **matriz ruta × rol** con la prueba que cubre cada permiso: [`infra/seguridad/README.md`](../infra/seguridad/README.md).

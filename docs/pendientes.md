@@ -3,7 +3,7 @@
 Lo que falta decidir y lo que falta construir. Cuando algo se resuelva, se borra de aquí y se refleja en `CLAUDE.md` (sección 4 si es una decisión, sección 9 si es trabajo terminado).
 
 **Estado (2026-11-21):**
-- **Backend:** todas las funciones de la propuesta están implementadas y probadas (280 pruebas unitarias (87 % de cobertura en los servicios), 26 e2e y 142 contra PostgreSQL).
+- **Backend:** todas las funciones de la propuesta están implementadas y probadas (282 pruebas unitarias (87 % de cobertura en los servicios), 26 e2e y 144 contra PostgreSQL).
 - **Frontend:** Next.js en `frontend/`, conectado a la API. Están todas las pantallas salvo las de la sección 3.
 - **Hito de la Fase F cumplido:** recorrido de punta a punta en el navegador (publicar → reclamar → chatear → entregar).
 
@@ -24,12 +24,9 @@ Resueltas el 2026-11-21: suspensión al instante (el guard revisa la cuenta en c
 ## 3. Trabajo técnico pendiente
 
 ### Backend
-- [ ] Limpieza de imágenes de publicaciones entregadas hace más de 90 días (§6.5): falta la lógica; el programador (`node-cron`, ya instalado) solo tiene que llamarla.
 - [ ] Desenfoque automático de la miniatura en categorías sensibles (regla 6.6, opcional).
 
 ### Frontend
-- [ ] Editar una publicación (`PUT /publicaciones/:id` ya existe).
-- [ ] En `/admin`: gestión de categorías, sedes y lugares, y suspender o reactivar cuentas (los endpoints ya existen).
 - [ ] Linter, Prettier y pruebas propias: hoy el hook de pre-commit solo revisa los `.ts` con la configuración del backend; los `.tsx` del frontend no se revisan.
 - [ ] Recomendados en `frontend/docs/endpoints-pendientes.md` que siguen abiertos (#5: `id_publicacion` en los avisos).
 

@@ -1,8 +1,9 @@
-import { expect, type Page } from '@playwright/test';
+import { type Browser, expect, type Page } from '@playwright/test';
 
 // Usuarios del seed (backend/prisma/seed.ts). La contraseña sale del .env (CONTRASENA_SEED).
 export const AUTORA = 'usuario.prueba@udistrital.edu.co';
 export const RECLAMANTE = 'moderador.prueba@udistrital.edu.co';
+export const ADMIN = 'admin.prueba@udistrital.edu.co';
 
 export function contrasenaSeed(): string {
   const c = process.env.CONTRASENA_SEED;
@@ -25,3 +26,12 @@ export const FOTO_PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
   'base64',
 );
+
+// Sesiones guardadas por e2e/sesiones.setup.ts (una por usuario y por corrida).
+export const archivoSesion = (correo: string) => `e2e/.auth/${correo.split('@')[0]}.json`;
+
+// Página nueva con la sesión ya iniciada de ese usuario (sin pasar por el login).
+export async function paginaCon(browser: Browser, correo: string): Promise<Page> {
+  const ctx = await browser.newContext({ storageState: archivoSesion(correo) });
+  return ctx.newPage();
+}

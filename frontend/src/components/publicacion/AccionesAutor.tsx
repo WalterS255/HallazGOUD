@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { llamarApi } from '@/lib/api/cliente';
@@ -71,9 +72,15 @@ export function AccionesAutor({
             </button>
           </div>
         ) : (
-          <button type="button" className="btn btn-danger" onClick={() => setConfirmarRetiro(true)}>
-            Retirar publicación
-          </button>
+          <div className="row" style={{ gap: 8 }}>
+            {/* RF-10: editar título, categoría, descripción, lugar, fecha y detalle reservado. */}
+            <Link href={`/publicaciones/${publicacionId}/editar`} className="btn">
+              Editar
+            </Link>
+            <button type="button" className="btn btn-danger" onClick={() => setConfirmarRetiro(true)}>
+              Retirar publicación
+            </button>
+          </div>
         )}
       </div>
 
