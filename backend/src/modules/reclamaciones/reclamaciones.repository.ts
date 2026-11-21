@@ -83,6 +83,32 @@ export class ReclamacionesRepository {
     return { detalle_reservado: detalle?.texto ?? null, reclamaciones };
   }
 
+  // Ficha de una reclamación para sus dos partes: quién es quién y en qué va la entrega.
+  // Sin respuesta_detalle ni detalle reservado (eso solo en paraElAutor).
+  detalle(id: number) {
+    return this.prisma.reclamacion.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        estado: true,
+        fecha: true,
+        fecha_resolucion: true,
+        publicacion: {
+          select: {
+            id: true,
+            titulo: true,
+            estado: true,
+            usuario: { select: { id: true, nombre: true } },
+          },
+        },
+        reclamante: { select: { id: true, nombre: true } },
+        entrega: {
+          select: { confirmo_autor: true, confirmo_reclamante: true, fecha_entrega: true },
+        },
+      },
+    });
+  }
+
   // FOR UPDATE OF r: bloquea la reclamación (no la publicación: esa la bloquea
   // cambiarEstadoEn). Así dos "aceptar" simultáneos sobre la misma no se pisan.
   async bloquear(tx: Tx, id: number): Promise<ReclamacionBloqueada | null> {

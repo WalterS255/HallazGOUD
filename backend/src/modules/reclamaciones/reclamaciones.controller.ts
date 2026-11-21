@@ -53,6 +53,15 @@ export class ReclamacionesController {
     return this.reclamaciones.paraElAutor(id, usuario.id);
   }
 
+  // Ficha para las dos partes: quién es quién y en qué va la entrega (pantalla del chat).
+  @Get('reclamaciones/:id')
+  detalle(
+    @Param('id', new ValidacionZod(esquemaId)) id: number,
+    @UsuarioActual() usuario: UsuarioSesion,
+  ) {
+    return this.reclamaciones.detalle(id, usuario.id);
+  }
+
   // RF-19/20: aceptar (abre el chat) o rechazar.
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch('reclamaciones/:id')

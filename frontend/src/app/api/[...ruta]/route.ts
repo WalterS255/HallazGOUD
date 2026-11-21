@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { config, COOKIE_TOKEN, DURACION_TOKEN_S, urlBackend } from '@/lib/config';
+import { ipCliente } from '@/lib/ip-cliente';
 
 // Proxy hacia el backend: el navegador sólo habla con este servidor (/api/...) y aquí se reenvía todo.
 // - No hace falta CORS en el backend (el navegador nunca lo llama directo).
@@ -28,7 +29,9 @@ async function proxy(req: NextRequest, { params }: Contexto): Promise<Response> 
     const v = req.headers.get(h);
     if (v) headers.set(h, v);
   }
-  headers.set('X-Forwarded-For', req.headers.get('x-forwarded-for') ?? '127.0.0.1');
+  // Nunca el X-Forwarded-For del navegador tal cual: se podría inventar (ver ip-cliente.ts).
+  const ip = ipCliente(req.headers);
+  if (ip) headers.set('X-Forwarded-For', ip);
   const token = req.cookies.get(COOKIE_TOKEN)?.value;
   if (token) headers.set('Authorization', `Bearer ${token}`);
 

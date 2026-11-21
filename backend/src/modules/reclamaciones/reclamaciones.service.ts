@@ -71,6 +71,29 @@ export class ReclamacionesService {
   }
 
   // RF-19: el autor ve cada respuesta junto al detalle reservado para comparar.
+  // Para la pantalla del chat: quién es quién y quién ya confirmó la entrega.
+  // Solo las dos partes, en cualquier estado de la reclamación. Mismo 403 si no existe
+  // o si no eres parte: así no se revela qué reclamaciones existen (igual que el chat).
+  async detalle(id: number, id_usuario: number) {
+    const r = await this.repo.detalle(id);
+    const autor = r?.publicacion.usuario;
+    if (!r || !autor || (id_usuario !== autor.id && id_usuario !== r.reclamante.id)) {
+      throw prohibido('Solo las dos partes pueden ver esta reclamación.');
+    }
+    const { usuario: _autor, ...publicacion } = r.publicacion;
+    return {
+      id: r.id,
+      estado: r.estado,
+      fecha: r.fecha,
+      fecha_resolucion: r.fecha_resolucion,
+      publicacion,
+      autor,
+      reclamante: r.reclamante,
+      soy: id_usuario === autor.id ? ('AUTOR' as const) : ('RECLAMANTE' as const),
+      entrega: r.entrega,
+    };
+  }
+
   async paraElAutor(id_publicacion: number, id_solicitante: number) {
     const pub = await this.repo.publicacion(id_publicacion);
     if (!pub || pub.id_usuario !== id_solicitante) {

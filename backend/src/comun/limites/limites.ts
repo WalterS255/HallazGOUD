@@ -20,11 +20,15 @@ export const opcionesLimites: ThrottlerModuleOptions = [
 export const LIMITE_ESTRICTO = { limit: 5, ttl: UN_MINUTO };
 export const LimiteEstricto = () => Throttle({ default: LIMITE_ESTRICTO });
 
-// OJO (Fase K): el límite se cuenta por `req.ip`. Detrás del proxy inverso, req.ip
-// sería la IP del proxy y TODOS compartirían el mismo límite. En producción hay que
-// activar app.set('trust proxy', 1) para que Express lea la IP real del encabezado
-// X-Forwarded-For que pone el proxy. Sin proxy NO se activa: cualquiera podría
-// falsificar ese encabezado y saltarse el límite.
+// El límite se cuenta por `req.ip`. Todo pasa por el servidor de Next.js, así que sin
+// más, req.ip sería la de Next y TODOS compartirían el mismo límite. Por eso:
+// - Backend: TRUST_PROXY=1 → Express toma la IP del X-Forwarded-For que pone Next
+//   (configurar-app.ts).
+// - Frontend: Next NUNCA reenvía el X-Forwarded-For del navegador tal cual (se puede
+//   inventar). Solo con CONFIAR_PROXY=true (hay un proxy inverso delante) reenvía la
+//   última entrada, la que puso ese proxy (frontend/src/lib/ip-cliente.ts).
+// Probado: inventando una IP distinta en cada intento, el 6.º login igual da 429
+// (test/limites.e2e-spec.ts).
 //
 // Los contadores viven en la memoria del proceso: sirve con UNA instancia del backend.
 // Con varias (escalar), cada una contaría por su lado y habría que guardarlos en Redis.

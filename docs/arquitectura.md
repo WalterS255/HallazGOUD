@@ -168,7 +168,7 @@ Cuando trabajan dos personas (o sesiones) a la vez:
 
 Plan: un VPS con Docker Compose.
 1. Dockerfiles de producción (backend compilado; frontend estático).
-2. Proxy inverso con HTTPS (TLS). Detrás del proxy, `app.set('trust proxy', 1)`; si no, el rate limit ve la IP del proxy y todos comparten el mismo límite.
+2. Proxy inverso con HTTPS (TLS) delante de Next.js. Backend con `TRUST_PROXY=1` y frontend con `CONFIAR_PROXY=true`: así el rate limit cuenta por la IP real y nadie puede inventarla (ver `backend/src/comun/limites/limites.ts`).
 3. No publicar los puertos de PostgreSQL, el explorador de SeaweedFS ni Mailpit.
 4. Backend con `DATABASE_URL` = `hallazgo_app`; migraciones con `DATABASE_URL_MIGRACIONES` = dueño (`prisma migrate deploy`).
 5. Cron diario de `infra/respaldo/respaldar.sh` y una copia fuera del servidor.

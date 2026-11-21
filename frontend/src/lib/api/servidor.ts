@@ -1,6 +1,7 @@
 import 'server-only';
 import { cookies, headers } from 'next/headers';
 import { config, COOKIE_TOKEN, urlBackend } from '../config';
+import { ipCliente } from '../ip-cliente';
 import type { CuerpoError } from '../tipos';
 
 // Llamadas al backend desde los componentes de servidor (páginas), con el token del usuario.
@@ -19,8 +20,8 @@ export async function cabecerasDeSesion(): Promise<Headers> {
   const h = new Headers({ Accept: 'application/json' });
   const token = (await cookies()).get(COOKIE_TOKEN)?.value;
   if (token) h.set('Authorization', `Bearer ${token}`);
-  // Para que el límite de peticiones del backend cuente por persona y no por servidor (requiere trust proxy).
-  const ip = (await headers()).get('x-forwarded-for');
+  // Para que el límite de peticiones del backend cuente por persona y no por servidor (ver ip-cliente.ts).
+  const ip = ipCliente(await headers());
   if (ip) h.set('X-Forwarded-For', ip);
   return h;
 }

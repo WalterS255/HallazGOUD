@@ -126,3 +126,48 @@ describe('ReclamacionesService.resolver', () => {
     ).rejects.toMatchObject({ codigo: 'RECLAMACION_RESUELTA' });
   });
 });
+
+describe('detalle (pantalla del chat)', () => {
+  const ficha = {
+    id: 7,
+    estado: 'ACEPTADA',
+    fecha: new Date('2026-10-25T13:00:00Z'),
+    fecha_resolucion: new Date('2026-10-25T14:00:00Z'),
+    publicacion: {
+      id: 41,
+      titulo: 'Calculadora',
+      estado: 'EN_RECLAMACION',
+      usuario: { id: 1, nombre: 'Ana' },
+    },
+    reclamante: { id: 2, nombre: 'Luis' },
+    entrega: { confirmo_autor: true, confirmo_reclamante: false, fecha_entrega: null },
+  };
+  const conFicha = (f: typeof ficha | null) =>
+    new ReclamacionesService(
+      { detalle: async () => f } as unknown as ReclamacionesRepository,
+      {} as PublicacionesService,
+      {} as AuditoriaService,
+      {} as NotificacionesService,
+    );
+
+  it('el autor la ve, con el autor aparte y sin repetirlo dentro de la publicación', async () => {
+    const d = await conFicha(ficha).detalle(7, 1);
+    expect(d.soy).toBe('AUTOR');
+    expect(d.autor).toEqual({ id: 1, nombre: 'Ana' });
+    expect(d.publicacion).toEqual({ id: 41, titulo: 'Calculadora', estado: 'EN_RECLAMACION' });
+    expect(d.entrega).toEqual({
+      confirmo_autor: true,
+      confirmo_reclamante: false,
+      fecha_entrega: null,
+    });
+  });
+
+  it('el reclamante la ve como RECLAMANTE', async () => {
+    expect((await conFicha(ficha).detalle(7, 2)).soy).toBe('RECLAMANTE');
+  });
+
+  it('un tercero y una reclamación inexistente dan el MISMO 403', async () => {
+    await expect(conFicha(ficha).detalle(7, 3)).rejects.toMatchObject({ codigo: 'PROHIBIDO' });
+    await expect(conFicha(null).detalle(999, 1)).rejects.toMatchObject({ codigo: 'PROHIBIDO' });
+  });
+});
