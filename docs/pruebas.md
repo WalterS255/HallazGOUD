@@ -2,7 +2,7 @@
 
 Cómo están organizadas las pruebas de HallazGO UD, cómo se corren, qué prueba cada archivo y cómo escribir una nueva. Para la arquitectura general ver [`arquitectura.md`](arquitectura.md).
 
-**Estado (2026-11-21):** 270 pruebas unitarias, 26 e2e y 142 contra PostgreSQL, todas en verde. Cobertura de los servicios: **87 % de líneas** (el mínimo exigido es 60 %, RNF-14).
+**Estado (2026-11-21):** 276 pruebas unitarias, 26 e2e y 142 contra PostgreSQL, todas en verde. Cobertura de los servicios: **87 % de líneas** (el mínimo exigido es 60 %, RNF-14).
 
 ---
 
@@ -76,7 +76,7 @@ auth.service.ts    |     100 |    96.15 |     100 |     100 | 194,242
 
 ## 4. Qué prueba cada archivo
 
-### Unitarias (270)
+### Unitarias (276)
 
 | Área | Archivos (pruebas) | Qué cubren |
 |---|---|---|
@@ -85,7 +85,7 @@ auth.service.ts    |     100 |    96.15 |     100 |     100 | 194,242
 | Reclamaciones y chat | `reclamaciones.service` (12), `mensajes.service` (7) | Reglas de §6.2 y §6.4: quién reclama, quién acepta, solo las dos partes en el chat, ficha de la reclamación |
 | Coincidencias | `puntaje` (19), `coincidencias.service` (8) | La fórmula del §7 (día 0, 7 y 8; edificio análogo; paridad con `docs/sql/04_coincidencias.sql`) y los avisos RF-24 |
 | Otros módulos | `moderacion.service` (8), `notificaciones.service` (6), `catalogos.service` (10), `estadisticas.service` (2), `mi-cuenta.service` (4), `salud` (4) | Moderación con plazo de 48 h, avisos que nunca lanzan, catálogos en uso, la contraparte del chat |
-| Piezas comunes | `filtro-errores` (5), `validacion-zod.pipe` (5), `configuracion` (6), `opciones-logger` (2), `plantillas` (4), `procesar` (8), `expiracion.service` (2) | Forma de los errores, mensajes de Zod en español, el servidor no arranca con un `.env` malo, secretos ocultos en el log, correos sin HTML inyectado, imágenes a WEBP sin GPS |
+| Piezas comunes | `filtro-errores` (5), `validacion-zod.pipe` (5), `configuracion` (6), `opciones-logger` (2), `plantillas` (4), `procesar` (8), `expiracion.service` (2), `programador.service` (6) | Forma de los errores, mensajes de Zod en español, el servidor no arranca con un `.env` malo, secretos ocultos en el log, correos sin HTML inyectado, imágenes a WEBP sin GPS, el cron a las 3:00 a. m. de Colombia que nunca tumba el servidor |
 
 ### E2E (26)
 

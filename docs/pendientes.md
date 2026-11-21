@@ -3,7 +3,7 @@
 Lo que falta decidir y lo que falta construir. Cuando algo se resuelva, se borra de aquí y se refleja en `CLAUDE.md` (sección 4 si es una decisión, sección 9 si es trabajo terminado).
 
 **Estado (2026-11-21):**
-- **Backend:** todas las funciones de la propuesta están implementadas y probadas (270 pruebas unitarias (87 % de cobertura en los servicios), 26 e2e y 142 contra PostgreSQL).
+- **Backend:** todas las funciones de la propuesta están implementadas y probadas (276 pruebas unitarias (87 % de cobertura en los servicios), 26 e2e y 142 contra PostgreSQL).
 - **Frontend:** Next.js en `frontend/`, conectado a la API. Están todas las pantallas salvo las de la sección 3.
 - **Hito de la Fase F cumplido:** recorrido de punta a punta en el navegador (publicar → reclamar → chatear → entregar).
 
@@ -19,13 +19,12 @@ Resueltas el 2026-11-21: suspensión al instante (el guard revisa la cuenta en c
 
 | # | Qué | Recomendación |
 |---|---|---|
-| 8 | Instalar **`node-cron`** para disparar cada día la expiración a 90 días (lógica ya hecha y probada en `jobs/expiracion.service.ts`) y la limpieza de imágenes 90 días después de la entrega (§6.5, aún sin lógica) | Sí. Ya está elegido en `CLAUDE.md` §4 |
-| 9 | Instalar **`gh`** (CLI de GitHub) en el PC de Walter | Opcional: permite abrir los PR desde la terminal en vez del navegador |
+| 8 | Instalar **`gh`** (CLI de GitHub) en el PC de Walter | Opcional: permite abrir los PR desde la terminal en vez del navegador |
 
 ## 3. Trabajo técnico pendiente
 
 ### Backend
-- [ ] Programador diario (depende de #8): conectar `ExpiracionService.expirarInactivas` y escribir la limpieza de imágenes de publicaciones entregadas hace más de 90 días.
+- [ ] Limpieza de imágenes de publicaciones entregadas hace más de 90 días (§6.5): falta la lógica; el programador (`node-cron`, ya instalado) solo tiene que llamarla.
 - [ ] Desenfoque automático de la miniatura en categorías sensibles (regla 6.6, opcional).
 
 ### Frontend

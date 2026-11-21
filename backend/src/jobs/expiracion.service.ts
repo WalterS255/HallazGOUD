@@ -11,8 +11,8 @@ export interface ResultadoExpiracion {
   omitidas: number; // cambiaron de estado entre la búsqueda y el cambio (otra petición ganó)
 }
 
-// Tarea del cron de expiración (RF-12). Aquí solo está la LÓGICA: el programador
-// que la ejecuta una vez al día se conecta aparte (falta aprobar la dependencia).
+// Tarea del cron de expiración (RF-12). Aquí está la LÓGICA; la dispara cada día
+// ProgramadorService (programador.service.ts, con node-cron).
 @Injectable()
 export class ExpiracionService {
   private readonly logger = new Logger(ExpiracionService.name);
