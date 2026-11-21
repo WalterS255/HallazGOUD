@@ -21,7 +21,8 @@ export type AccionAuditada =
   | 'CUENTA_REACTIVADA'
   | 'CUENTA_ANONIMIZADA'
   | 'MODERACION_OCULTAR'
-  | 'MODERACION_RESOLVER';
+  | 'MODERACION_RESOLVER'
+  | 'IMAGENES_RETENCION';
 
 export interface EventoAuditoria {
   accion: AccionAuditada;

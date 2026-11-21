@@ -1,6 +1,7 @@
 import { createTask, validate } from 'node-cron';
 import type { ExpiracionService, ResultadoExpiracion } from './expiracion.service.js';
-import { PATRON_EXPIRACION, ProgramadorService } from './programador.service.js';
+import type { LimpiezaImagenesService } from './limpieza-imagenes.service.js';
+import { PATRON_EXPIRACION, PATRON_LIMPIEZA, ProgramadorService } from './programador.service.js';
 
 // La lógica de qué expira está probada en expiracion.service.spec y en
 // test/db/expiracion.db-spec. Aquí: el horario y cómo el programador la llama.
@@ -14,7 +15,10 @@ const conLotes = (lotes: (ResultadoExpiracion | Error)[]) => {
       return r;
     },
   } as unknown as ExpiracionService;
-  return { servicio: new ProgramadorService(expiracion), llamadas };
+  const limpieza = {
+    limpiarEntregadas: async () => ({ publicaciones: 2, imagenes: 5 }),
+  } as unknown as LimpiezaImagenesService;
+  return { servicio: new ProgramadorService(expiracion, limpieza), llamadas };
 };
 
 describe('ProgramadorService', () => {
@@ -63,7 +67,28 @@ describe('ProgramadorService', () => {
   it('en NODE_ENV=test no programa nada, y apagar sin tarea no falla', async () => {
     const { servicio } = conLotes([]);
     servicio.onApplicationBootstrap();
-    expect((servicio as unknown as { tarea: unknown }).tarea).toBeNull();
+    expect((servicio as unknown as { tareas: unknown[] }).tareas).toEqual([]);
     await expect(servicio.onModuleDestroy()).resolves.toBeUndefined();
+  });
+
+  it('la limpieza de fotos corre a las 3:30 a. m. de Colombia, media hora después', async () => {
+    const tarea = createTask(PATRON_LIMPIEZA, () => undefined, { timezone: 'America/Bogota' });
+    const [proxima] = tarea.getNextRuns(1);
+    await tarea.destroy();
+    expect([proxima.getUTCHours(), proxima.getUTCMinutes()]).toEqual([8, 30]);
+  });
+
+  it('ejecutarLimpieza devuelve el resultado; si falla, NO lanza', async () => {
+    const { servicio } = conLotes([]);
+    expect(await servicio.ejecutarLimpieza()).toEqual({ publicaciones: 2, imagenes: 5 });
+    const roto = new ProgramadorService(
+      {} as ExpiracionService,
+      {
+        limpiarEntregadas: async () => {
+          throw new Error('S3 caído');
+        },
+      } as unknown as LimpiezaImagenesService,
+    );
+    await expect(roto.ejecutarLimpieza()).resolves.toBeNull();
   });
 });

@@ -7,10 +7,13 @@ import {
 import { schedule, type ScheduledTask } from 'node-cron';
 import { config } from '../config/configuracion.js';
 import { ExpiracionService } from './expiracion.service.js';
+import { LimpiezaImagenesService } from './limpieza-imagenes.service.js';
 
 // Cuándo corre la expiración a 90 días (RF-12): todos los días a las 3:00 a. m. en hora
 // de Colombia, la de menos uso. Formato cron: minuto hora día-del-mes mes día-de-la-semana.
 export const PATRON_EXPIRACION = '0 3 * * *';
+// Fotos de entregas de hace más de 90 días (§6.5): media hora después, para no pisarse.
+export const PATRON_LIMPIEZA = '30 3 * * *';
 
 // expirarInactivas() procesa hasta 500 por llamada. Si se acumularon más (por ejemplo,
 // el servidor estuvo apagado semanas), se repite en la misma noche, con un tope para
@@ -28,25 +31,45 @@ const MAX_LOTES_POR_NOCHE = 20;
 @Injectable()
 export class ProgramadorService implements OnApplicationBootstrap, OnModuleDestroy {
   private readonly logger = new Logger(ProgramadorService.name);
-  private tarea: ScheduledTask | null = null;
+  private tareas: ScheduledTask[] = [];
 
-  constructor(private readonly expiracion: ExpiracionService) {}
+  constructor(
+    private readonly expiracion: ExpiracionService,
+    private readonly limpieza: LimpiezaImagenesService,
+  ) {}
 
   onApplicationBootstrap(): void {
     if (config.entorno === 'test') return;
-    this.tarea = schedule(PATRON_EXPIRACION, () => this.ejecutarExpiracion(), {
-      name: 'expiracion-90-dias',
-      timezone: config.zonaHoraria,
-      noOverlap: true,
-    });
-    this.logger.log(
-      `Expiración a ${PATRON_EXPIRACION} (${config.zonaHoraria}); próxima: ${this.tarea.getNextRun()?.toISOString()}`,
-    );
+    const programar = (nombre: string, patron: string, f: () => Promise<unknown>) => {
+      const t = schedule(patron, f, {
+        name: nombre,
+        timezone: config.zonaHoraria,
+        noOverlap: true,
+      });
+      this.tareas.push(t);
+      this.logger.log(
+        `${nombre} a ${patron} (${config.zonaHoraria}); próxima: ${t.getNextRun()?.toISOString()}`,
+      );
+    };
+    programar('Expiración', PATRON_EXPIRACION, () => this.ejecutarExpiracion());
+    programar('Limpieza de imágenes', PATRON_LIMPIEZA, () => this.ejecutarLimpieza());
   }
 
   async onModuleDestroy(): Promise<void> {
-    await this.tarea?.destroy();
-    this.tarea = null;
+    for (const t of this.tareas) await t.destroy();
+    this.tareas = [];
+  }
+
+  // Pública para poder probarla. Nunca lanza: un fallo se registra y se reintenta mañana.
+  async ejecutarLimpieza(): Promise<{ publicaciones: number; imagenes: number } | null> {
+    try {
+      return await this.limpieza.limpiarEntregadas();
+    } catch (e) {
+      this.logger.error(
+        `La limpieza de imágenes falló; se reintenta mañana: ${(e as Error).message}`,
+      );
+      return null;
+    }
   }
 
   // Pública para poder probarla (y, si hiciera falta, dispararla a mano). Nunca lanza.
