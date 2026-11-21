@@ -3,34 +3,40 @@
 import { useEffect, useRef, useState } from 'react';
 import { ErrorApi, llamarApi } from '@/lib/api/cliente';
 import { formatearFechaHora } from '@/lib/formato';
-import type { Mensaje } from '@/lib/tipos';
+import { type EstadoEntrega, estadoEntrega } from '@/lib/entrega';
+import type { Mensaje, ReclamacionDetalle } from '@/lib/tipos';
 
 type Props = {
   reclamacionId: number;
   miId: number;
   contraparte: string;
   mensajesIniciales: Mensaje[];
-  entregada: boolean;
+  entregaInicial: EstadoEntrega;
 };
 
-// El backend no tiene tiempo real: se vuelve a pedir el hilo cada 10 s (api.md §10).
+// El backend no tiene tiempo real: se vuelve a pedir el hilo (y la ficha) cada 10 s (api.md §10).
 const INTERVALO_MS = 10_000;
 
-export function Chat({ reclamacionId, miId, contraparte, mensajesIniciales, entregada: entregadaInicial }: Props) {
+export function Chat({ reclamacionId, miId, contraparte, mensajesIniciales, entregaInicial }: Props) {
   const [mensajes, setMensajes] = useState(mensajesIniciales);
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // El backend sólo dice si la entrega quedó cerrada; no expone quién ya confirmó.
-  const [entrega, setEntrega] = useState<'pendiente' | 'yo-confirme' | 'entregada'>(entregadaInicial ? 'entregada' : 'pendiente');
-  const [cerrado, setCerrado] = useState(entregadaInicial);
+  const [entrega, setEntrega] = useState<EstadoEntrega>(entregaInicial);
+  const cerrado = entrega === 'entregada';
   const log = useRef<HTMLDivElement>(null);
   const url = `/api/reclamaciones/${reclamacionId}`;
 
   useEffect(() => {
     const t = setInterval(async () => {
       try {
-        setMensajes(await llamarApi<Mensaje[]>(`${url}/mensajes`));
+        const [hilo, ficha] = await Promise.all([
+          llamarApi<Mensaje[]>(`${url}/mensajes`),
+          llamarApi<ReclamacionDetalle>(url),
+        ]);
+        setMensajes(hilo);
+        // Si la otra parte confirma mientras tengo el chat abierto, se ve sin recargar.
+        setEntrega(estadoEntrega(ficha));
       } catch {
         // Se reintenta en el siguiente ciclo.
       }
@@ -55,7 +61,7 @@ export function Chat({ reclamacionId, miId, contraparte, mensajesIniciales, entr
       setMensajes((m) => [...m, { ...nuevo, leido: false, emisor: { id: miId, nombre: 'Tú' } }]);
       setTexto('');
     } catch (err) {
-      if (err instanceof ErrorApi && err.codigo === 'CHAT_CERRADO') setCerrado(true);
+      if (err instanceof ErrorApi && err.codigo === 'CHAT_CERRADO') setEntrega('entregada');
       setError(err instanceof Error ? err.message : 'No se pudo enviar el mensaje.');
     } finally {
       setEnviando(false);
@@ -67,12 +73,9 @@ export function Chat({ reclamacionId, miId, contraparte, mensajesIniciales, entr
     try {
       const r = await llamarApi<{ entregada: boolean }>(`${url}/entrega`, { metodo: 'POST' });
       setEntrega(r.entregada ? 'entregada' : 'yo-confirme');
-      if (r.entregada) setCerrado(true);
     } catch (err) {
-      if (err instanceof ErrorApi && err.codigo === 'ENTREGA_CERRADA') {
-        setEntrega('entregada');
-        setCerrado(true);
-      } else setError(err instanceof Error ? err.message : 'No se pudo confirmar la entrega.');
+      if (err instanceof ErrorApi && err.codigo === 'ENTREGA_CERRADA') setEntrega('entregada');
+      else setError(err instanceof Error ? err.message : 'No se pudo confirmar la entrega.');
     }
   }
 
@@ -124,6 +127,9 @@ export function Chat({ reclamacionId, miId, contraparte, mensajesIniciales, entr
           <p className="note note-info">Confirmaste la entrega. Falta que {contraparte} también la confirme.</p>
         ) : (
           <>
+            {entrega === 'otro-confirmo' && (
+              <p className="note note-info">{contraparte} ya confirmó la entrega. Falta tu confirmación.</p>
+            )}
             <p className="muted small">
               Cuando el objeto esté en manos de su dueño, ambos confirman. Con la doble confirmación la publicación queda
               como entregada.

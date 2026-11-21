@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Chat } from '@/components/Chat';
-import { apiGet, apiGetOpcional, ErrorBackend } from '@/lib/api/servidor';
-import { unico, type ParamsBusqueda } from '@/lib/params';
+import { apiGet, ErrorBackend } from '@/lib/api/servidor';
+import { estadoEntrega } from '@/lib/entrega';
 import { usuarioOLogin } from '@/lib/sesion';
-import type { Mensaje, Publicacion, ReclamacionesDePublicacion } from '@/lib/tipos';
+import type { Mensaje, ReclamacionDetalle } from '@/lib/tipos';
 
 export const metadata: Metadata = { title: 'Conversación' };
 
@@ -13,21 +13,30 @@ const MENSAJES: Record<string, string> = {
   PROHIBIDO: 'No participas en esta conversación.',
 };
 
-type Props = { params: Promise<{ id: string }>; searchParams: ParamsBusqueda };
+type Props = { params: Promise<{ id: string }> };
 
-export default async function ConversacionPage({ params, searchParams }: Props) {
+// Un error 4xx del backend se muestra en la página; uno 5xx sigue a error.tsx.
+const comoError = (e: unknown) => {
+  if (e instanceof ErrorBackend && e.status < 500) return e;
+  throw e;
+};
+
+export default async function ConversacionPage({ params }: Props) {
   const { id } = await params;
-  const idPublicacion = unico((await searchParams).publicacion);
-  const yo = await usuarioOLogin(`/mensajes/${id}`);
+  await usuarioOLogin(`/mensajes/${id}`);
+  const ruta = `/reclamaciones/${encodeURIComponent(id)}`;
 
-  const mensajes = await apiGet<Mensaje[]>(`/reclamaciones/${encodeURIComponent(id)}/mensajes`).catch((e: unknown) => {
-    if (e instanceof ErrorBackend && e.status < 500) return e;
-    throw e;
-  });
-  if (mensajes instanceof ErrorBackend) {
+  // La ficha (GET /reclamaciones/:id) dice quién es quién y en qué va la entrega,
+  // así que ya no hace falta adivinarlo con la publicación del enlace.
+  const [ficha, mensajes] = await Promise.all([
+    apiGet<ReclamacionDetalle>(ruta).catch(comoError),
+    apiGet<Mensaje[]>(`${ruta}/mensajes`).catch(comoError),
+  ]);
+  if (ficha instanceof ErrorBackend || mensajes instanceof ErrorBackend) {
+    const fallo = ficha instanceof ErrorBackend ? ficha : (mensajes as ErrorBackend);
     return (
       <div className="stack" style={{ maxWidth: 760, width: '100%', marginInline: 'auto' }}>
-        <p className="note note-err">{MENSAJES[mensajes.codigo] ?? mensajes.message}</p>
+        <p className="note note-err">{MENSAJES[fallo.codigo] ?? fallo.message}</p>
         <Link href="/mensajes" className="link">
           ← Volver a mensajes
         </Link>
@@ -35,16 +44,7 @@ export default async function ConversacionPage({ params, searchParams }: Props) 
     );
   }
 
-  // El backend no tiene GET /reclamaciones/:id: el contexto se arma con la publicación (si viene en el enlace).
-  const p = idPublicacion ? await apiGetOpcional<Publicacion>(`/publicaciones/${encodeURIComponent(idPublicacion)}`) : null;
-  const esAutor = !!p && p.usuario.id === yo.id;
-  let contraparte = mensajes.find((m) => m.emisor.id !== yo.id)?.emisor.nombre;
-  if (!contraparte && p && !esAutor) contraparte = p.usuario.nombre;
-  if (!contraparte && p && esAutor) {
-    const r = await apiGetOpcional<ReclamacionesDePublicacion>(`/publicaciones/${p.id}/reclamaciones`);
-    contraparte = r?.reclamaciones.find((x) => String(x.id) === id)?.reclamante.nombre;
-  }
-  contraparte ??= 'la otra persona';
+  const contraparte = (ficha.soy === 'AUTOR' ? ficha.reclamante : ficha.autor).nombre ?? 'la otra persona';
 
   return (
     <>
@@ -54,24 +54,19 @@ export default async function ConversacionPage({ params, searchParams }: Props) 
       <div className="stack" style={{ gap: 6 }}>
         <h1 className="titulo-pagina">Chat con {contraparte}</h1>
         <p className="muted">
-          {p ? (
-            <>
-              Sobre{' '}
-              <Link href={`/publicaciones/${p.id}`} className="link">
-                {p.titulo}
-              </Link>
-              .{' '}
-            </>
-          ) : null}
-          Tu correo y teléfono nunca se muestran a la otra persona.
+          Sobre{' '}
+          <Link href={`/publicaciones/${ficha.publicacion.id}`} className="link">
+            {ficha.publicacion.titulo}
+          </Link>
+          . Tu correo y teléfono nunca se muestran a la otra persona.
         </p>
       </div>
       <Chat
-        reclamacionId={Number(id)}
-        miId={yo.id}
+        reclamacionId={ficha.id}
+        miId={ficha.soy === 'AUTOR' ? ficha.autor.id : ficha.reclamante.id}
         contraparte={contraparte}
         mensajesIniciales={mensajes}
-        entregada={p?.estado === 'ENTREGADA'}
+        entregaInicial={estadoEntrega(ficha)}
       />
     </>
   );
