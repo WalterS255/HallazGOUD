@@ -7,6 +7,9 @@ la pantalla muestra un aviso "Pendiente en el backend" en lugar de fallar.
 
 ## Necesarios
 
+> ✅ **Los tres ya existen en el backend** (módulo `mi-cuenta`, documentados en `docs/api.md` §4 "Mis listas").
+> Diferencia con lo pedido: `GET /usuarios/me/publicaciones` trae además `oculta` (si moderación la ocultó).
+
 ### 1. `GET /usuarios/me/publicaciones` · sesión
 
 Pantalla **Mis publicaciones**. Ya está anotado en `docs/pendientes.md` §3.

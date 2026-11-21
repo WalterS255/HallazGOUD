@@ -188,6 +188,57 @@ describe('flujo completo: reclamar → aceptar → conversar → entregar', () =
     ]);
   });
 
+  it('mis publicaciones, mis reclamaciones y mis conversaciones (solo lo propio)', async () => {
+    for (const r of ['publicaciones', 'reclamaciones', 'conversaciones']) {
+      await como(null).get(`/api/usuarios/me/${r}`).expect(401);
+    }
+
+    // La autora ve su ENCONTRADO aunque ya no esté ACTIVA; el PERDIDO es del reclamante.
+    const pubs = await como('autora').get('/api/usuarios/me/publicaciones').expect(200);
+    expect(pubs.body.map((p: { id: number }) => p.id)).toEqual([idEncontrado]);
+    expect(pubs.body[0]).toMatchObject({ estado: 'EN_RECLAMACION', reclamaciones_pendientes: 0 });
+
+    const recs = await como('reclamante').get('/api/usuarios/me/reclamaciones').expect(200);
+    expect(recs.body).toEqual([
+      expect.objectContaining({
+        id: idReclamacion,
+        estado: 'ACEPTADA',
+        publicacion: expect.objectContaining({
+          id: idEncontrado,
+          usuario: { id: personas.autora.id, nombre: expect.any(String) },
+        }),
+      }),
+    ]);
+    expect((await como('autora').get('/api/usuarios/me/reclamaciones').expect(200)).body).toEqual(
+      [],
+    );
+
+    // Cada parte ve a la OTRA como contraparte. La autora no ha abierto el hilo desde
+    // que el reclamante escribió "¡Perfecto!": 1 sin leer. El reclamante ya lo abrió: 0.
+    const deLaAutora = await como('autora').get('/api/usuarios/me/conversaciones').expect(200);
+    expect(deLaAutora.body).toEqual([
+      {
+        id_reclamacion: idReclamacion,
+        publicacion: {
+          id: idEncontrado,
+          titulo: 'Calculadora Casio encontrada',
+          estado: 'EN_RECLAMACION',
+        },
+        contraparte: { id: personas.reclamante.id, nombre: expect.any(String) },
+        ultimo_mensaje: { contenido: '¡Perfecto!', fecha_envio: expect.any(String) },
+        no_leidos: 1,
+      },
+    ]);
+    const delReclamante = await como('reclamante')
+      .get('/api/usuarios/me/conversaciones')
+      .expect(200);
+    expect(delReclamante.body[0].contraparte.id).toBe(personas.autora.id);
+    expect(delReclamante.body[0].no_leidos).toBe(0);
+    expect((await como('curioso').get('/api/usuarios/me/conversaciones').expect(200)).body).toEqual(
+      [],
+    );
+  });
+
   it('con las dos confirmaciones la publicación queda ENTREGADA y el chat se cierra', async () => {
     const ruta = `/api/reclamaciones/${idReclamacion}/entrega`;
     expect((await como('autora').post(ruta).expect(200)).body).toEqual({ entregada: false });
@@ -261,7 +312,9 @@ describe('ANTI-FUGA (§6.3): nada sensible sale de la API', () => {
       for (const prohibido of ['@udistrital.edu.co', 'hash_contrasena', 'token_hash', 'correo']) {
         expect(texto, `${quien} → ${ruta}`).not.toContain(prohibido);
       }
-      const esLaVistaDeLaAutora = quien === 'autora' && ruta.endsWith('/reclamaciones');
+      // Solo GET /publicaciones/:id/reclamaciones (no /usuarios/me/reclamaciones ni otra).
+      const esLaVistaDeLaAutora =
+        quien === 'autora' && /^GET \/api\/publicaciones\/\d+\/reclamaciones$/.test(ruta);
       if (!esLaVistaDeLaAutora) {
         expect(texto, `${quien} → ${ruta}`).not.toContain(SECRETO);
         expect(texto, `${quien} → ${ruta}`).not.toContain('detalle_reservado');
