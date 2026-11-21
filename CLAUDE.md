@@ -60,7 +60,7 @@ Hoy en la universidad los objetos perdidos se anuncian en grupos de WhatsApp, re
 
 | Actor | Qué puede hacer |
 |---|---|
-| Visitante (sin sesión) | Ver el catálogo en modo lectura limitada, sin datos de contacto. |
+| Visitante (sin sesión) | Ver el catálogo, buscar, filtrar y abrir la ficha de cada objeto (sin datos de contacto ni detalle reservado). **No** puede publicar, reclamar, reportar ni chatear: esas acciones le piden ingresar (decisión 2026-11-21, pregunta 13.5). |
 | Usuario registrado | Publicar, buscar, reclamar, conversar, reportar contenido. |
 | Autor de hallazgo *(rol contextual)* | Ve y decide (acepta/rechaza) las reclamaciones de su publicación. |
 | Autor de pérdida *(rol contextual)* | Recibe sugerencias de coincidencias para su reporte. |
@@ -149,7 +149,7 @@ No cambiar sin preguntar.
 | Tema | Decisión | Por qué |
 |---|---|---|
 | Arquitectura | **Monolito modular en capas**, cliente-servidor, API REST | Volumen bajo (decenas de miles de registros); los microservicios serían sobreingeniería |
-| Frontend | **Next.js 15** (App Router) + React 19 + Tailwind CSS 4 + TypeScript | **Cambio propuesto (2026-11-18), pendiente de aprobación de Walter en el PR:** antes era React 18 + Vite + React Router. Next.js sigue siendo React, trae el enrutamiento por carpetas (reemplaza a React Router) y un servidor propio que hace de proxy hacia la API: sin CORS y con el JWT en una cookie `httpOnly` que el JavaScript del navegador no puede leer. Las páginas se arman en el servidor, lo que ayuda en celulares lentos (RNF-01, RNF-04). TypeScript, igual que el backend |
+| Frontend | **Next.js 15** (App Router) + React 19 + Tailwind CSS 4 + TypeScript | **Cambio aprobado (propuesto 2026-11-18 en el PR #1, aprobado 2026-11-21):** antes era React 18 + Vite + React Router. Next.js sigue siendo React, trae el enrutamiento por carpetas (reemplaza a React Router) y un servidor propio que hace de proxy hacia la API: sin CORS y con el JWT en una cookie `httpOnly` que el JavaScript del navegador no puede leer. Las páginas se arman en el servidor, lo que ayuda en celulares lentos (RNF-01, RNF-04). TypeScript, igual que el backend |
 | Backend | **NestJS 12 + TypeScript** sobre Node.js 24 LTS (por debajo usa Express 5). ES modules: los `import` locales terminan en `.js` aunque el archivo sea `.ts` | **Cambio (2026-10-25):** antes era Express "a mano". Nest trae de fábrica módulos, inyección de dependencias y capas, que encajan con el monolito modular. TypeScript porque es lo que usan la documentación y la CLI de Nest |
 | Validación | Zod, aplicado con un *Pipe* de Nest (no class-validator) | Valida la entrada de cada endpoint con un esquema; el mismo esquema puede reusarse en el frontend |
 | ORM | Prisma | Migraciones versionadas y protección contra inyección SQL |
@@ -412,7 +412,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [ ] Cron de expiración a 90 días. **Lógica lista:** `jobs/expiracion.service.ts` (`expirarInactivas`: ACTIVAS con `ultima_actividad < now() - 90 días`, en lotes de 500, una transacción por publicación vía `cambiarEstado`; cuenta como "omitida" la que otra petición cambió antes). Probado con 89, 91 y 200 días y con una EN_RECLAMACION quieta (esa no expira). **Falta:** el programador diario (`node-cron` o `@nestjs/schedule`): dependencia nueva, pendiente de aprobar.
 
 ### Fase F — Consulta (RF-13 a RF-17) · *Hito: demostración funcional*
-- [x] Listado con filtros combinados, búsqueda de texto, orden por relevancia y paginación. `GET /api/publicaciones` (público, `?…` validado con Zod) y `GET /api/publicaciones/:id` sobre `CatalogoService` (Prisma.sql parametrizado, lista cerrada de campos públicos). Pendiente: qué ve exactamente un visitante (pregunta 13.5).
+- [x] Listado con filtros combinados, búsqueda de texto, orden por relevancia y paginación. `GET /api/publicaciones` (público, `?…` validado con Zod) y `GET /api/publicaciones/:id` sobre `CatalogoService` (Prisma.sql parametrizado, lista cerrada de campos públicos). Visitante (13.5, resuelta): ve catálogo, búsqueda y ficha completos; las acciones le piden ingresar (frontend: `usuarioOLogin` y aviso en la ficha; backend: 401 en toda escritura).
 - [x] Frontend: Inicio, Catálogo, Detalle y asistente de publicación en 3 pasos (Next.js, `frontend/`).
 - [x] **Hito:** un usuario puede publicar y encontrar un objeto de punta a punta. Recorrido hecho en el navegador a 340 px (2026-11-21): publicar con foto → buscar → reclamar → aceptar → chatear → doble confirmación → ENTREGADA, con avisos en la app y por correo. Arreglado en ese recorrido: el chat leía mal quién ya confirmó (ahora usa `GET /reclamaciones/:id`) y el texto oculto "sin leer" del menú estiraba la página en el celular (`.nav { position: relative }`).
 
@@ -481,18 +481,22 @@ hallazgo-ud/
 │   │   │   ├── reclamaciones/
 │   │   │   ├── notificaciones/
 │   │   │   ├── coincidencias/
+│   │   │   ├── moderacion/
+│   │   │   ├── mi-cuenta/     ← GET /api/usuarios/me/publicaciones, /reclamaciones, /conversaciones
 │   │   │   └── admin/
 │   │   ├── comun/             ← guards (sesión, roles), pipes (Zod), filtros de errores, interceptores
 │   │   ├── jobs/              ← tareas cron
 │   │   └── lib/               ← prisma, mailer, almacenamiento, auditoría (como providers de Nest)
 │   └── test/                  ← pruebas e2e (*.e2e-spec.ts); las unitarias van junto al archivo (*.spec.ts)
-└── frontend/
+└── frontend/                  ← Next.js 15 (App Router); detalle en frontend/README.md
+    ├── docs/                  ← endpoints que pide el frontend, temas a decidir
     └── src/
-        ├── pages/
-        ├── components/
-        ├── services/          ← cliente HTTP
-        └── hooks/
+        ├── app/               ← cada carpeta es una ruta (page.tsx); api/[...ruta]/ es el proxy hacia el backend
+        ├── components/        ← componentes ('use client' = interactivos en el navegador)
+        └── lib/               ← api/ (servidor.ts y cliente.ts), tipos.ts, sesion.ts, ip-cliente.ts, entrega.ts…
 ```
+
+> **Ojo con `'use client'` (Next.js):** una página del servidor no puede llamar funciones de un archivo marcado `'use client'`. La lógica compartida va en `src/lib/`.
 
 > La propuesta agrupa por capa (`routes/`, `services/`, `repositories/`). Aquí se agrupa **por módulo y dentro de cada uno por capa**, porque refleja mejor el "monolito modular" y facilita extraer un módulo después. Las capas siguen siendo las mismas.
 
@@ -534,6 +538,9 @@ npm run lint                         # lint completo con tipos (~23 s)
 npm run format:check                 # ¿todo está formateado? (no cambia nada)
 npm install                          # en la RAÍZ: instala husky y activa el hook de pre-commit
 cd frontend && npm run dev           # frontend (Next.js) en http://localhost:3001
+cd frontend && npm run typecheck     # revisión de tipos del frontend
+cd frontend && npm run build         # compilación de producción. APAGA antes `npm run dev`: los dos usan .next/
+                                     # y se pisan (el dev responde 500). Si pasa: borrar frontend/.next y reiniciar
 ```
 
 ---
@@ -544,7 +551,7 @@ cd frontend && npm run dev           # frontend (Next.js) en http://localhost:30
 2. **"Edificio análogo" (10 % del puntaje de sede).** No está definido. Opción simple: un campo `tipo_lugar` en `lugar` (cafetería, biblioteca, laboratorio…) y comparar ese campo entre sedes.
 3. **¿Quién publica lo que llega a portería?** El personal de vigilancia aparece como usuario objetivo, pero no tiene rol propio. ¿Usan una cuenta normal?
 4. **Revertir una reclamación aceptada.** Si el reclamante no aparece, ¿el autor puede cancelarla y volver a `ACTIVA`? Se asume que sí (sección 6.1), pero hay que confirmarlo.
-5. **Visitante "lectura limitada".** ¿Qué ve exactamente? Propuesta: título, categoría, sede, fecha e imagen en miniatura, sin la descripción completa.
+5. ~~**Visitante "lectura limitada".**~~ **Resuelta (2026-11-21):** el visitante ve el catálogo, busca y abre la ficha completa (sin contacto ni detalle reservado), pero no publica, reclama, reporta ni chatea: esas acciones le piden ingresar. Ver sección 2.
 6. **Imágenes en publicaciones PERDIDO.** RF-08 pide "entre una y cinco" imágenes. Para un objeto perdido muchas veces no hay foto. ¿Se vuelven opcionales en ese caso?
 7. **`fecha_suceso` con el reloj del celular.** El CHECK exige `fecha_suceso <= fecha_creacion` (reloj de la BD). Si el celular del usuario va adelantado y reporta "ahora mismo", la publicación se rechaza. Propuesta: el servicio recorta `fecha_suceso` a `min(fecha_suceso, ahora)` antes de guardar y envía `fecha_creacion` desde el mismo reloj (ver la regla de fechas de la Fase C).
 

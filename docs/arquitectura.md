@@ -167,7 +167,7 @@ Cuando trabajan dos personas (o sesiones) a la vez:
 ## Despliegue (pendiente, Fase K)
 
 Plan: un VPS con Docker Compose.
-1. Dockerfiles de producción (backend compilado; frontend estático).
+1. Dockerfiles de producción (backend compilado; frontend con `next build` + `next start`, que tiene su propio servidor).
 2. Proxy inverso con HTTPS (TLS) delante de Next.js. Backend con `TRUST_PROXY=1` y frontend con `CONFIAR_PROXY=true`: así el rate limit cuenta por la IP real y nadie puede inventarla (ver `backend/src/comun/limites/limites.ts`).
 3. No publicar los puertos de PostgreSQL, el explorador de SeaweedFS ni Mailpit.
 4. Backend con `DATABASE_URL` = `hallazgo_app`; migraciones con `DATABASE_URL_MIGRACIONES` = dueño (`prisma migrate deploy`).
