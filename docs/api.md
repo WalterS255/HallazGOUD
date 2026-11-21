@@ -233,6 +233,55 @@ Quita la foto. Respuesta: el perfil actualizado.
 ### `GET /imagenes/usuarios/:id/:archivo` · público
 Sirve la foto de perfil (la URL viene en `foto_url`).
 
+### Mis listas
+
+Las tres salen del usuario del **token**: no hay forma de pedir las de otra persona. Sin paginación (una persona tiene pocas). Sin sesión → `401 NO_AUTENTICADO`.
+
+### `GET /usuarios/me/publicaciones` · sesión
+Todas mis publicaciones, **en cualquier estado** y aunque estén ocultas por moderación, de la más reciente a la más antigua. Misma forma que una fila de `GET /publicaciones`, más `oculta` y las reclamaciones por revisar:
+
+```json
+[
+  {
+    "id": 41, "tipo": "ENCONTRADO", "estado": "ACTIVA",
+    "titulo": "Calculadora Casio encontrada",
+    "fecha_suceso": "2026-10-24T15:00:00.000Z", "fecha_creacion": "2026-10-24T16:10:00.000Z",
+    "categoria": "Útiles y libros", "sede": "Calle 40 (Ingeniería)", "edificio": "Biblioteca",
+    "miniatura": "/api/imagenes/publicaciones/41/<uuid>_min.webp",
+    "oculta": false,
+    "reclamaciones_pendientes": 2
+  }
+]
+```
+
+### `GET /usuarios/me/reclamaciones` · sesión
+Las reclamaciones que **yo** hice, de la más reciente a la más antigua. No incluye mi `respuesta_detalle`.
+
+```json
+[
+  {
+    "id": 7, "estado": "ACEPTADA", "fecha": "2026-10-25T13:00:00.000Z",
+    "publicacion": { "id": 41, "titulo": "Calculadora Casio encontrada", "estado": "EN_RECLAMACION",
+                     "usuario": { "id": 12, "nombre": "Ana Pérez" } }
+  }
+]
+```
+
+### `GET /usuarios/me/conversaciones` · sesión
+Una fila por reclamación **ACEPTADA** donde soy autor o reclamante (los chats, §10), la de actividad más reciente primero. `contraparte` es siempre la otra persona. `no_leidos` cuenta los mensajes de la otra parte que no he abierto. `ultimo_mensaje` es `null` si nadie ha escrito. También aparecen los chats ya cerrados por la entrega (solo lectura).
+
+```json
+[
+  {
+    "id_reclamacion": 7,
+    "publicacion": { "id": 41, "titulo": "Calculadora Casio encontrada", "estado": "EN_RECLAMACION" },
+    "contraparte": { "id": 20, "nombre": "Luis Gómez" },
+    "ultimo_mensaje": { "contenido": "¿Mañana a las 10?", "fecha_envio": "2026-10-25T15:00:00.000Z" },
+    "no_leidos": 1
+  }
+]
+```
+
 ---
 
 ## 5. Catálogos públicos

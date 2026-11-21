@@ -32,7 +32,6 @@ Cada una con la recomendación técnica. Las primeras afectan al frontend.
 - [ ] Programador diario (depende de #9): conectar `ExpiracionService.expirarInactivas` y escribir la limpieza de imágenes de publicaciones entregadas hace más de 90 días.
 - [ ] Ruta para cancelar una reclamación aceptada (depende de #4).
 - [ ] Desenfoque automático de la miniatura en categorías sensibles (regla 6.6, opcional).
-- [ ] Endpoint "mis publicaciones" (`GET /usuarios/me/publicaciones`) y "mis reclamaciones": el frontend las va a necesitar para las pantallas "Mis publicaciones" y "Mensajes". Hoy se puede filtrar el catálogo, pero no por autor.
 
 ### Calidad (Fase J)
 - [ ] **Cobertura ≥ 60 %** (RNF-14) con pruebas unitarias. Hoy está por debajo porque `auth`, `gestion` e `imagenes` se prueban solo contra la base (cuentan en `test:db`, no en la cobertura unitaria). Opciones: agregarles pruebas unitarias, o medir la cobertura también con `test:db`.

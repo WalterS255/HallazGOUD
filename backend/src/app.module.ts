@@ -15,6 +15,7 @@ import { PrismaModule } from './lib/prisma/prisma.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { CoincidenciasModule } from './modules/coincidencias/coincidencias.module.js';
+import { MiCuentaModule } from './modules/mi-cuenta/mi-cuenta.module.js';
 import { ModeracionModule } from './modules/moderacion/moderacion.module.js';
 import { NotificacionesModule } from './modules/notificaciones/notificaciones.module.js';
 import { PublicacionesModule } from './modules/publicaciones/publicaciones.module.js';
@@ -40,6 +41,7 @@ import { SaludModule } from './modules/salud/salud.module.js';
     ReclamacionesModule,
     AdminModule,
     ModeracionModule,
+    MiCuentaModule,
     // jobs/: tareas programadas
     JobsModule,
   ],

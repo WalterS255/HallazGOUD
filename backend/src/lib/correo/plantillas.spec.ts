@@ -1,3 +1,4 @@
+import { config } from '../../config/configuracion.js';
 import { correoRecuperacion, correoVerificacion, escaparHtml } from './plantillas.js';
 
 const token = 'a'.repeat(64);
@@ -6,7 +7,7 @@ describe('plantillas de correo', () => {
   it('el correo de verificación lleva el enlace al frontend con el token', () => {
     const c = correoVerificacion('ana@udistrital.edu.co', 'Ana', token);
     expect(c.para).toBe('ana@udistrital.edu.co');
-    expect(c.texto).toContain(`http://localhost:5173/verificar/${token}`);
+    expect(c.texto).toContain(`${config.urlFrontend}/verificar/${token}`);
     expect(c.html).toContain(`/verificar/${token}`);
     expect(c.texto).toContain('24 horas');
   });
