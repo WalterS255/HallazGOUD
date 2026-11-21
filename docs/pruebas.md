@@ -162,6 +162,28 @@ Consejos:
 | Una prueba de coincidencias buscaba `id` y la API devuelve `id_publicacion` | Antes de suponer que el código falla, revisa la forma real de la respuesta (`docs/api.md`) |
 | Activar `trust proxy` parecía arreglado y se podía falsificar la IP | Prueba el ataque, no solo el caso feliz: 7 logins con IPs inventadas lo demostraron |
 
-## 8. Frontend
+## 8. Frontend: el recorrido completo con Playwright
 
-El frontend todavía **no tiene pruebas automáticas** (ni linter propio; ver [`pendientes.md`](pendientes.md)). El 21 de noviembre se hizo a mano el recorrido completo en el navegador a 340 px de ancho (publicar → buscar → reclamar → aceptar → chatear → entregar, y como visitante sin sesión). Automatizarlo con **Playwright** es parte de la Fase J.
+**Playwright** abre un navegador real (Chromium) y usa la app como lo haría una persona: escribe en los campos, pulsa botones y revisa lo que aparece en pantalla. Es la única prueba que junta **todo** a la vez: frontend, proxy, backend, PostgreSQL, SeaweedFS (las fotos) y las reglas de negocio.
+
+| Archivo | Qué hace |
+|---|---|
+| `frontend/playwright.config.ts` | Pantalla de **celular de 360 px** (RNF-04), hora de Colombia, un solo trabajador; arranca el backend y el frontend si no están encendidos |
+| `frontend/e2e/ayudas.ts` | Usuarios del seed, inicio de sesión por el formulario y una foto PNG de prueba |
+| `frontend/e2e/recorrido.spec.ts` | **Dos personas a la vez**, cada una en su propio navegador: la autora publica con foto (asistente de 3 pasos), el reclamante lo busca y lo reclama, la autora acepta, conversan y los dos confirman la entrega. Comprueba también que el detalle reservado **no** le aparece al reclamante |
+
+Desde `frontend/` (necesita `docker compose up -d` y el seed del backend):
+
+```bash
+npm run test:e2e          # en segundo plano (~30 s)
+npm run test:e2e:ver      # mostrando el navegador, para ver qué hace
+npx playwright show-report   # informe HTML de la última corrida
+```
+
+- Busca los elementos **como los ve una persona**: por su etiqueta (`getByLabel('Contraseña')`), su rol y su texto (`getByRole('button', { name: 'Publicar' })`). Si una etiqueta se pierde, la prueba falla, y eso también es un problema de accesibilidad.
+- Cada corrida usa un título único, así no se confunde con datos de corridas anteriores. Deja esos datos en `hallazgo_ud` (es tu base de desarrollo).
+- Si falla, guarda una **grabación paso a paso** (`trace`) con capturas: `npx playwright show-trace test-results/…/trace.zip`.
+- Cada corrida inicia sesión 2 veces. El login permite 5 por minuto, así que **no la corras más de 2 veces en el mismo minuto**.
+- Estable: pasó 3 corridas seguidas (2026-11-21).
+
+**Lo que todavía no tiene el frontend:** linter propio y pruebas de sus componentes por separado (ver [`pendientes.md`](pendientes.md)).
