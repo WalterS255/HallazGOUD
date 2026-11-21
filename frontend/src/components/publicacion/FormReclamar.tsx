@@ -49,7 +49,7 @@ export function FormReclamar({ publicacionId, autor }: { publicacionId: number; 
   }
 
   return (
-    <form onSubmit={enviar} className="panel stack" noValidate>
+    <form method="post" onSubmit={enviar} className="panel stack" noValidate>
       <h3>Reclamar este objeto</h3>
       <p className="muted small">
         Quien lo encontró guardó un detalle que no aparece en la publicación. Descríbelo para demostrar que es tuyo.

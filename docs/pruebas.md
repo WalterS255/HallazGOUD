@@ -2,7 +2,7 @@
 
 Cómo están organizadas las pruebas de HallazGO UD, cómo se corren, qué prueba cada archivo y cómo escribir una nueva. Para la arquitectura general ver [`arquitectura.md`](arquitectura.md).
 
-**Estado (2026-11-21):** 276 pruebas unitarias, 26 e2e y 142 contra PostgreSQL, todas en verde. Cobertura de los servicios: **87 % de líneas** (el mínimo exigido es 60 %, RNF-14).
+**Estado (2026-11-21):** 280 pruebas unitarias, 26 e2e y 142 contra PostgreSQL, todas en verde. Cobertura de los servicios: **87 % de líneas** (el mínimo exigido es 60 %, RNF-14).
 
 ---
 
@@ -76,7 +76,7 @@ auth.service.ts    |     100 |    96.15 |     100 |     100 | 194,242
 
 ## 4. Qué prueba cada archivo
 
-### Unitarias (276)
+### Unitarias (280)
 
 | Área | Archivos (pruebas) | Qué cubren |
 |---|---|---|
@@ -87,7 +87,7 @@ auth.service.ts    |     100 |    96.15 |     100 |     100 | 194,242
 | Otros módulos | `moderacion.service` (8), `notificaciones.service` (6), `catalogos.service` (10), `estadisticas.service` (2), `mi-cuenta.service` (4), `salud` (4) | Moderación con plazo de 48 h, avisos que nunca lanzan, catálogos en uso, la contraparte del chat |
 | Piezas comunes | `filtro-errores` (5), `validacion-zod.pipe` (5), `configuracion` (6), `opciones-logger` (2), `plantillas` (4), `procesar` (8), `expiracion.service` (2), `programador.service` (6) | Forma de los errores, mensajes de Zod en español, el servidor no arranca con un `.env` malo, secretos ocultos en el log, correos sin HTML inyectado, imágenes a WEBP sin GPS, el cron a las 3:00 a. m. de Colombia que nunca tumba el servidor |
 
-### E2E (26)
+### E2E (27)
 
 | Archivo | Qué cubre |
 |---|---|
@@ -188,7 +188,7 @@ npx playwright show-report   # informe HTML de la última corrida
 
 ## 9. Accesibilidad (RNF-05) y responsivo (RNF-04)
 
-`frontend/e2e/accesibilidad.spec.ts` corre con `npm run test:e2e`, junto al recorrido (30 pruebas en total, ~2 min).
+`frontend/e2e/accesibilidad.spec.ts` corre con `npm run test:e2e`, junto al recorrido (33 pruebas en total con la de seguridad, ~2 min).
 
 **Automático con axe-core** (`@axe-core/playwright`): en cada pantalla se aplican las reglas de **WCAG 2.1 nivel A y AA** (contraste de colores, etiquetas de los campos, nombres de botones y enlaces, idioma de la página, títulos, uso correcto de ARIA…) y se comprueba que **nada se salga por el costado a 360 px**.
 
@@ -217,5 +217,15 @@ Cada una en **tema oscuro y claro** (el contraste cambia con los colores): 28 re
 200 estudiantes virtuales usan el catálogo a la vez (filtros, búsqueda, páginas, fichas) sobre **10.000 publicaciones**. Resultado (2026-11-21): **p95 = 19,9 ms** frente a los 2.000 ms exigidos, 0 errores en 9.224 peticiones. Cómo correrla y qué no mide: [`infra/carga/README.md`](../infra/carga/README.md).
 
 Para que 200 usuarios simulados desde un PC no choquen con el límite de 100 peticiones por minuto por IP, el backend de la prueba arranca con `SIN_LIMITE_PETICIONES=true`, que **se niega a arrancar en producción** (probado en `configuracion.spec.ts`).
+
+## 11. Seguridad: OWASP ZAP y control de acceso
+
+Dos escaneos con OWASP ZAP (pasivo sobre el frontend, activo con ataques sobre la API pública contra la base de carga) y una revisión manual de quién puede usar cada ruta. Resultado: **0 fallos**. Lo que encontró se corrigió y quedó vigilado por pruebas:
+
+- `frontend/e2e/seguridad.spec.ts`: con el **JavaScript apagado**, enviar el login o el registro no deja la contraseña en la URL (antes sí: `/login?contrasena=…`), y las páginas envían CSP, `Permissions-Policy`, COOP, `X-Frame-Options` y `nosniff`. Contraprueba hecha: sin el arreglo, falla.
+- `validacion-zod.pipe.spec.ts`: el carácter nulo (` `) en cualquier entrada → 400 (antes, 500 desde PostgreSQL).
+- `salud.e2e-spec.ts`: la API envía `nosniff` y `Cross-Origin-Resource-Policy`.
+
+Detalle, avisos aceptados y la **matriz ruta × rol** con la prueba que cubre cada permiso: [`infra/seguridad/README.md`](../infra/seguridad/README.md).
 
 **Lo que todavía no tiene el frontend:** linter propio y pruebas de sus componentes por separado (ver [`pendientes.md`](pendientes.md)).

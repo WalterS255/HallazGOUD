@@ -25,6 +25,8 @@ Thumbs.db
 
 # Prueba de carga (k6): resultado de cada corrida
 infra/carga/resultado.json
+# Informes de OWASP ZAP: se regeneran con los comandos de infra/seguridad/README.md
+infra/seguridad/informes/
 
 # Pruebas E2E (Playwright)
 playwright-report/

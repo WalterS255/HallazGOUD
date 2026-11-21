@@ -1,0 +1,71 @@
+# Mapa de la API PÚBLICA para el escaneo ACTIVO de OWASP ZAP (Fase J).
+# ZAP ataca cada parámetro (inyección SQL, XSS, rutas, tipos raros...). Por eso se apunta
+# al backend de la prueba de carga (puerto 3100, base hallazgo_carga, desechable), nunca
+# a hallazgo_ud. Ver infra/seguridad/README.md.
+openapi: 3.0.3
+info:
+  title: HallazGO UD - API pública
+  version: '1.0'
+servers:
+  - url: http://host.docker.internal:3100/api
+paths:
+  /salud:
+    get:
+      responses: { '200': { description: ok } }
+  /catalogos:
+    get:
+      responses: { '200': { description: ok } }
+  /publicaciones:
+    get:
+      parameters:
+        - { name: q, in: query, schema: { type: string, example: calculadora gris } }
+        - { name: tipo, in: query, schema: { type: string, example: ENCONTRADO } }
+        - { name: id_categoria, in: query, schema: { type: integer, example: 3 } }
+        - { name: id_sede, in: query, schema: { type: integer, example: 2 } }
+        - { name: estado, in: query, schema: { type: string, example: ACTIVA } }
+        - { name: desde, in: query, schema: { type: string, example: '2026-01-01' } }
+        - { name: hasta, in: query, schema: { type: string, example: '2026-12-31' } }
+        - { name: orden, in: query, schema: { type: string, example: relevancia } }
+        - { name: pagina, in: query, schema: { type: integer, example: 1 } }
+        - { name: limite, in: query, schema: { type: integer, example: 20 } }
+      responses: { '200': { description: ok } }
+  /publicaciones/{id}:
+    get:
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, example: 1 } }
+      responses: { '200': { description: ok } }
+  /auth/login:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                correo: { type: string, example: carga1@udistrital.edu.co }
+                contrasena: { type: string, example: Una-clave-123 }
+      responses: { '401': { description: credenciales invalidas } }
+  /auth/recuperar:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                correo: { type: string, example: carga1@udistrital.edu.co }
+      responses: { '202': { description: aceptado } }
+  /auth/registro:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nombre: { type: string, example: Persona Escaneo }
+                correo: { type: string, example: escaneo@udistrital.edu.co }
+                programa: { type: string, example: Sistemas }
+                contrasena: { type: string, example: Una-clave-123 }
+                aceptaPolitica: { type: boolean, example: true }
+      responses: { '201': { description: creada } }

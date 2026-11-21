@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ErrorApp } from '../errores/error-app.js';
-import { ValidacionZod } from './validacion-zod.pipe.js';
+import { buscarNulo, ValidacionZod } from './validacion-zod.pipe.js';
 
 const esquema = z.object({
   correo: z
@@ -59,5 +59,28 @@ describe('ValidacionZod', () => {
 
   it('si el cuerpo no es un objeto, el campo es "(cuerpo)"', () => {
     expect(errorDe('hola').detalles?.[0]?.campo).toBe('(cuerpo)');
+  });
+});
+
+// OWASP ZAP (Fase J): PostgreSQL no admite \u0000 en un texto; antes llegaba a la base y daba 500.
+describe('carácter nulo (\u0000)', () => {
+  it('un texto con \u0000 → 400 con el campo marcado, sin llegar a Zod ni a la base', () => {
+    const pipe = new ValidacionZod(esquema);
+    try {
+      pipe.transform({ correo: 'ana\u0000@udistrital.edu.co', edad: 20 });
+      throw new Error('debía rechazarlo');
+    } catch (e) {
+      expect(e).toBeInstanceOf(ErrorApp);
+      expect((e as ErrorApp).getStatus()).toBe(400);
+      expect((e as ErrorApp).detalles).toEqual([
+        { campo: 'correo', mensaje: 'Contiene caracteres no permitidos' },
+      ]);
+    }
+  });
+
+  it('busca en objetos y listas anidados', () => {
+    expect(buscarNulo({ a: [{ b: 'ok' }, { b: 'x\u0000' }] })).toBe('a.1.b');
+    expect(buscarNulo('solo\u0000texto')).toBe('(cuerpo)');
+    expect(buscarNulo({ a: 'normal', n: 3, v: null, l: ['ñandú', 'calculadora'] })).toBeNull();
   });
 });

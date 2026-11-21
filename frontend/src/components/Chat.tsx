@@ -138,7 +138,7 @@ export function Chat({
               : 'La entrega se confirmó: el chat quedó en solo lectura.'}
           </p>
         ) : (
-          <form onSubmit={enviar}>
+          <form method="post" onSubmit={enviar}>
             <label htmlFor="chat-txt" className="sr-only">
               Mensaje
             </label>

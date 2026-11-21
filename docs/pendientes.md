@@ -3,7 +3,7 @@
 Lo que falta decidir y lo que falta construir. Cuando algo se resuelva, se borra de aquí y se refleja en `CLAUDE.md` (sección 4 si es una decisión, sección 9 si es trabajo terminado).
 
 **Estado (2026-11-21):**
-- **Backend:** todas las funciones de la propuesta están implementadas y probadas (276 pruebas unitarias (87 % de cobertura en los servicios), 26 e2e y 142 contra PostgreSQL).
+- **Backend:** todas las funciones de la propuesta están implementadas y probadas (280 pruebas unitarias (87 % de cobertura en los servicios), 26 e2e y 142 contra PostgreSQL).
 - **Frontend:** Next.js en `frontend/`, conectado a la API. Están todas las pantallas salvo las de la sección 3.
 - **Hito de la Fase F cumplido:** recorrido de punta a punta en el navegador (publicar → reclamar → chatear → entregar).
 
@@ -34,9 +34,10 @@ Resueltas el 2026-11-21: suspensión al instante (el guard revisa la cuenta en c
 - [ ] Recomendados en `frontend/docs/endpoints-pendientes.md` que siguen abiertos (#5: `id_publicacion` en los avisos).
 
 ### Calidad (Fase J)
-- [ ] OWASP ZAP y revisión manual de control de acceso.
 
 ### Despliegue (Fase K)
+- [ ] Repetir el escaneo pasivo de ZAP contra `next build` (en desarrollo, Next sirve paquetes sin minificar y una CSP con `unsafe-eval`).
+- [ ] CSP sin `'unsafe-inline'` en scripts (nonces por petición): mejora opcional.
 - [ ] Dockerfiles de producción y proxy inverso con HTTPS (en producción, `CONFIAR_PROXY=true` en el frontend).
 - [ ] Backend con el rol `hallazgo_app` (`infra/bd/roles.sql`, listo y probado).
 - [ ] Cron de respaldos en el VPS (`infra/respaldo/*.sh`, listos y probados) y una copia fuera del servidor.
