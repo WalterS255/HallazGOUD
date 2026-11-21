@@ -439,7 +439,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 
 ### Fase J — Pruebas y calidad
 - [x] Cobertura ≥ 60 % en los `*.service.ts` del backend (Vitest). **87 % de líneas** (2026-11-21) con 270 pruebas unitarias: se agregaron las de `auth`, `gestion`, `imagenes` y `perfil` (antes en 0 %: solo tenían pruebas contra la BD). El límite está en `vitest.config.ts` (`coverage.thresholds`, con `include` para que cuenten también los servicios sin pruebas): `npm run test:cov` falla si baja del 60 %.
-- [ ] Playwright: publicar → reclamar → conversar → entregar.
+- [x] Playwright: publicar → reclamar → conversar → entregar. `frontend/e2e/recorrido.spec.ts` (`@playwright/test` 1.65.1): dos personas en navegadores separados, pantalla de 360 px, foto real, ~30 s. Estable en 3 corridas. `npm run test:e2e` en `frontend/`.
 - [ ] k6 con 200 usuarios virtuales sobre el listado (RNF-01).
 - [ ] OWASP ZAP + revisión manual de control de acceso.
 - [ ] Revisión de accesibilidad (WCAG AA) y del responsivo a 360 px.
@@ -542,6 +542,7 @@ npm run format:check                 # ¿todo está formateado? (no cambia nada)
 npm install                          # en la RAÍZ: instala husky y activa el hook de pre-commit
 cd frontend && npm run dev           # frontend (Next.js) en http://localhost:3001
 cd frontend && npm run typecheck     # revisión de tipos del frontend
+cd frontend && npm run test:e2e      # Playwright: recorrido completo en un navegador real (~30 s; no más de 2 veces por minuto)
 cd frontend && npm run build         # compilación de producción. APAGA antes `npm run dev`: los dos usan .next/
                                      # y se pisan (el dev responde 500). Si pasa: borrar frontend/.next y reiniciar
 ```
