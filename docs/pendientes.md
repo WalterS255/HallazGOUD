@@ -41,7 +41,7 @@ Cada una con la recomendación técnica. Las primeras afectan al frontend.
 - [ ] Accesibilidad (WCAG AA) y responsivo a 360 px (frontend).
 
 ### Despliegue (Fase K)
-- [ ] Dockerfiles de producción y proxy inverso con HTTPS (`trust proxy`).
+- [ ] Dockerfiles de producción y proxy inverso con HTTPS (en producción, `CONFIAR_PROXY=true` en el frontend).
 - [ ] Backend con el rol `hallazgo_app` (`infra/bd/roles.sql`, listo y probado).
 - [ ] Cron de respaldos en el VPS (`infra/respaldo/*.sh`, listos y probados) y una copia fuera del servidor.
 - [ ] CI en GitHub Actions.

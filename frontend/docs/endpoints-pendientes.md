@@ -72,6 +72,9 @@ autor o el reclamante, la de actividad más reciente primero:
 
 ## Recomendados
 
+> ✅ **#4 hecho:** `GET /reclamaciones/:id` (`docs/api.md` §10). Trae además `soy` (`AUTOR` o `RECLAMANTE`) y `fecha`/`fecha_resolucion`; `entrega` es `null` si la reclamación no está aceptada.
+> ✅ **#6 hecho, con un cambio en el frontend:** el backend usa `TRUST_PROXY=1`. Reenviar el `X-Forwarded-For` del navegador tal cual dejaba **inventar la IP** (probado: 7 logins seguidos con IPs inventadas pasaban todos). Ahora `src/lib/ip-cliente.ts` solo reenvía la IP cuando `CONFIAR_PROXY=true` (hay un proxy inverso delante, en producción) y toma la última entrada, la que puso ese proxy.
+
 | # | Qué | Para qué |
 | - | --- | -------- |
 | 4 | `GET /reclamaciones/:id` (partes): `{ id, estado, publicacion: { id, titulo, estado }, autor, reclamante, entrega: { confirmo_autor, confirmo_reclamante, fecha_entrega } }` | El chat no puede saber quién ya confirmó la entrega: si alguien recarga la página, el botón "Confirmar" vuelve a aparecer. Hoy el frontend arma el encabezado del chat con la publicación que viene en el enlace |

@@ -95,6 +95,7 @@ Todas las respuestas de error tienen la misma forma:
 - Estricto: **5 por minuto** en `registro`, `login`, `recuperar`, `reenviar-verificacion` y `restablecer`.
 - Al pasarse: `429 DEMASIADAS_SOLICITUDES`, con el encabezado **`Retry-After`** (cuántos segundos esperar): el frontend puede mostrar "intenta de nuevo en N segundos".
 - `/salud` y las imágenes públicas no tienen límite.
+- La IP sale de `X-Forwarded-For` solo si `TRUST_PROXY` lo permite (el frontend Next.js la pone; ver `.env.example`). Un `X-Forwarded-For` inventado por el cliente no cambia el conteo.
 
 ### Lo que NUNCA devuelve la API (regla 6.3)
 Correo de **otras** personas, teléfono, `hash_contrasena`, tokens ni el **detalle reservado** (este último solo lo ve el autor, en `GET /publicaciones/:id/reclamaciones`). De otras personas solo se devuelve `{ id, nombre }`. Hay pruebas automáticas que fallan si alguna respuesta lo filtra.
@@ -509,6 +510,24 @@ Las reclamaciones de **mi** publicación, junto al detalle reservado, para compa
 }
 ```
 Errores: `403 PROHIBIDO`.
+
+### `GET /reclamaciones/:id` · partes
+Ficha de una reclamación para sus dos partes (autor de la publicación y reclamante), en cualquier estado. Sirve a la pantalla del chat para saber quién es quién y quién ya confirmó la entrega. No incluye la respuesta al detalle reservado.
+
+```json
+{
+  "id": 7, "estado": "ACEPTADA",
+  "fecha": "2026-10-25T13:00:00.000Z", "fecha_resolucion": "2026-10-25T14:00:00.000Z",
+  "publicacion": { "id": 41, "titulo": "Calculadora Casio encontrada", "estado": "EN_RECLAMACION" },
+  "autor": { "id": 12, "nombre": "Ana Pérez" },
+  "reclamante": { "id": 20, "nombre": "Luis Gómez" },
+  "soy": "RECLAMANTE",
+  "entrega": { "confirmo_autor": true, "confirmo_reclamante": false, "fecha_entrega": null }
+}
+```
+
+`soy` es `AUTOR` o `RECLAMANTE`. `entrega` es `null` mientras la reclamación no se ha aceptado.
+Errores: `403 PROHIBIDO` si no eres parte **o** si no existe (mismo error a propósito, como en el chat).
 
 ### `PATCH /reclamaciones/:id` · autor
 Aceptar o rechazar (RF-19, RF-20).

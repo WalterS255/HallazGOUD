@@ -344,6 +344,7 @@ Base: `/api`. Las respuestas van en JSON. Los errores tienen la forma `{ "error"
 | GET | `/publicaciones/:id/coincidencias` | autor | Sugerencias |
 | POST | `/publicaciones/:id/reclamaciones` | sesión | Reclamar |
 | GET | `/publicaciones/:id/reclamaciones` | autor | Ver reclamaciones de mi publicación *(añadido, RF-19)* |
+| GET | `/reclamaciones/:id` | partes | Ficha para el chat: quién es quién (`soy`) y en qué va la entrega *(añadido, para el frontend)* |
 | PATCH | `/reclamaciones/:id` | autor | Aceptar o rechazar |
 | GET / POST | `/reclamaciones/:id/mensajes` | partes | Hilo de chat |
 | POST | `/reclamaciones/:id/entrega` | partes | Confirmar entrega |
@@ -443,7 +444,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [ ] Revisión de accesibilidad (WCAG AA) y del responsivo a 360 px.
 
 ### Fase K — Despliegue y documentación
-- [ ] Dockerfiles de producción + proxy inverso con TLS. En el VPS no se publican los puertos de Postgres, ni el explorador de SeaweedFS (8888, sin contraseña), ni Mailpit. Detrás del proxy, activar `app.set('trust proxy', 1)`: si no, el rate limit ve la IP del proxy y **todos** los usuarios comparten el mismo límite (ver `comun/limites/limites.ts`).
+- [ ] Dockerfiles de producción + proxy inverso con TLS. En el VPS no se publican los puertos de Postgres, ni el explorador de SeaweedFS (8888, sin contraseña), ni Mailpit. **IP real para el rate limit (hecho):** backend con `TRUST_PROXY=1` (el salto es Next) y frontend con `CONFIAR_PROXY=true` en producción, para que tome la IP que el proxy agrega al final de `X-Forwarded-For`. Sin eso, todos comparten el mismo límite; con un salto de más, cualquiera inventa su IP (ver `comun/limites/limites.ts`, probado en `test/limites.e2e-spec.ts`).
 - [ ] Usuario de BD con permisos mínimos. **Script listo y probado:** `infra/bd/roles.sql` crea `hallazgo_app`, que lee y escribe datos, pero en `auditoria` solo puede hacer `INSERT` y `SELECT`. Tampoco puede hacer `DROP`, desactivar triggers ni crear tablas, y las tablas de migraciones futuras heredan sus permisos. Falta: en producción el backend usa `hallazgo_app` y solo `prisma migrate deploy` y los respaldos usan el dueño. Eso requiere separar las dos URL en la configuración.
 - [ ] CI en GitHub Actions: lint + pruebas en cada PR.
 - [ ] Respaldo diario con `pg_dump` (30 días) + prueba de restauración. **Scripts listos y probados** (`infra/respaldo/respaldar.sh` y `restaurar.sh`: misma cantidad de filas, triggers, CHECK e índices). Falta programar el cron en el VPS y guardar una copia fuera del servidor.

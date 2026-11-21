@@ -31,6 +31,13 @@ const esquemaEntorno = z
     PUERTO: puertoTcp.default(3000),
     NIVEL_LOG: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
     URL_FRONTEND: z.url({ error: 'debe ser una URL (http://…)' }),
+    // Cuántos intermediarios de confianza hay delante del backend (ver comun/limites/limites.ts).
+    TRUST_PROXY: z.coerce
+      .number({ error: 'debe ser un número' })
+      .int({ error: 'debe ser un número entero' })
+      .min(0, { error: 'debe estar entre 0 y 5' })
+      .max(5, { error: 'debe estar entre 0 y 5' })
+      .default(0),
     ZONA_HORARIA: texto.default('America/Bogota'),
 
     DATABASE_URL: z
@@ -83,6 +90,7 @@ function aConfig(v: z.infer<typeof esquemaEntorno>) {
     // En las pruebas no se escribe nada al log, para que la salida de Vitest se lea limpia.
     nivelLog: v.NIVEL_LOG ?? (v.NODE_ENV === 'test' ? 'silent' : 'info'),
     urlFrontend: v.URL_FRONTEND,
+    saltosProxy: v.TRUST_PROXY,
     zonaHoraria: v.ZONA_HORARIA,
     baseDatos: { url: v.DATABASE_URL },
     jwt: { secreto: v.JWT_SECRET, expiraEn: v.JWT_EXPIRA_EN },

@@ -241,8 +241,30 @@ describe('flujo completo: reclamar → aceptar → conversar → entregar', () =
 
   it('con las dos confirmaciones la publicación queda ENTREGADA y el chat se cierra', async () => {
     const ruta = `/api/reclamaciones/${idReclamacion}/entrega`;
+    const ficha = `/api/reclamaciones/${idReclamacion}`;
+    await como(null).get(ficha).expect(401);
+    await como('curioso').get(ficha).expect(403);
+    await como('reclamante').get('/api/reclamaciones/999999').expect(403); // igual que un tercero
+
     expect((await como('autora').post(ruta).expect(200)).body).toEqual({ entregada: false });
+
+    // Si el reclamante recarga el chat, ve que la autora YA confirmó y él todavía no.
+    const aMedias = await como('reclamante').get(ficha).expect(200);
+    expect(aMedias.body).toMatchObject({
+      id: idReclamacion,
+      estado: 'ACEPTADA',
+      soy: 'RECLAMANTE',
+      publicacion: { id: idEncontrado, estado: 'EN_RECLAMACION' },
+      autor: { id: personas.autora.id },
+      reclamante: { id: personas.reclamante.id },
+      entrega: { confirmo_autor: true, confirmo_reclamante: false, fecha_entrega: null },
+    });
+
     expect((await como('reclamante').post(ruta).expect(200)).body).toEqual({ entregada: true });
+    const cerrada = await como('autora').get(ficha).expect(200);
+    expect(cerrada.body.soy).toBe('AUTOR');
+    expect(cerrada.body.entrega).toMatchObject({ confirmo_autor: true, confirmo_reclamante: true });
+    expect(cerrada.body.entrega.fecha_entrega).not.toBeNull();
     const pub = await como(null).get(`/api/publicaciones/${idEncontrado}`).expect(200);
     expect(pub.body.estado).toBe('ENTREGADA');
     const cerrado = await como('reclamante')
