@@ -24,7 +24,7 @@ export const TRANSICIONES: Readonly<
   },
   EN_RECLAMACION: {
     ENTREGADA: 'Entrega con doble confirmación',
-    // Supuesto de la pregunta abierta 13.4 (si el reclamante no aparece). Confirmar con Walter.
+    // Pregunta 13.4, decidida 2026-11-21: cualquiera de las partes cancela (ReclamacionesService.cancelar).
     ACTIVA: 'Reclamación aceptada cancelada o revertida',
   },
   ENTREGADA: {},

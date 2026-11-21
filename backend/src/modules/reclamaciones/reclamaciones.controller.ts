@@ -62,7 +62,7 @@ export class ReclamacionesController {
     return this.reclamaciones.detalle(id, usuario.id);
   }
 
-  // RF-19/20: aceptar (abre el chat) o rechazar.
+  // RF-19/20: aceptar (abre el chat) o rechazar (autor). CANCELAR: cualquiera de las partes.
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch('reclamaciones/:id')
   async resolver(
@@ -71,7 +71,11 @@ export class ReclamacionesController {
     @UsuarioActual() usuario: UsuarioSesion,
     @Ip() ip: string,
   ): Promise<void> {
-    await this.reclamaciones.resolver(id, usuario.id, datos.decision, ip);
+    if (datos.decision === 'CANCELAR') {
+      await this.reclamaciones.cancelar(id, usuario.id, ip);
+    } else {
+      await this.reclamaciones.resolver(id, usuario.id, datos.decision, ip);
+    }
   }
 
   // RF-20 · §6.4: el chat de las dos partes.

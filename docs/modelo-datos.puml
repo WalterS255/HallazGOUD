@@ -80,6 +80,7 @@ entity lugar <<catalogo>> {
   * id_sede : int [FK]
   * edificio : varchar(100)
   referencia : varchar(200)
+  tipo : tipo_lugar  // "edificio análogo" (§7)
   ..
   UNIQUE (id_sede, edificio)
 }

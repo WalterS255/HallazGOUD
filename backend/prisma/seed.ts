@@ -4,6 +4,7 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { hash } from 'bcryptjs';
 import { PrismaClient } from '../src/generated/prisma/client.js';
+import type { tipo_lugar } from '../src/generated/prisma/enums.js';
 
 try {
   process.loadEnvFile('../.env');
@@ -43,6 +44,19 @@ const sedes: Record<string, string[]> = {
   'ASAB (Artes)': ['Salones de ensayo', 'Auditorio'],
   'Aduanilla de Paiba': ['Biblioteca central', 'Auditorio'],
 };
+
+// Clase de cada lugar, para el "edificio análogo" (pregunta 13.2). Mismas reglas que la
+// migración tipo_lugar, que llena las bases que ya existían antes de esa columna.
+function tipoDe(edificio: string): tipo_lugar | null {
+  const e = edificio.toLowerCase();
+  if (e.includes('bibliotec')) return 'BIBLIOTECA';
+  if (e.includes('cafeter')) return 'CAFETERIA';
+  if (e.includes('laborator')) return 'LABORATORIO';
+  if (e.includes('auditor')) return 'AUDITORIO';
+  if (/aula|sal[oó]n/.test(e)) return 'AULAS';
+  if (e.includes('bloque principal') || e.startsWith('edificio ')) return 'EDIFICIO_PRINCIPAL';
+  return null;
+}
 
 // Contraseña de los usuarios de prueba: viene del .env (CONTRASENA_SEED), nunca del
 // código (regla 5). Se guarda su hash bcrypt, como haría el registro real.
@@ -92,7 +106,7 @@ async function main() {
       await prisma.lugar.upsert({
         where: { id_sede_edificio: { id_sede: sede.id, edificio } },
         update: {},
-        create: { id_sede: sede.id, edificio },
+        create: { id_sede: sede.id, edificio, tipo: tipoDe(edificio) },
       });
     }
   }

@@ -325,6 +325,102 @@ describe('notificaciones (RF-24, RF-25)', () => {
   });
 });
 
+describe('cancelar una reclamación aceptada (pregunta 13.4)', () => {
+  it('cualquiera de las partes cancela: vuelve a ACTIVA, se cierra el chat y otra pendiente puede aceptarse', async () => {
+    const lugar = await prisma.lugar.findFirstOrThrow({ select: { id: true } });
+    const cat = await prisma.categoria.findFirstOrThrow({ select: { id: true } });
+    const ahora = Date.now();
+    const { id: idPub } = await prisma.publicacion.create({
+      data: {
+        id_usuario: personas.autora.id,
+        id_categoria: cat.id,
+        id_lugar: lugar.id,
+        tipo: 'ENCONTRADO',
+        titulo: 'Sombrilla azul',
+        descripcion: 'Sombrilla plegable',
+        fecha_creacion: new Date(ahora),
+        fecha_suceso: new Date(ahora - 3_600_000),
+      },
+    });
+    await prisma.detalle_reservado.create({ data: { id_publicacion: idPub, texto: SECRETO } });
+    const reclamar = async (quien: string) =>
+      (
+        await como(quien)
+          .post(`/api/publicaciones/${idPub}/reclamaciones`, { respuesta_detalle: 'cinta roja' })
+          .expect(201)
+      ).body.id as number;
+    const primera = await reclamar('reclamante');
+    const segunda = await reclamar('curioso');
+
+    // Una PENDIENTE no se cancela: primero hay que aceptarla.
+    const pendiente = await como('reclamante')
+      .patch(`/api/reclamaciones/${primera}`, { decision: 'CANCELAR' })
+      .expect(409);
+    expect(pendiente.body.error.codigo).toBe('SIN_ENTREGA');
+
+    await como('autora')
+      .patch(`/api/reclamaciones/${primera}`, { decision: 'ACEPTAR' })
+      .expect(204);
+    // Un tercero (el otro reclamante) no puede cancelar la de otro.
+    await como('curioso')
+      .patch(`/api/reclamaciones/${primera}`, { decision: 'CANCELAR' })
+      .expect(403);
+
+    // El reclamante cancela: la publicación vuelve al catálogo y el chat se cierra.
+    await como('reclamante')
+      .patch(`/api/reclamaciones/${primera}`, { decision: 'CANCELAR' })
+      .expect(204);
+    expect((await como(null).get(`/api/publicaciones/${idPub}`).expect(200)).body.estado).toBe(
+      'ACTIVA',
+    );
+    const chat = await como('reclamante').get(`/api/reclamaciones/${primera}/mensajes`).expect(409);
+    expect(chat.body.error.codigo).toBe('SIN_CHAT');
+    expect(
+      (await como('autora').get(`/api/reclamaciones/${primera}`).expect(200)).body.estado,
+    ).toBe('CANCELADA');
+    const aviso = await prisma.notificacion.findFirst({
+      where: { id_usuario: personas.autora.id, id_referencia: primera, tipo: 'ESTADO' },
+    });
+    expect(aviso?.mensaje).toContain('se canceló');
+
+    // La otra reclamación seguía PENDIENTE: la autora ahora la acepta, y ella misma la cancela.
+    await como('autora')
+      .patch(`/api/reclamaciones/${segunda}`, { decision: 'ACEPTAR' })
+      .expect(204);
+    await como('autora')
+      .patch(`/api/reclamaciones/${segunda}`, { decision: 'CANCELAR' })
+      .expect(204);
+    expect((await como(null).get(`/api/publicaciones/${idPub}`).expect(200)).body.estado).toBe(
+      'ACTIVA',
+    );
+
+    // La historia queda: dos pasos a EN_RECLAMACION y dos regresos a ACTIVA.
+    const historial = await prisma.historial_estado.findMany({
+      where: { id_publicacion: idPub },
+      orderBy: { id: 'asc' },
+      select: { estado_nuevo: true },
+    });
+    expect(historial.map((h) => h.estado_nuevo)).toEqual([
+      'EN_RECLAMACION',
+      'ACTIVA',
+      'EN_RECLAMACION',
+      'ACTIVA',
+    ]);
+  });
+
+  it('una entrega ya completada no se puede cancelar', async () => {
+    // La reclamación del flujo completo terminó ENTREGADA.
+    const entregada = await prisma.reclamacion.findFirstOrThrow({
+      where: { id_publicacion: idEncontrado, estado: 'ACEPTADA' },
+      select: { id: true },
+    });
+    const res = await como('autora')
+      .patch(`/api/reclamaciones/${entregada.id}`, { decision: 'CANCELAR' })
+      .expect(409);
+    expect(res.body.error.codigo).toBe('ENTREGA_CERRADA');
+  });
+});
+
 describe('ANTI-FUGA (§6.3): nada sensible sale de la API', () => {
   // Corre al final: revisa TODAS las respuestas que dieron las pruebas anteriores.
   it('ninguna respuesta trae correo, hash ni tokens; el detalle reservado solo lo ve la autora', () => {

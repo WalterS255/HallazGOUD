@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { tipo_lugar } from '../../generated/prisma/enums.js';
 import { PrismaService } from '../../lib/prisma/prisma.service.js';
 
 export interface DatosCategoria {
@@ -10,6 +11,12 @@ export interface DatosCategoria {
 
 // Catálogos (RF-28). Los errores de Prisma (nombre repetido, en uso, no existe) los
 // traduce el servicio; aquí solo se lee y se escribe.
+export interface DatosLugar {
+  edificio?: string;
+  referencia?: string | null;
+  tipo?: tipo_lugar | null;
+}
+
 @Injectable()
 export class CatalogosRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -27,7 +34,7 @@ export class CatalogosRepository {
           id: true,
           nombre: true,
           lugares: {
-            select: { id: true, edificio: true, referencia: true },
+            select: { id: true, edificio: true, referencia: true, tipo: true },
             orderBy: { edificio: 'asc' },
           },
         },
@@ -57,10 +64,10 @@ export class CatalogosRepository {
     return this.prisma.sede.delete({ where: { id } });
   }
 
-  crearLugar(d: { id_sede: number; edificio: string; referencia?: string | null }) {
+  crearLugar(d: DatosLugar & { id_sede: number; edificio: string }) {
     return this.prisma.lugar.create({ data: d });
   }
-  editarLugar(id: number, d: { edificio?: string; referencia?: string | null }) {
+  editarLugar(id: number, d: DatosLugar) {
     return this.prisma.lugar.update({ where: { id }, data: d });
   }
   borrarLugar(id: number) {

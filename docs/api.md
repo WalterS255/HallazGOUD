@@ -42,8 +42,8 @@ implementado y probado (pruebas unitarias, e2e y contra PostgreSQL real).
   Authorization: Bearer <token>
   ```
 - El token dura lo que diga `JWT_EXPIRA_EN` (por defecto **1 día**). No hay "refresh token": al vencer, se vuelve a iniciar sesión.
-- Sin el encabezado, la petición se trata como **visitante**. Con un token vencido o alterado: `401 SESION_INVALIDA` (el frontend debe mandar a iniciar sesión).
-- El token lleva dentro `{ sub: id_usuario, rol }`. El frontend puede leer el rol para mostrar u ocultar menús, pero **la decisión real la toma siempre el servidor**.
+- Sin el encabezado, la petición se trata como **visitante**. Con un token vencido o alterado: `401 SESION_INVALIDA` (el frontend debe mandar a iniciar sesión). Con la cuenta suspendida: `401 CUENTA_SUSPENDIDA`, aunque el token no haya vencido.
+- El token lleva dentro `{ sub: id_usuario, rol }`. El frontend puede leer el rol para mostrar u ocultar menús, pero **la decisión real la toma siempre el servidor**, con el rol que está en la base en ese momento (no el del token).
 
 ### Niveles de acceso
 | Acceso | Significa |
@@ -298,7 +298,7 @@ Lo que necesita el formulario de publicar: categorías **activas**, sedes y sus 
     {
       "id": 1,
       "nombre": "Calle 40 (Ingeniería)",
-      "lugares": [{ "id": 3, "edificio": "Biblioteca", "referencia": null }]
+      "lugares": [{ "id": 3, "edificio": "Biblioteca", "referencia": null, "tipo": "BIBLIOTECA" }]
     }
   ]
 }
@@ -529,13 +529,16 @@ Ficha de una reclamación para sus dos partes (autor de la publicación y reclam
 `soy` es `AUTOR` o `RECLAMANTE`. `entrega` es `null` mientras la reclamación no se ha aceptado.
 Errores: `403 PROHIBIDO` si no eres parte **o** si no existe (mismo error a propósito, como en el chat).
 
-### `PATCH /reclamaciones/:id` · autor
-Aceptar o rechazar (RF-19, RF-20).
+### `PATCH /reclamaciones/:id` · autor (aceptar o rechazar) · partes (cancelar)
+Aceptar o rechazar (RF-19, RF-20), o cancelar una ya aceptada (pregunta 13.4).
 ```json
 { "decision": "ACEPTAR" }
 ```
-`decision`: `ACEPTAR` o `RECHAZAR`. Respuesta `204` (sin cuerpo).
+`decision`: `ACEPTAR`, `RECHAZAR` o `CANCELAR`. Respuesta `204` (sin cuerpo).
 Al aceptar: la reclamación queda `ACEPTADA`, la publicación pasa a `EN_RECLAMACION`, se abre el chat y se crea la entrega. Las demás reclamaciones pendientes **siguen pendientes**. Al reclamante le llega un aviso.
+
+**Cancelar** (cualquiera de las dos partes, sobre una `ACEPTADA` cuya entrega no se completó, por ejemplo si el reclamante no aparece): la reclamación queda `CANCELADA`, la publicación vuelve a `ACTIVA` (otra vez en el catálogo), el chat se cierra (`409 SIN_CHAT`) y a la otra parte le llega un aviso. Las demás pendientes siguen esperando y la autora puede aceptar otra. Errores propios: `409 SIN_ENTREGA` (no está aceptada), `409 ENTREGA_CERRADA` (la entrega ya se confirmó), `403 PROHIBIDO` (no eres parte).
+
 Errores:
 | Código | Estado | Cuándo |
 |---|---|---|
@@ -670,8 +673,8 @@ Para retirar una publicación del todo: `DELETE /publicaciones/:id` (los moderad
 | POST | `/admin/sedes` | `{ "nombre" }` | `201` |
 | PATCH | `/admin/sedes/:id` | `{ "nombre" }` | |
 | DELETE | `/admin/sedes/:id` | | `204`. Si tiene lugares: `409 EN_USO` |
-| POST | `/admin/lugares` | `{ "id_sede", "edificio", "referencia"? }` | `201`. Sede inexistente: `400 SEDE_NO_EXISTE` |
-| PATCH | `/admin/lugares/:id` | `{ "edificio"?, "referencia"? }` | |
+| POST | `/admin/lugares` | `{ "id_sede", "edificio", "referencia"?, "tipo"? }` | `201`. Sede inexistente: `400 SEDE_NO_EXISTE` |
+| PATCH | `/admin/lugares/:id` | `{ "edificio"?, "referencia"?, "tipo"? }` | `tipo`: `BIBLIOTECA`, `CAFETERIA`, `LABORATORIO`, `AUDITORIO`, `AULAS`, `EDIFICIO_PRINCIPAL`, `ADMINISTRATIVO`, `OTRO` o `null`. Da el "edificio análogo" del motor de coincidencias |
 | DELETE | `/admin/lugares/:id` | | `204`. Si tiene publicaciones: `409 EN_USO` |
 
 Errores comunes: `409 NOMBRE_REPETIDO`, `404 NO_ENCONTRADO`, `400 SOLICITUD_INVALIDA`.
@@ -700,7 +703,7 @@ Buscar por nombre (contiene) o por correo **exacto**. Máximo 20 resultados. **N
 ```
 `accion`: `SUSPENDER` o `REACTIVAR`. Respuesta: la cuenta actualizada (misma forma que la búsqueda).
 Errores: `409 ACCION_SOBRE_SI_MISMO`, `409 SIN_CAMBIO`, `409 CUENTA_ELIMINADA`, `404 USUARIO_NO_ENCONTRADO`.
-> Limitación conocida: la sesión que la persona ya tenía abierta sigue funcionando hasta que vence su token (máximo 1 día). Ver `docs/pendientes.md`.
+> La suspensión corta la sesión **al instante**: en la siguiente petición, la persona recibe `401 CUENTA_SUSPENDIDA` aunque su token no haya vencido (el servidor revisa la cuenta en cada petición).
 
 ### Estadísticas · admin (RF-30)
 

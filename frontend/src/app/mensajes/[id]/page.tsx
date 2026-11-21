@@ -32,6 +32,19 @@ export default async function ConversacionPage({ params }: Props) {
     apiGet<ReclamacionDetalle>(ruta).catch(comoError),
     apiGet<Mensaje[]>(`${ruta}/mensajes`).catch(comoError),
   ]);
+  // Cancelada (pregunta 13.4): el hilo responde 409, pero la ficha sí dice qué pasó.
+  if (!(ficha instanceof ErrorBackend) && ficha.estado === 'CANCELADA') {
+    return (
+      <div className="stack" style={{ maxWidth: 760, width: '100%', marginInline: 'auto' }}>
+        <p className="note note-info">
+          Esta reclamación se canceló y el chat quedó cerrado. «{ficha.publicacion.titulo}» volvió al catálogo.
+        </p>
+        <Link href={`/publicaciones/${ficha.publicacion.id}`} className="link">
+          Ver la publicación
+        </Link>
+      </div>
+    );
+  }
   if (ficha instanceof ErrorBackend || mensajes instanceof ErrorBackend) {
     const fallo = ficha instanceof ErrorBackend ? ficha : (mensajes as ErrorBackend);
     return (
@@ -67,6 +80,8 @@ export default async function ConversacionPage({ params }: Props) {
         contraparte={contraparte}
         mensajesIniciales={mensajes}
         entregaInicial={estadoEntrega(ficha)}
+        publicacionId={ficha.publicacion.id}
+        soyAutor={ficha.soy === 'AUTOR'}
       />
     </>
   );

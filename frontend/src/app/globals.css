@@ -372,6 +372,7 @@
   .chip-EXPIRADA,
   .chip-RETIRADA,
   .chip-RECHAZADA,
+  .chip-CANCELADA,
   .chip-DESCARTADO {
     background: var(--grey-bg);
     color: var(--grey);

@@ -4,6 +4,7 @@ import { ErrorApp } from '../../comun/errores/error-app.js';
 import { AuditoriaService } from '../../lib/auditoria/auditoria.service.js';
 import { CoincidenciasService } from '../coincidencias/coincidencias.service.js';
 import { esEditable } from './estados.js';
+import { ajustarFechaSuceso } from './fecha-suceso.js';
 import type { DatosCrear, DatosEditar } from './gestion.schemas.js';
 import { GestionRepository } from './gestion.repository.js';
 import { PublicacionesService } from './publicaciones.service.js';
@@ -38,7 +39,9 @@ export class GestionService {
   // RF-06 / RF-07: crear un ENCONTRADO o un PERDIDO.
   async crear(datos: DatosCrear, ctx: Contexto) {
     const ahora = new Date();
-    if (datos.fecha_suceso.getTime() > ahora.getTime()) {
+    // Reloj del celular unos minutos adelantado → se toma como "ahora" (fecha-suceso.ts).
+    const fecha_suceso = ajustarFechaSuceso(datos.fecha_suceso, ahora);
+    if (!fecha_suceso) {
       throw campoInvalido('fecha_suceso', 'La fecha no puede estar en el futuro');
     }
 
@@ -51,7 +54,7 @@ export class GestionService {
         tipo: datos.tipo,
         titulo: datos.titulo,
         descripcion: datos.descripcion,
-        fecha_suceso: datos.fecha_suceso,
+        fecha_suceso,
         ahora,
       });
       if (datos.tipo === 'ENCONTRADO') {

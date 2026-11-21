@@ -3,7 +3,7 @@
 Lo que falta decidir y lo que falta construir. Cuando algo se resuelva, se borra de aquí y se refleja en `CLAUDE.md` (sección 4 si es una decisión, sección 9 si es trabajo terminado).
 
 **Estado (2026-11-21):**
-- **Backend:** todas las funciones de la propuesta están implementadas y probadas (184 pruebas unitarias, 26 e2e y 136 contra PostgreSQL).
+- **Backend:** todas las funciones de la propuesta están implementadas y probadas (193 pruebas unitarias, 26 e2e y 140 contra PostgreSQL).
 - **Frontend:** Next.js en `frontend/`, conectado a la API. Están todas las pantallas salvo las de la sección 3.
 - **Hito de la Fase F cumplido:** recorrido de punta a punta en el navegador (publicar → reclamar → chatear → entregar).
 
@@ -11,19 +11,9 @@ Lo de abajo son decisiones de producto, detalles y la puesta en producción.
 
 ## 1. Decisiones de producto (Walter)
 
-Cada una con la recomendación técnica.
+No queda ninguna abierta.
 
-| # | Pregunta | Recomendación | Afecta |
-|---|---|---|---|
-| 1 | **¿Fotos obligatorias en un PERDIDO?** (13.6). RF-08 pide de 1 a 5 | Obligatorias en ENCONTRADO, opcionales en PERDIDO | Frontend (asistente) |
-| 2 | **Botón "Lo tengo" en un PERDIDO** (13.1). Hoy la ficha dice "¿Lo encontraste? Publica el hallazgo" y abre el asistente vacío | Abrir el asistente de ENCONTRADO ya prellenado (categoría, sede, fecha); al publicarlo, el aviso de coincidencias llega al dueño | Frontend |
-| 3 | **¿Cancelar una reclamación aceptada?** (13.4), por ejemplo si el reclamante no aparece | Sí: la publicación vuelve a ACTIVA y las demás pendientes siguen. La máquina de estados ya lo permite; falta la ruta (`PATCH /reclamaciones/:id` con `CANCELAR`) y el botón en el chat | Backend + frontend |
-| 4 | **Reloj del celular adelantado** (13.7) | Recortar `fecha_suceso` a "ahora" si la diferencia es de pocos minutos; rechazar si es mayor | Backend (`GestionService.crear`) |
-| 5 | **¿La suspensión corta la sesión al instante?** Hoy el JWT ya emitido sirve hasta 1 día | Sí: consultar `estado_cuenta` en el `SesionGuard` en cada petición (costo pequeño a este volumen) | Backend |
-| 6 | **"Edificio análogo"** en otra sede (13.2): hoy vale 0 de los 10 puntos | Agregar `tipo_lugar` a `lugar` (cafetería, biblioteca, laboratorio…) y comparar ese campo | Backend + migración |
-| 7 | **¿Quién publica lo que llega a portería?** (13.3) | Una cuenta normal con correo institucional; un rol propio solo si después hace falta | — |
-
-Resueltas: qué ve un visitante (13.5, 2026-11-21: catálogo, búsqueda y ficha; nada de acciones sin sesión) y el cambio a Next.js (`CLAUDE.md` §4).
+Resueltas el 2026-11-21: suspensión al instante (el guard revisa la cuenta en cada petición), fotos obligatorias también en PERDIDO (13.6), "¡Lo tengo!" con el asistente prellenado (13.1), cancelar una reclamación aceptada (13.4), reloj del celular con 10 min de margen (13.7), edificio análogo con `lugar.tipo` (13.2), portería con una cuenta normal (13.3), qué ve un visitante (13.5) y el cambio a Next.js. Detalle en `CLAUDE.md` §13.
 
 ## 2. Aprobaciones (regla 4: dependencias y push)
 
@@ -36,7 +26,6 @@ Resueltas: qué ve un visitante (13.5, 2026-11-21: catálogo, búsqueda y ficha;
 
 ### Backend
 - [ ] Programador diario (depende de #8): conectar `ExpiracionService.expirarInactivas` y escribir la limpieza de imágenes de publicaciones entregadas hace más de 90 días.
-- [ ] Ruta para cancelar una reclamación aceptada (depende de #3).
 - [ ] Desenfoque automático de la miniatura en categorías sensibles (regla 6.6, opcional).
 
 ### Frontend

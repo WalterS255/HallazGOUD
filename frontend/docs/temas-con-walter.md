@@ -20,8 +20,8 @@ refleja en `CLAUDE.md` o en `docs/pendientes.md`.
 | 3 | **Rutas de los enlaces de los correos de aviso** | El backend enlaza a `/reclamaciones/:id` y `/publicaciones/:id/reclamaciones`; el frontend las redirige a `/mensajes/:id` y a `/publicaciones/:id#reclamaciones` | Cambiar las rutas en el backend o mantener las redirecciones |
 | 4 | **Íconos de categoría** | El backend guarda un nombre (`laptop`, `id-card`…) y el frontend lo muestra como emoji; uno desconocido sale como 📦 | Fijar la lista de nombres válidos para cuando el admin cree categorías (RF-28) |
 | 5 | ✅ Qué ve un visitante | **Resuelto:** catálogo, búsqueda y ficha completos; ninguna acción sin sesión | — |
-| 6 | Fotos en un PERDIDO (`pendientes.md` #1) | Obligatorias en ENCONTRADO, opcionales en PERDIDO | Confirmar |
-| 7 | Botón "Lo tengo" en un PERDIDO (`pendientes.md` #2) | Lleva al asistente de "Encontré algo" vacío | Prellenar categoría, sede y fecha |
+| 6 | ✅ Fotos en un PERDIDO | **Resuelto:** obligatorias también (al menos una; se sugiere una de un objeto parecido) | — |
+| 7 | ✅ Botón "Lo tengo" en un PERDIDO | **Resuelto:** "¡Lo tengo!" abre el asistente con categoría, título y lugar copiados (`/publicar?lo_tengo=<id>`) | — |
 
 ## 3. Despliegue y calidad
 

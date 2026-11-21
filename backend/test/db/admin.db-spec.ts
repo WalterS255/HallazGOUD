@@ -171,6 +171,41 @@ describe('cuentas (RF-29)', () => {
     expect(res.body.estado_cuenta).toBe('ACTIVA');
   });
 
+  it('suspender corta la sesión AL INSTANTE: el mismo token deja de servir', async () => {
+    const victima = await crearUsuario(prisma);
+    const token = await app.get(JwtService).signAsync({ sub: victima.id, rol: 'USUARIO' });
+    const yo = () =>
+      request(app.getHttpServer()).get('/api/usuarios/me').set('Authorization', `Bearer ${token}`);
+
+    await yo().expect(200);
+    await como('admin')
+      .patch(`/api/admin/usuarios/${victima.id}`, { accion: 'SUSPENDER' })
+      .expect(200);
+
+    // Mismo token, todavía sin vencer: antes seguía sirviendo hasta 1 día.
+    const cortada = await yo().expect(401);
+    expect(cortada.body.error.codigo).toBe('CUENTA_SUSPENDIDA');
+
+    await como('admin')
+      .patch(`/api/admin/usuarios/${victima.id}`, { accion: 'REACTIVAR' })
+      .expect(200);
+    await yo().expect(200);
+  });
+
+  it('el rol sale de la BD, no del token: un "ADMIN" degradado ya no entra al panel', async () => {
+    const ex = await crearUsuario(prisma);
+    await prisma.usuario.update({ where: { id: ex.id }, data: { rol: 'ADMIN' } });
+    const token = await app.get(JwtService).signAsync({ sub: ex.id, rol: 'ADMIN' });
+    const panel = () =>
+      request(app.getHttpServer())
+        .get('/api/admin/estadisticas')
+        .set('Authorization', `Bearer ${token}`);
+
+    await panel().expect(200);
+    await prisma.usuario.update({ where: { id: ex.id }, data: { rol: 'USUARIO' } });
+    await panel().expect(403); // el token todavía dice ADMIN, pero la BD manda
+  });
+
   it('un admin no se suspende a sí mismo; una cuenta anonimizada no se toca', async () => {
     const yo = await como('admin')
       .patch(`/api/admin/usuarios/${ids.admin}`, { accion: 'SUSPENDER' })
