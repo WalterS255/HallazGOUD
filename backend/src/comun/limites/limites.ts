@@ -1,4 +1,5 @@
 import { Throttle, type ThrottlerModuleOptions } from '@nestjs/throttler';
+import { config } from '../../config/configuracion.js';
 
 // *Rate limit*: cuántas peticiones puede hacer una misma IP en una ventana de tiempo.
 // Frena a quien intenta adivinar contraseñas probando miles por minuto, o a un
@@ -11,9 +12,11 @@ import { Throttle, type ThrottlerModuleOptions } from '@nestjs/throttler';
 const UN_MINUTO = 60_000;
 
 // Límite general para toda la API.
-export const opcionesLimites: ThrottlerModuleOptions = [
-  { name: 'default', ttl: UN_MINUTO, limit: 100 },
-];
+export const opcionesLimites: ThrottlerModuleOptions = {
+  throttlers: [{ name: 'default', ttl: UN_MINUTO, limit: 100 }],
+  // Solo la prueba de carga lo apaga (SIN_LIMITE_PETICIONES; prohibido en producción).
+  skipIf: () => config.sinLimitePeticiones,
+};
 
 // Límite estricto para las rutas que un atacante querría probar a la fuerza:
 // login, registro, recuperar contraseña. Uso:  @LimiteEstricto()  sobre el método.

@@ -62,4 +62,16 @@ describe('cargarConfig', () => {
     const conEjemplo = { ...validas, JWT_SECRET: 'cambia-esto-por-un-valor-largo-y-aleatorio' };
     expect(() => cargarConfig(conEjemplo)).not.toThrow();
   });
+
+  it('SIN_LIMITE_PETICIONES: apagado por defecto; se puede encender fuera de producción', () => {
+    expect(cargarConfig(validas).sinLimitePeticiones).toBe(false);
+    expect(cargarConfig({ ...validas, SIN_LIMITE_PETICIONES: 'true' }).sinLimitePeticiones).toBe(
+      true,
+    );
+  });
+
+  it('SIN_LIMITE_PETICIONES=true en producción: el servidor NO arranca', () => {
+    const enProduccion = { ...validas, NODE_ENV: 'production', SIN_LIMITE_PETICIONES: 'true' };
+    expect(() => cargarConfig(enProduccion)).toThrow(/SIN_LIMITE_PETICIONES/);
+  });
 });
