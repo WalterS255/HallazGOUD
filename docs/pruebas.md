@@ -212,4 +212,10 @@ Cada una en **tema oscuro y claro** (el contraste cambia con los colores): 28 re
 - [ ] Las fotos de las publicaciones tienen un texto alternativo con sentido (hoy, la grande: "<título>, foto 1 de 3"; las miniaturas van con `alt=""` porque repiten la misma foto).
 - [ ] Los mensajes de error dicen cómo corregir el problema, no solo que hay un error.
 
+## 10. Carga con k6 (RNF-01)
+
+200 estudiantes virtuales usan el catálogo a la vez (filtros, búsqueda, páginas, fichas) sobre **10.000 publicaciones**. Resultado (2026-11-21): **p95 = 19,9 ms** frente a los 2.000 ms exigidos, 0 errores en 9.224 peticiones. Cómo correrla y qué no mide: [`infra/carga/README.md`](../infra/carga/README.md).
+
+Para que 200 usuarios simulados desde un PC no choquen con el límite de 100 peticiones por minuto por IP, el backend de la prueba arranca con `SIN_LIMITE_PETICIONES=true`, que **se niega a arrancar en producción** (probado en `configuracion.spec.ts`).
+
 **Lo que todavía no tiene el frontend:** linter propio y pruebas de sus componentes por separado (ver [`pendientes.md`](pendientes.md)).
