@@ -125,7 +125,7 @@ En la base de datos solo existen tres roles fijos: `USUARIO`, `MODERADOR`, `ADMI
 | RNF-02 | Miniaturas ≤ 200 KB, carga diferida | Sharp genera la miniatura al subir; `loading="lazy"` en el frontend |
 | RNF-03 | Publicar en ≤ 4 pasos y ≤ 2 min | Asistente de 3 pasos (sección 7) |
 | RNF-04 | Responsivo desde 360 px; el móvil primero | Tailwind, diseño *mobile-first* |
-| RNF-05 | WCAG 2.1 AA (contraste, foco visible, etiquetas) | `<label>` en todos los campos, foco visible, revisar contraste |
+| RNF-05 | WCAG 2.1 AA (contraste, foco visible, etiquetas) | `<label>` en todos los campos, foco visible, contraste. Se revisa con axe-core en 14 pantallas × 2 temas + una prueba de teclado (`frontend/e2e/accesibilidad.spec.ts`) |
 | RNF-06 | bcrypt con coste ≥ 10 | `bcrypt.hash(pwd, 12)` |
 | RNF-07 | HTTPS | En producción, con un proxy inverso con TLS |
 | RNF-08 | Validar y sanitizar toda entrada (SQLi, XSS) | Zod en cada endpoint + Prisma (consultas parametrizadas) + React escapa por defecto. Nunca `dangerouslySetInnerHTML` |
@@ -442,7 +442,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [x] Playwright: publicar → reclamar → conversar → entregar. `frontend/e2e/recorrido.spec.ts` (`@playwright/test` 1.65.1): dos personas en navegadores separados, pantalla de 360 px, foto real, ~30 s. Estable en 3 corridas. `npm run test:e2e` en `frontend/`.
 - [ ] k6 con 200 usuarios virtuales sobre el listado (RNF-01).
 - [ ] OWASP ZAP + revisión manual de control de acceso.
-- [ ] Revisión de accesibilidad (WCAG AA) y del responsivo a 360 px.
+- [x] Revisión de accesibilidad (WCAG AA) y del responsivo a 360 px. `frontend/e2e/accesibilidad.spec.ts` (`@axe-core/playwright` 4.14.0): reglas WCAG 2.1 A y AA en 14 pantallas (visitante, usuario y moderador) en tema oscuro y claro, sin desplazamiento horizontal a 360 px, y una prueba solo con teclado (saltar al contenido, foco visible, ingresar). Encontró y se corrigió un fallo: el enlace de la etiqueta de cartón del Inicio tenía un `aria-label` que no incluía el texto visible (WCAG 2.5.3). Lo que axe no revisa queda como lista manual en `docs/pruebas.md` §9.
 
 ### Fase K — Despliegue y documentación
 - [ ] Dockerfiles de producción + proxy inverso con TLS. En el VPS no se publican los puertos de Postgres, ni el explorador de SeaweedFS (8888, sin contraseña), ni Mailpit. **IP real para el rate limit (hecho):** backend con `TRUST_PROXY=1` (el salto es Next) y frontend con `CONFIAR_PROXY=true` en producción, para que tome la IP que el proxy agrega al final de `X-Forwarded-For`. Sin eso, todos comparten el mismo límite; con un salto de más, cualquiera inventa su IP (ver `comun/limites/limites.ts`, probado en `test/limites.e2e-spec.ts`).

@@ -36,7 +36,6 @@ Resueltas el 2026-11-21: suspensión al instante (el guard revisa la cuenta en c
 ### Calidad (Fase J)
 - [ ] k6 con 200 usuarios virtuales sobre el listado (RNF-01). La consulta ya se midió en SQL: 5,7 ms con 10.000 publicaciones.
 - [ ] OWASP ZAP y revisión manual de control de acceso.
-- [ ] Accesibilidad (WCAG AA). El responsivo a 340 px ya se revisó en 9 pantallas sin desborde.
 
 ### Despliegue (Fase K)
 - [ ] Dockerfiles de producción y proxy inverso con HTTPS (en producción, `CONFIAR_PROXY=true` en el frontend).

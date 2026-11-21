@@ -76,7 +76,8 @@ export function EtiquetaHallazgo({ p }: { p: ResumenPublicacion | null }) {
         <dt>Fecha</dt>
         <dd>{p ? formatearFecha(p.fecha_suceso) : 'Hoy'}</dd>
       </dl>
-      <div className="t-secret">
+      {/* Decorativo: un lector de pantalla no gana nada leyendo "círculo negro" ocho veces. */}
+      <div className="t-secret" aria-hidden>
         Detalle reservado 🔒 <span>●●●●●●●●</span>
       </div>
     </>
@@ -84,7 +85,11 @@ export function EtiquetaHallazgo({ p }: { p: ResumenPublicacion | null }) {
   return (
     <div className="tag-wrap">
       {p ? (
-        <Link href={`/publicaciones/${p.id}`} className="tag" aria-label={`Último hallazgo: ${p.titulo}`}>
+        // Sin aria-label: reemplazaría el texto visible y alguien que usa control por voz
+        // ("pulsa Hallazgo HG-0007") no encontraría el enlace (WCAG 2.5.3). El nombre sale
+        // del contenido, con un prefijo que solo oyen los lectores de pantalla.
+        <Link href={`/publicaciones/${p.id}`} className="tag">
+          <span className="sr-only">Último hallazgo: </span>
           {contenido}
         </Link>
       ) : (

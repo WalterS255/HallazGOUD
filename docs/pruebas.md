@@ -186,4 +186,30 @@ npx playwright show-report   # informe HTML de la última corrida
 - Cada corrida inicia sesión 2 veces. El login permite 5 por minuto, así que **no la corras más de 2 veces en el mismo minuto**.
 - Estable: pasó 3 corridas seguidas (2026-11-21).
 
+## 9. Accesibilidad (RNF-05) y responsivo (RNF-04)
+
+`frontend/e2e/accesibilidad.spec.ts` corre con `npm run test:e2e`, junto al recorrido (30 pruebas en total, ~2 min).
+
+**Automático con axe-core** (`@axe-core/playwright`): en cada pantalla se aplican las reglas de **WCAG 2.1 nivel A y AA** (contraste de colores, etiquetas de los campos, nombres de botones y enlaces, idioma de la página, títulos, uso correcto de ARIA…) y se comprueba que **nada se salga por el costado a 360 px**.
+
+| Quién mira | Pantallas |
+|---|---|
+| Visitante | Inicio, Catálogo, Ficha, Ingresar, Crear cuenta, Recuperar contraseña, Privacidad |
+| Usuario con sesión | Publicar (paso 1), Ficha (como autora), Mis publicaciones, Mensajes, Notificaciones, Perfil |
+| Moderador | Administración |
+
+Cada una en **tema oscuro y claro** (el contraste cambia con los colores): 28 revisiones.
+
+**Teclado** (axe no puede probarlo): Tab lleva primero a "Saltar al contenido" (2.4.1), los campos enfocados muestran el contorno (2.4.7) y se puede iniciar sesión sin mouse (2.1.1).
+
+**Lo que encontró** (2026-11-21): un solo fallo, en el Inicio. El enlace de la etiqueta de cartón tenía `aria-label="Último hallazgo: …"`, que **reemplazaba** el texto visible ("Hallazgo · HG-0007…"). Quien usa control por voz dice lo que ve y el enlace no respondía (WCAG 2.5.3, *etiqueta en el nombre*). Se quitó el `aria-label` y se agregó un prefijo que solo oyen los lectores de pantalla.
+
+**Revisión manual** (axe detecta más o menos un tercio de los problemas; esto lo tiene que mirar una persona antes de cada entrega):
+
+- [ ] Recorrer la app solo con Tab y Mayús+Tab: el orden del foco sigue el orden visual y nunca queda atrapado.
+- [ ] Ampliar al 200 % (Ctrl +): el texto se lee y nada se corta.
+- [ ] Probar con un lector de pantalla (NVDA en Windows, gratuito): los avisos de error y de "reclamación enviada" se anuncian.
+- [ ] Las fotos de las publicaciones tienen un texto alternativo con sentido (hoy, la grande: "<título>, foto 1 de 3"; las miniaturas van con `alt=""` porque repiten la misma foto).
+- [ ] Los mensajes de error dicen cómo corregir el problema, no solo que hay un error.
+
 **Lo que todavía no tiene el frontend:** linter propio y pruebas de sus componentes por separado (ver [`pendientes.md`](pendientes.md)).
