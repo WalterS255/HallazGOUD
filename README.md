@@ -8,7 +8,7 @@ Plataforma web de objetos perdidos y encontrados para la Universidad Distrital F
 - Propuesta técnica original: [`docs/propuesta/Aplicacion_Web.pdf`](docs/propuesta/Aplicacion_Web.pdf)
 - **Documentación técnica:** [`docs/`](docs/README.md): API para el frontend, arquitectura, modelo de datos y pendientes
 
-> **Estado:** el **backend está completo y probado** (todas las funciones de la propuesta). El **frontend** (carpeta [`frontend/`](frontend/README.md)) tiene las pantallas principales conectadas a la API; le faltan tres endpoints del backend ([`frontend/docs/endpoints-pendientes.md`](frontend/docs/endpoints-pendientes.md)). Quedan algunas decisiones de producto y el despliegue: ver [`docs/pendientes.md`](docs/pendientes.md) y la sección 9 de `CLAUDE.md`.
+> **Estado:** el **backend está completo y probado** (todas las funciones de la propuesta). El **frontend** (carpeta [`frontend/`](frontend/README.md)) tiene las pantallas conectadas a la API y ya se probó el recorrido completo (publicar → reclamar → chatear → entregar). Un visitante sin sesión puede ver el catálogo, buscar y abrir cada objeto; para publicar o reclamar debe ingresar. Quedan algunas decisiones de producto y el despliegue: ver [`docs/pendientes.md`](docs/pendientes.md) y la sección 9 de `CLAUDE.md`.
 
 ## Estructura del repositorio
 
@@ -142,7 +142,7 @@ git push -u origin feature/front-catalogo    # subirla
 
 ## Control de cada commit
 
-Antes de cada `git commit`, husky ejecuta **Prettier** (formatea) y **oxlint** (busca errores comunes) sobre los archivos `.ts` del backend que vas a guardar. Si oxlint encuentra algo, **el commit no se hace** y la terminal dice qué corregir. No uses `--no-verify` para saltarlo: si el control molesta, es mejor ajustarlo. (Cuando exista el frontend, se le agregará su propio control en `frontend/`.)
+Antes de cada `git commit`, husky ejecuta **Prettier** (formatea) y **oxlint** (busca errores comunes) sobre los archivos `.ts` del backend que vas a guardar. Si oxlint encuentra algo, **el commit no se hace** y la terminal dice qué corregir. No uses `--no-verify` para saltarlo: si el control molesta, es mejor ajustarlo. (El frontend todavía no tiene su propio control: está en `docs/pendientes.md`.)
 
 ## Estructura del backend
 

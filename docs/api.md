@@ -48,7 +48,7 @@ implementado y probado (pruebas unitarias, e2e y contra PostgreSQL real).
 ### Niveles de acceso
 | Acceso | Significa |
 |---|---|
-| público | Sin sesión |
+| público | Sin sesión. Un **visitante** solo lee: catálogo, búsqueda, ficha, catálogos e imágenes. Toda escritura (publicar, reclamar, reportar, chatear…) pide sesión |
 | sesión | Cualquier usuario con sesión (`USUARIO`, `MODERADOR` o `ADMIN`) |
 | autor | Con sesión **y** ser el autor de esa publicación (lo revisa el servidor) |
 | partes | Con sesión **y** ser el autor o el reclamante de esa reclamación |
@@ -370,7 +370,7 @@ Ficha de detalle (RF-17).
   "usuario": { "id": 12, "nombre": "Ana Pérez" }
 }
 ```
-**Acciones según quién mira:** el frontend compara `usuario.id` con el id de la sesión. Si es el autor, muestra "Editar", "Retirar", "Ver reclamaciones" y "Coincidencias"; si no, "Reclamar" (solo en ENCONTRADO y ACTIVA) y "Reportar".
+**Acciones según quién mira:** el frontend compara `usuario.id` con el id de la sesión. Si es el autor, muestra "Editar", "Retirar", "Ver reclamaciones" y "Coincidencias"; si no, "Reclamar" (solo en ENCONTRADO y ACTIVA) y "Reportar". Un visitante ve la ficha completa pero ninguna acción: en su lugar, una invitación a ingresar.
 Errores: `404 PUBLICACION_NO_ENCONTRADA` (también si está oculta).
 
 ---

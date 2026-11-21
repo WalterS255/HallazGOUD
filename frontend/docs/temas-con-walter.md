@@ -5,28 +5,13 @@ publicar con foto → coincidencias → reclamar → chat → doble confirmació
 reportes, moderación y estadísticas) contra el backend real. Cuando algo se decida, se borra de aquí y se
 refleja en `CLAUDE.md` o en `docs/pendientes.md`.
 
-## 1. Aprobación
+## 1. Aprobación y endpoints (resuelto 2026-11-21)
 
-| # | Tema | Contexto |
-|---|---|---|
-| 1 | **Frontend en Next.js en lugar de React + Vite** | Marcado en `CLAUDE.md` §4 como *cambio propuesto*. Next.js sigue siendo React; trae enrutamiento por carpetas y un servidor propio que hace de proxy hacia la API (sin CORS, JWT en cookie `httpOnly`). **Implicación:** en producción el frontend es un proceso Node.js, no archivos estáticos (ver §4 de este documento) |
-| 2 | **Cambios en archivos de la raíz** | `README.md` (tecnologías, cómo levantar el frontend), `CLAUDE.md` §4 y comando del frontend, `docs/arquitectura.md` (diagrama) y `.env.example` (`URL_FRONTEND=http://localhost:3001`) |
+- ✅ **Next.js aprobado** (`CLAUDE.md` §4), con los cambios en archivos de la raíz.
+- ✅ **Endpoints:** `trust proxy` (con `TRUST_PROXY` en el backend y `CONFIAR_PROXY` aquí, para que no se pueda inventar la IP), `GET /usuarios/me/publicaciones`, `/reclamaciones`, `/conversaciones` y `GET /reclamaciones/:id` (el chat ya lo usa). Detalle en [`endpoints-pendientes.md`](endpoints-pendientes.md).
+- Siguen abiertos: `id_publicacion` en los avisos `MENSAJE` y `ESTADO`, y cancelar una reclamación aceptada (`docs/pendientes.md` #3).
 
-## 2. Backend: endpoints
-
-Detalle y JSON esperado en [`endpoints-pendientes.md`](endpoints-pendientes.md).
-
-| Prioridad | Qué | Por qué |
-|---|---|---|
-| **Urgente** | `app.set('trust proxy', 1)` y usar `X-Forwarded-For` | Todas las peticiones llegan desde el servidor del frontend: el límite de **5 ingresos por minuto** se reparte entre todos los usuarios. El frontend ya envía la IP real |
-| Necesario | `GET /usuarios/me/publicaciones` | Pantalla "Mis publicaciones" (hoy muestra "Pendiente en el backend") |
-| Necesario | `GET /usuarios/me/reclamaciones` | "Mis reclamaciones" y, en el detalle, saber si ya reclamé |
-| Necesario | `GET /usuarios/me/conversaciones` | Lista de chats en "Mensajes" |
-| Recomendado | `GET /reclamaciones/:id` con el estado de la entrega | Al recargar el chat no se sabe quién ya confirmó |
-| Recomendado | `id_publicacion` en los avisos `MENSAJE` y `ESTADO` | Que el chat abierto desde un aviso muestre el título del objeto |
-| Recomendado | Cancelar una reclamación aceptada (`pendientes.md` #4) | El frontend agregaría el botón en el chat |
-
-## 3. Producto
+## 2. Producto
 
 | # | Tema | Hoy | Opciones |
 |---|---|---|---|
@@ -34,11 +19,11 @@ Detalle y JSON esperado en [`endpoints-pendientes.md`](endpoints-pendientes.md).
 | 2 | **Aviso de coincidencia al publicar un PERDIDO** | Sólo se avisa al publicar un ENCONTRADO. Quien publica la pérdida después ve las sugerencias en su página, pero no le llega aviso | Avisarle también, o dejarlo así |
 | 3 | **Rutas de los enlaces de los correos de aviso** | El backend enlaza a `/reclamaciones/:id` y `/publicaciones/:id/reclamaciones`; el frontend las redirige a `/mensajes/:id` y a `/publicaciones/:id#reclamaciones` | Cambiar las rutas en el backend o mantener las redirecciones |
 | 4 | **Íconos de categoría** | El backend guarda un nombre (`laptop`, `id-card`…) y el frontend lo muestra como emoji; uno desconocido sale como 📦 | Fijar la lista de nombres válidos para cuando el admin cree categorías (RF-28) |
-| 5 | Qué ve un visitante (`pendientes.md` #1) | Catálogo y detalle completos | Recomendación del backend: sin descripción ni galería |
-| 6 | Fotos en un PERDIDO (`pendientes.md` #2) | Obligatorias en ENCONTRADO, opcionales en PERDIDO | Confirmar |
-| 7 | Botón "Lo tengo" en un PERDIDO (`pendientes.md` #3) | Lleva al asistente de "Encontré algo" vacío | Prellenar categoría, sede y fecha |
+| 5 | ✅ Qué ve un visitante | **Resuelto:** catálogo, búsqueda y ficha completos; ninguna acción sin sesión | — |
+| 6 | Fotos en un PERDIDO (`pendientes.md` #1) | Obligatorias en ENCONTRADO, opcionales en PERDIDO | Confirmar |
+| 7 | Botón "Lo tengo" en un PERDIDO (`pendientes.md` #2) | Lleva al asistente de "Encontré algo" vacío | Prellenar categoría, sede y fecha |
 
-## 4. Despliegue y calidad
+## 3. Despliegue y calidad
 
 - **Producción:** frontend y backend detrás del mismo dominio con HTTPS; sólo el frontend se expone, el
   backend queda privado. Falta el `Dockerfile` del frontend (Next.js con `output: 'standalone'`). En
@@ -49,7 +34,7 @@ Detalle y JSON esperado en [`endpoints-pendientes.md`](endpoints-pendientes.md).
 - **Playwright:** ya se puede escribir el E2E publicar → reclamar → conversar → entregar.
 - **Windows:** si PowerShell bloquea `npm` ("la ejecución de scripts está deshabilitada"), usar `npm.cmd`.
 
-## 5. Pendiente del lado del frontend
+## 4. Pendiente del lado del frontend
 
 - Página para editar una publicación (`PUT /publicaciones/:id` ya existe).
 - Gestión de categorías, sedes, lugares y cuentas en Administración (endpoints RF-28 y RF-29 ya existen).
