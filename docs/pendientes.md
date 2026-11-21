@@ -3,7 +3,7 @@
 Lo que falta decidir y lo que falta construir. Cuando algo se resuelva, se borra de aquí y se refleja en `CLAUDE.md` (sección 4 si es una decisión, sección 9 si es trabajo terminado).
 
 **Estado (2026-11-21):**
-- **Backend:** todas las funciones de la propuesta están implementadas y probadas (193 pruebas unitarias, 26 e2e y 140 contra PostgreSQL).
+- **Backend:** todas las funciones de la propuesta están implementadas y probadas (270 pruebas unitarias (87 % de cobertura en los servicios), 26 e2e y 142 contra PostgreSQL).
 - **Frontend:** Next.js en `frontend/`, conectado a la API. Están todas las pantallas salvo las de la sección 3.
 - **Hito de la Fase F cumplido:** recorrido de punta a punta en el navegador (publicar → reclamar → chatear → entregar).
 
@@ -35,7 +35,6 @@ Resueltas el 2026-11-21: suspensión al instante (el guard revisa la cuenta en c
 - [ ] Recomendados en `frontend/docs/endpoints-pendientes.md` que siguen abiertos (#5: `id_publicacion` en los avisos).
 
 ### Calidad (Fase J)
-- [ ] **Cobertura ≥ 60 %** (RNF-14) con pruebas unitarias. Hoy está por debajo porque `auth`, `gestion` e `imagenes` se prueban solo contra la base (cuentan en `test:db`, no en la cobertura unitaria). Opciones: agregarles pruebas unitarias, o medir la cobertura también con `test:db`.
 - [ ] Playwright: automatizar el recorrido publicar → reclamar → conversar → entregar (ya se hizo a mano en el navegador).
 - [ ] k6 con 200 usuarios virtuales sobre el listado (RNF-01). La consulta ya se midió en SQL: 5,7 ms con 10.000 publicaciones.
 - [ ] OWASP ZAP y revisión manual de control de acceso.

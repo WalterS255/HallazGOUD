@@ -438,7 +438,7 @@ Se respeta el orden de la propuesta (modelo incremental, con un entregable demos
 - [x] Estadísticas (consultas de agregación). `GET /api/admin/estadisticas` (`@Roles('ADMIN')`, `?desde&hasta`) sobre `modules/admin/estadisticas.*`: por mes en **hora de Colombia** (probado con el 31 de enero a las 22:00), tasa de recuperación, categorías frecuentes y lugares críticos.
 
 ### Fase J — Pruebas y calidad
-- [ ] Cobertura ≥ 60 % en los `*.service.ts` del backend (Vitest).
+- [x] Cobertura ≥ 60 % en los `*.service.ts` del backend (Vitest). **87 % de líneas** (2026-11-21) con 270 pruebas unitarias: se agregaron las de `auth`, `gestion`, `imagenes` y `perfil` (antes en 0 %: solo tenían pruebas contra la BD). El límite está en `vitest.config.ts` (`coverage.thresholds`, con `include` para que cuenten también los servicios sin pruebas): `npm run test:cov` falla si baja del 60 %.
 - [ ] Playwright: publicar → reclamar → conversar → entregar.
 - [ ] k6 con 200 usuarios virtuales sobre el listado (RNF-01).
 - [ ] OWASP ZAP + revisión manual de control de acceso.
@@ -532,6 +532,7 @@ npm run db:seed                      # datos iniciales (se puede repetir sin dup
 npm run db:status                    # qué migraciones están aplicadas
 npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script   # debe salir vacío
 npm test                             # pruebas unitarias (sin BD)
+npm run test:cov                     # unitarias + cobertura de los servicios; falla si baja del 60 % (RNF-14)
 npm run test:db                      # pruebas contra PostgreSQL: cada corrida crea y borra su propia BD (hallazgo_test_<carpeta>_<pid>)
 bash infra/respaldo/respaldar.sh     # (desde la raíz) respaldo de hallazgo_ud en respaldos/
 bash infra/respaldo/restaurar.sh respaldos/<archivo>.dump   # restaura en hallazgo_restaurada para comprobarlo
