@@ -32,14 +32,13 @@ Resueltas el 2026-11-21: suspensión al instante (el guard revisa la cuenta en c
 
 ### Calidad (Fase J)
 
-### Despliegue (Fase K)
-- [ ] Repetir el escaneo pasivo de ZAP contra `next build` (en desarrollo, Next sirve paquetes sin minificar y una CSP con `unsafe-eval`).
+### Despliegue (Fase K): todo preparado y probado en local; falta el servidor real
+Guía: [`infra/despliegue/README.md`](../infra/despliegue/README.md).
+- [ ] Conseguir el VPS, el dominio y un SMTP real; seguir la guía (secciones 2 a 7).
+- [ ] Ver correr el CI en GitHub en el primer PR (`.github/workflows/ci.yml`).
+- [ ] Preguntar a la oficina de redes si el campus sale a Internet por una sola IP (NAT): el límite general de 100 peticiones por minuto es por IP (ver la guía, sección 10).
 - [ ] CSP sin `'unsafe-inline'` en scripts (nonces por petición): mejora opcional.
-- [ ] Dockerfiles de producción y proxy inverso con HTTPS (en producción, `CONFIAR_PROXY=true` en el frontend).
-- [ ] Backend con el rol `hallazgo_app` (`infra/bd/roles.sql`, listo y probado).
-- [ ] Cron de respaldos en el VPS (`infra/respaldo/*.sh`, listos y probados) y una copia fuera del servidor.
-- [ ] CI en GitHub Actions.
-- [ ] Manual de usuario y manual de administrador.
+- [ ] Adelgazar la imagen del backend (871 MB, sobre todo sharp y el SDK de AWS): opcional.
 
 ## 4. Detalles del entorno a tener presentes
 - El clúster **`k3s-default`** (k3d, otro proyecto) está **detenido** para liberar memoria. Para volver a usarlo: `k3d cluster start k3s-default`. Con él encendido, el PC se queda sin RAM y Docker se reinicia solo.

@@ -233,4 +233,9 @@ Dos escaneos con OWASP ZAP (pasivo sobre el frontend, activo con ataques sobre l
 
 Detalle, avisos aceptados y la **matriz ruta × rol** con la prueba que cubre cada permiso: [`infra/seguridad/README.md`](../infra/seguridad/README.md).
 
+## 12. CI y pruebas contra producción (Fase K)
+
+- **CI** (`.github/workflows/ci.yml`): en cada PR y push a `main`, GitHub corre el lint, el formato, las unitarias con cobertura (falla si baja del 60 %), las e2e, las de PostgreSQL (con un Postgres en un contenedor), la compilación del frontend y las tres imágenes Docker de producción. Playwright no va en el CI todavía (necesita el stack completo).
+- **Playwright contra producción:** `E2E_URL=https://localhost:8443 npm run test:e2e` corre las 48 pruebas contra el stack de `docker-compose.prod.yml` por HTTPS (acepta el certificado local de Caddy). Resultado (2026-11-21): 48 de 48. La base de producción local necesita datos: `npx prisma db seed` con el servicio `migrar` (ver `infra/despliegue/README.md`) y al menos una publicación activa (las crean `editar.spec` y `recorrido.spec`).
+
 **Lo que todavía no tiene el frontend:** linter propio y pruebas de sus componentes por separado (ver [`pendientes.md`](pendientes.md)).

@@ -164,12 +164,17 @@ Cuando trabajan dos personas (o sesiones) a la vez:
 - para usar la carpeta principal (merge, `npm install`, pruebas), se **anuncia**, se **espera respuesta** y al terminar se avisa "carpeta libre";
 - las ramas se unen a `main` con `git merge --ff-only`, después de verificar en el worktree.
 
-## Despliegue (pendiente, Fase K)
+## Despliegue (Fase K)
 
-Plan: un VPS con Docker Compose.
-1. Dockerfiles de producción (backend compilado; frontend con `next build` + `next start`, que tiene su propio servidor).
-2. Proxy inverso con HTTPS (TLS) delante de Next.js. Backend con `TRUST_PROXY=1` y frontend con `CONFIAR_PROXY=true`: así el rate limit cuenta por la IP real y nadie puede inventarla (ver `backend/src/comun/limites/limites.ts`).
-3. No publicar los puertos de PostgreSQL, el explorador de SeaweedFS ni Mailpit.
-4. Backend con `DATABASE_URL` = `hallazgo_app`; migraciones con `DATABASE_URL_MIGRACIONES` = dueño (`prisma migrate deploy`).
-5. Cron diario de `infra/respaldo/respaldar.sh` y una copia fuera del servidor.
-6. CI en GitHub Actions: lint + las tres baterías de pruebas en cada PR.
+Un VPS con Docker Compose (`docker-compose.prod.yml`). Guía paso a paso: [`infra/despliegue/README.md`](../infra/despliegue/README.md).
+
+```
+Internet ──443──► Caddy (HTTPS) ──► frontend (Next) ──/api──► backend (Nest) ──► PostgreSQL, SeaweedFS, SMTP
+```
+
+1. Imágenes: `backend/Dockerfile` (con un target `migrar`) y `frontend/Dockerfile` (Next `standalone`). Corren sin root.
+2. Caddy con HTTPS automático (Let's Encrypt) y HSTS. Backend con `TRUST_PROXY=1` y frontend con `CONFIAR_PROXY=true`: el rate limit cuenta por la IP real y nadie puede inventarla.
+3. Solo Caddy publica puertos: PostgreSQL, SeaweedFS (y su explorador sin contraseña), el backend y el frontend no son alcanzables desde fuera.
+4. Arranque ordenado: base sana → `migrar` (dueño, `DATABASE_URL_MIGRACIONES`) → `rol-app` (`infra/bd/roles.sql`) → backend (`hallazgo_app`, permisos mínimos) → frontend → Caddy.
+5. Respaldos diarios con `ARCHIVO_ENV=.env.prod bash infra/respaldo/respaldar.sh` (cron) y copia fuera del servidor.
+6. CI en GitHub Actions (`.github/workflows/ci.yml`): lint, las tres baterías de pruebas y las imágenes Docker en cada PR.

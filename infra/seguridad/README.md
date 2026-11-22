@@ -84,3 +84,7 @@ Para cada ruta: quién **debe** poder usarla y qué prueba demuestra que **quien
 | `/admin/categorias`, `/admin/sedes`, `/admin/lugares`, `/admin/usuarios`, `/admin/estadisticas` | Admin | Usuario 403; visitante 401; un "ADMIN" degradado en la base ya no entra aunque su token lo diga | `admin.db-spec`, `api.db-spec`, `roles.e2e-spec` |
 
 **Conclusión:** cada ruta que escribe o lee datos privados tiene al menos una prueba que demuestra que un visitante (401) y una persona sin relación (403 o 404) no pueden usarla.
+
+## 4. Repetición contra la compilación de producción (Fase K)
+
+Pasivo con la araña AJAX contra el frontend del stack de producción local (`docker-compose.prod.yml`), desde la red interna (`--network hallazgo-prod_default`, objetivo `http://frontend:3001`): **0 fallos**. Desaparecieron los avisos propios del modo desarrollo: `unsafe-eval` y `ws:` en la CSP, "funciones JS peligrosas" y "comentarios sospechosos" (paquetes sin minificar). Quedan los ya aceptados arriba (`unsafe-inline`, CSRF, redirección del visitante, atributo controlable) y uno informativo nuevo: la página guarda la preferencia de tema en `localStorage` (no es un dato personal).
