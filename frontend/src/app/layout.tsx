@@ -1,19 +1,30 @@
 import type { Metadata, Viewport } from 'next';
 import { Archivo, Atkinson_Hyperlegible, JetBrains_Mono } from 'next/font/google';
+import Link from 'next/link';
 import Script from 'next/script';
 import { Encabezado } from '@/components/Encabezado';
 import './globals.css';
 
 // Display con carácter (Archivo ancho), cuerpo muy legible (Atkinson, diseñada para baja visión, RNF-05)
 // y monoespaciada para folios y cifras.
-const archivo = Archivo({ subsets: ['latin'], axes: ['wdth'], variable: '--font-archivo', display: 'swap' });
+const archivo = Archivo({
+  subsets: ['latin'],
+  axes: ['wdth'],
+  variable: '--font-archivo',
+  display: 'swap',
+});
 const atkinson = Atkinson_Hyperlegible({
   subsets: ['latin'],
   weight: ['400', '700'],
   variable: '--font-atkinson',
   display: 'swap',
 });
-const mono = JetBrains_Mono({ subsets: ['latin'], weight: ['500'], variable: '--font-mono', display: 'swap' });
+const mono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['500'],
+  variable: '--font-mono',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: { default: 'HallazGO UD', template: '%s · HallazGO UD' },
@@ -28,7 +39,11 @@ const SCRIPT_TEMA = `try{var t=localStorage.getItem('tema');if(t==='light'||t===
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" suppressHydrationWarning className={`${archivo.variable} ${atkinson.variable} ${mono.variable}`}>
+    <html
+      lang="es"
+      suppressHydrationWarning
+      className={`${archivo.variable} ${atkinson.variable} ${mono.variable}`}
+    >
       <body className="flex min-h-screen flex-col">
         <Script id="tema" strategy="beforeInteractive">
           {SCRIPT_TEMA}
@@ -44,12 +59,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="wrap small muted flex flex-wrap justify-between gap-2 py-5">
             <span>HallazGO UD · Universidad Distrital Francisco José de Caldas</span>
             <span className="flex gap-4">
-              <a href="/estado" className="link">
+              <Link href="/estado" className="link">
                 Estado de la conexión
-              </a>
-              <a href="/privacidad" className="link">
+              </Link>
+              <Link href="/privacidad" className="link">
                 Tratamiento de datos
-              </a>
+              </Link>
             </span>
           </div>
         </footer>
