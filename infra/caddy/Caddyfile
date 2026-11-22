@@ -1,0 +1,23 @@
+# Proxy inverso con HTTPS (RNF-07). Caddy saca y renueva solo el certificado de
+# Let's Encrypt para {$DOMINIO} (por ejemplo hallazgo.udistrital.edu.co). Con
+# DOMINIO=localhost usa un certificado local de prueba (el navegador avisa: es normal).
+
+{$DOMINIO} {
+	# Comprime las respuestas (texto, JSON) para celulares con datos lentos.
+	encode zstd gzip
+
+	# Todo va al frontend (Next). Next reenvía /api al backend, que NO se publica.
+	# Caddy reemplaza X-Forwarded-For con la IP real del visitante: así nadie puede
+	# inventar su IP para saltarse el límite de peticiones (ver infra/seguridad).
+	reverse_proxy frontend:3001
+
+	# HSTS: el navegador recordará usar SIEMPRE https con este dominio (1 año).
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	# No anunciar qué servidor es.
+	header -Server
+
+	# Fotos de 5 MB + margen; lo demás lo limita el backend.
+	request_body {
+		max_size 30MB
+	}
+}

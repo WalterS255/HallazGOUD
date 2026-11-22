@@ -25,6 +25,9 @@ const csp = [
 
 const config: NextConfig = {
   poweredByHeader: false,
+  // Producción en Docker (Fase K): `next build` genera .next/standalone, un servidor
+  // mínimo con solo los archivos que la app usa. No cambia nada en `npm run dev`.
+  output: 'standalone',
   // Monorepo: la raíz también tiene un package-lock.json (husky). La app es esta carpeta.
   outputFileTracingRoot: process.cwd(),
   // Sólo desarrollo: permite abrir `npm run dev` desde un celular en la misma red (http://192.168.x.x:3001).

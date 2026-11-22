@@ -12,6 +12,10 @@ try {
   // Sin .env (por ejemplo en el CI): las variables deben venir del entorno.
 }
 
+// E2E_URL: correr las pruebas contra otro sitio, por ejemplo el stack de producción local
+// (https://localhost:8443, con certificado de prueba). Sin ella: los servidores de desarrollo.
+const destino = process.env.E2E_URL;
+
 export default defineConfig({
   testDir: './e2e',
   // Un archivo a la vez: el login tiene un límite de 5 intentos por minuto y varias
@@ -24,7 +28,8 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: 'http://localhost:3001',
+    baseURL: destino ?? 'http://localhost:3001',
+    ignoreHTTPSErrors: !!destino, // el certificado local de Caddy no es de una autoridad pública
     locale: 'es-CO',
     timezoneId: 'America/Bogota',
     trace: 'retain-on-failure', // si algo falla, queda la grabación paso a paso
@@ -36,23 +41,29 @@ export default defineConfig({
     {
       // Mobile first (RNF-04): la pantalla de un celular pequeño, 360 px de ancho.
       name: 'celular',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 360, height: 780 }, isMobile: false },
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 360, height: 780 },
+        isMobile: false,
+      },
       dependencies: ['sesiones'],
     },
   ],
   // Si el backend y el frontend ya están encendidos, los usa; si no, los arranca.
-  webServer: [
-    {
-      command: 'npm --prefix ../backend run start:dev',
-      url: 'http://localhost:3000/api/salud',
-      reuseExistingServer: true,
-      timeout: 120_000,
-    },
-    {
-      command: 'npm run dev',
-      url: 'http://localhost:3001',
-      reuseExistingServer: true,
-      timeout: 120_000,
-    },
-  ],
+  webServer: destino
+    ? undefined
+    : [
+        {
+          command: 'npm --prefix ../backend run start:dev',
+          url: 'http://localhost:3000/api/salud',
+          reuseExistingServer: true,
+          timeout: 120_000,
+        },
+        {
+          command: 'npm run dev',
+          url: 'http://localhost:3001',
+          reuseExistingServer: true,
+          timeout: 120_000,
+        },
+      ],
 });

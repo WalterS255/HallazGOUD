@@ -1,0 +1,12 @@
+# Lo que NO entra a la imagen: dependencias del PC (se instalan dentro), compilados
+# viejos, pruebas, informes y, sobre todo, secretos.
+node_modules
+dist
+coverage
+test
+*.tsbuildinfo
+src/generated
+**/*.spec.ts
+.env
+.env.*
+*.log
