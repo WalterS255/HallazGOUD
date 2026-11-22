@@ -74,4 +74,10 @@ describe('cargarConfig', () => {
     const enProduccion = { ...validas, NODE_ENV: 'production', SIN_LIMITE_PETICIONES: 'true' };
     expect(() => cargarConfig(enProduccion)).toThrow(/SIN_LIMITE_PETICIONES/);
   });
+
+  it('SMTP con usuario y clave (producción) o sin ellos (Mailpit)', () => {
+    expect(cargarConfig(validas).smtp.auth).toBeUndefined();
+    const real = cargarConfig({ ...validas, SMTP_USUARIO: 'apikey', SMTP_CLAVE: 'secreta' });
+    expect(real.smtp.auth).toEqual({ user: 'apikey', pass: 'secreta' });
+  });
 });

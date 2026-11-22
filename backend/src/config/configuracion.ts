@@ -67,6 +67,9 @@ const esquemaEntorno = z
     SMTP_HOST: texto,
     SMTP_PORT: puertoTcp,
     SMTP_FROM: texto,
+    // Usuario y clave del SMTP real (producción). Mailpit no los pide: en desarrollo, vacíos.
+    SMTP_USUARIO: z.string().trim().optional(),
+    SMTP_CLAVE: z.string().optional(),
 
     S3_ENDPOINT: z.url({ error: 'debe ser una URL (http://…)' }),
     S3_REGION: texto.default('us-east-1'),
@@ -110,7 +113,13 @@ function aConfig(v: z.infer<typeof esquemaEntorno>) {
     jwt: { secreto: v.JWT_SECRET, expiraEn: v.JWT_EXPIRA_EN },
     bcryptCoste: v.BCRYPT_COSTE,
     dominioCorreo: v.DOMINIO_CORREO.toLowerCase(),
-    smtp: { host: v.SMTP_HOST, puerto: v.SMTP_PORT, remitente: v.SMTP_FROM },
+    smtp: {
+      host: v.SMTP_HOST,
+      puerto: v.SMTP_PORT,
+      remitente: v.SMTP_FROM,
+      // Solo si hay usuario: un SMTP real (Brevo, SES, Gmail…) exige autenticarse.
+      auth: v.SMTP_USUARIO ? { user: v.SMTP_USUARIO, pass: v.SMTP_CLAVE ?? '' } : undefined,
+    },
     s3: {
       endpoint: v.S3_ENDPOINT,
       region: v.S3_REGION,

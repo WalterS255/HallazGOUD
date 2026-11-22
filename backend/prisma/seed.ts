@@ -62,13 +62,18 @@ function tipoDe(edificio: string): tipo_lugar | null {
 // código (regla 5). Se guarda su hash bcrypt, como haría el registro real.
 // Hash de relleno de versiones anteriores del seed: si una cuenta lo tiene, se reemplaza.
 const HASH_PENDIENTE = 'PENDIENTE-FASE-D';
+// PRODUCCIÓN: SOLO_CATALOGOS=true carga categorías, sedes y lugares, SIN las cuentas de
+// prueba (en el servidor real nadie debe poder entrar con una contraseña conocida).
+const soloCatalogos = process.env.SOLO_CATALOGOS === 'true';
 const contrasenaSeed = process.env.CONTRASENA_SEED;
-if (!contrasenaSeed || contrasenaSeed.length < 8) {
+if (!soloCatalogos && (!contrasenaSeed || contrasenaSeed.length < 8)) {
   throw new Error(
     'Define CONTRASENA_SEED en el .env (mínimo 8 caracteres): es la contraseña de los usuarios de prueba.',
   );
 }
-const hashSeed = await hash(contrasenaSeed, Number(process.env.BCRYPT_COSTE ?? 12));
+const hashSeed = soloCatalogos
+  ? ''
+  : await hash(contrasenaSeed!, Number(process.env.BCRYPT_COSTE ?? 12));
 
 const usuarios = [
   {
@@ -113,7 +118,7 @@ async function main() {
 
   // correo no lleva @unique en el schema (su índice único es sobre lower(correo),
   // ver CLAUDE.md §5.5), así que upsert no sirve: se busca con findFirst.
-  for (const u of usuarios) {
+  for (const u of soloCatalogos ? [] : usuarios) {
     const existe = await prisma.usuario.findFirst({
       where: { correo: u.correo },
       select: { id: true, hash_contrasena: true },
