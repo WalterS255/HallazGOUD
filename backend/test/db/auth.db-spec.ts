@@ -6,6 +6,7 @@ import { Test } from '@nestjs/testing';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module.js';
+import { config } from '../../src/config/configuracion.js';
 import { configurarApp } from '../../src/configurar-app.js';
 import type { PrismaClient } from '../../src/generated/prisma/client.js';
 import { CorreoService } from '../../src/lib/correo/correo.service.js';
@@ -64,7 +65,11 @@ describe('registro y verificación (RF-01, RF-02)', () => {
 
     const u = await prisma.usuario.findFirstOrThrow({ where: { correo: d.correo } });
     expect(u.verificado).toBe(false);
-    expect(u.hash_contrasena).toMatch(/^\$2[aby]\$12\$/); // bcrypt con coste 12 (RNF-06)
+    // bcrypt con el coste CONFIGURADO (12 en el .env, 10 en el CI): la prueba no debe
+    // depender del .env de nadie. Lo que exige RNF-06 es que sea al menos 10.
+    const coste = String(config.bcryptCoste).padStart(2, '0');
+    expect(u.hash_contrasena?.startsWith(`$2b$${coste}$`)).toBe(true);
+    expect(config.bcryptCoste).toBeGreaterThanOrEqual(10);
     expect(u.hash_contrasena).not.toContain(d.contrasena);
     expect(u.acepto_politica_en).toBeInstanceOf(Date); // Ley 1581
 
