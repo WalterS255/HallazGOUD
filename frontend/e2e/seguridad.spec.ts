@@ -13,7 +13,8 @@ for (const [pantalla, campos] of [
     const ctx = await browser.newContext({ javaScriptEnabled: false });
     const page = await ctx.newPage();
     await page.goto(pantalla);
-    for (const c of campos) await page.locator(c).fill(c === '#correo' ? 'x@udistrital.edu.co' : 'Secreta-123456');
+    for (const c of campos)
+      await page.locator(c).fill(c === '#correo' ? 'x@udistrital.edu.co' : 'Secreta-123456');
     await page.locator('form button[type=submit]').first().click();
     await page.waitForLoadState();
     expect(page.url()).not.toContain('Secreta');

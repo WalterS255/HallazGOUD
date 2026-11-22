@@ -2,12 +2,21 @@ import 'server-only';
 import { config, urlBackend } from '../config';
 import { cabecerasDeSesion } from './servidor';
 
-export type Chequeo = { nombre: string; estado: 'ok' | 'falla' | 'info'; detalle: string; ms?: number };
+export type Chequeo = {
+  nombre: string;
+  estado: 'ok' | 'falla' | 'info';
+  detalle: string;
+  ms?: number;
+};
 
 async function medir(ruta: string) {
   const inicio = Date.now();
   try {
-    const res = await fetch(urlBackend(ruta), { headers: await cabecerasDeSesion(), cache: 'no-store', signal: AbortSignal.timeout(8000) });
+    const res = await fetch(urlBackend(ruta), {
+      headers: await cabecerasDeSesion(),
+      cache: 'no-store',
+      signal: AbortSignal.timeout(8000),
+    });
     const json = await res.json().catch(() => null);
     return { status: res.status, json, ms: Date.now() - inicio, error: null as string | null };
   } catch (e) {
@@ -18,7 +27,13 @@ async function medir(ruta: string) {
 
 /** Diagnóstico desde el servidor del frontend hacia el backend (usa /salud y /salud/bd de api.md §2). */
 export async function diagnosticarBackend(): Promise<{ ok: boolean; chequeos: Chequeo[] }> {
-  const chequeos: Chequeo[] = [{ nombre: 'Backend configurado', estado: 'info', detalle: `${config.backendUrl}${config.apiPrefix}` }];
+  const chequeos: Chequeo[] = [
+    {
+      nombre: 'Backend configurado',
+      estado: 'info',
+      detalle: `${config.backendUrl}${config.apiPrefix}`,
+    },
+  ];
 
   const salud = await medir('/salud');
   if (salud.status === null) {
@@ -30,7 +45,12 @@ export async function diagnosticarBackend(): Promise<{ ok: boolean; chequeos: Ch
     });
     return { ok: false, chequeos };
   }
-  chequeos.push({ nombre: 'Servidor del backend', estado: salud.status === 200 ? 'ok' : 'falla', ms: salud.ms, detalle: `GET /salud respondió ${salud.status}` });
+  chequeos.push({
+    nombre: 'Servidor del backend',
+    estado: salud.status === 200 ? 'ok' : 'falla',
+    ms: salud.ms,
+    detalle: `GET /salud respondió ${salud.status}`,
+  });
 
   const bd = await medir('/salud/bd');
   chequeos.push({

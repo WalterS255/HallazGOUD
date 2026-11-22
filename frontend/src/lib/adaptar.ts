@@ -19,5 +19,7 @@ export function aResumen(p: Publicacion): ResumenPublicacion {
 
 /** Enlace al chat. Con el id de la publicación, el chat puede mostrar el título y la contraparte. */
 export function enlaceChat(idReclamacion: number, idPublicacion?: number) {
-  return idPublicacion ? `/mensajes/${idReclamacion}?publicacion=${idPublicacion}` : `/mensajes/${idReclamacion}`;
+  return idPublicacion
+    ? `/mensajes/${idReclamacion}?publicacion=${idPublicacion}`
+    : `/mensajes/${idReclamacion}`;
 }

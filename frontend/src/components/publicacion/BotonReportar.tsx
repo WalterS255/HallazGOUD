@@ -15,7 +15,10 @@ export function BotonReportar({ publicacionId }: { publicacionId: number }) {
     setEstado('enviando');
     setError(null);
     try {
-      await llamarApi('/api/reportes', { metodo: 'POST', cuerpo: { id_publicacion: publicacionId, motivo } });
+      await llamarApi('/api/reportes', {
+        metodo: 'POST',
+        cuerpo: { id_publicacion: publicacionId, motivo },
+      });
       setEstado('listo');
     } catch (err) {
       setError(err);
@@ -33,7 +36,12 @@ export function BotonReportar({ publicacionId }: { publicacionId: number }) {
 
   if (!abierto) {
     return (
-      <button type="button" className="link small" style={{ color: 'var(--muted)', justifySelf: 'start' }} onClick={() => setAbierto(true)}>
+      <button
+        type="button"
+        className="link small"
+        style={{ color: 'var(--muted)', justifySelf: 'start' }}
+        onClick={() => setAbierto(true)}
+      >
         Reportar publicación
       </button>
     );

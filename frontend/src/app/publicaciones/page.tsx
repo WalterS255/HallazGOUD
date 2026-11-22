@@ -13,7 +13,8 @@ const POR_PAGINA = 12;
 
 function aQuery(filtros: Filtros, pagina?: number) {
   const sp = new URLSearchParams();
-  for (const [k, v] of Object.entries(filtros)) if (v !== undefined && k !== 'pagina') sp.set(k, String(v));
+  for (const [k, v] of Object.entries(filtros))
+    if (v !== undefined && k !== 'pagina') sp.set(k, String(v));
   if (pagina && pagina > 1) sp.set('pagina', String(pagina));
   return sp.toString();
 }
@@ -24,7 +25,9 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Par
   const pagina = f.pagina ?? 1;
 
   const [resultado, catalogos] = await Promise.all([
-    apiGet<Pagina<ResumenPublicacion>>(`/publicaciones?${aQuery(f)}&pagina=${pagina}&limite=${POR_PAGINA}`),
+    apiGet<Pagina<ResumenPublicacion>>(
+      `/publicaciones?${aQuery(f)}&pagina=${pagina}&limite=${POR_PAGINA}`,
+    ),
     apiGet<Catalogos>('/catalogos'),
   ]);
   const paginas = Math.max(1, Math.ceil(resultado.total / POR_PAGINA));
@@ -49,7 +52,9 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Par
         </Link>
       </div>
 
-      {!analisis.success && <p className="note note-info">Algunos filtros no eran válidos y se ignoraron.</p>}
+      {!analisis.success && (
+        <p className="note note-info">Algunos filtros no eran válidos y se ignoraron.</p>
+      )}
 
       <div className="cat-layout">
         <form method="get" className="panel filters" aria-label="Filtros">
@@ -57,7 +62,14 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Par
             <label className="label" htmlFor="f-q">
               Palabras clave
             </label>
-            <input id="f-q" name="q" type="search" className="field" defaultValue={f.q} placeholder="Ej.: casio" />
+            <input
+              id="f-q"
+              name="q"
+              type="search"
+              className="field"
+              defaultValue={f.q}
+              placeholder="Ej.: casio"
+            />
           </div>
           <fieldset>
             <legend className="label">Tipo</legend>
@@ -71,7 +83,12 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Par
             <label className="label" htmlFor="f-cat">
               Categoría
             </label>
-            <select id="f-cat" name="id_categoria" className="field" defaultValue={f.id_categoria ?? ''}>
+            <select
+              id="f-cat"
+              name="id_categoria"
+              className="field"
+              defaultValue={f.id_categoria ?? ''}
+            >
               <option value="">Todas</option>
               {catalogos.categorias.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -98,13 +115,25 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Par
               <label className="label" htmlFor="f-desde">
                 Desde
               </label>
-              <input id="f-desde" name="desde" type="date" className="field" defaultValue={f.desde} />
+              <input
+                id="f-desde"
+                name="desde"
+                type="date"
+                className="field"
+                defaultValue={f.desde}
+              />
             </div>
             <div>
               <label className="label" htmlFor="f-hasta">
                 Hasta
               </label>
-              <input id="f-hasta" name="hasta" type="date" className="field" defaultValue={f.hasta} />
+              <input
+                id="f-hasta"
+                name="hasta"
+                type="date"
+                className="field"
+                defaultValue={f.hasta}
+              />
             </div>
           </div>
           <div>

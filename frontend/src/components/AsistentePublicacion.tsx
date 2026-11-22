@@ -29,7 +29,12 @@ type Datos = {
 
 // Asistente en 3 pasos (sección 7.6 de la propuesta, RNF-03). Crea la publicación y después sube las fotos.
 /** "¡Lo tengo!" (pregunta 13.1): datos copiados del PERDIDO para no escribirlos de nuevo. */
-export type Prellenado = { desde: { id: number; titulo: string }; titulo: string; id_categoria: number; id_lugar: number | null };
+export type Prellenado = {
+  desde: { id: number; titulo: string };
+  titulo: string;
+  id_categoria: number;
+  id_lugar: number | null;
+};
 
 export function AsistentePublicacion({
   tipoInicial,
@@ -64,7 +69,9 @@ export function AsistentePublicacion({
   const categoria = catalogos.categorias.find((c) => String(c.id) === d.id_categoria);
   const hallazgo = d.tipo === 'ENCONTRADO';
 
-  function cambiar(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+  function cambiar(
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+  ) {
     const { name, value } = e.target;
     setD((x) => ({ ...x, [name]: value }));
     setErrores((x) => ({ ...x, [name]: '' }));
@@ -76,17 +83,22 @@ export function AsistentePublicacion({
     if (n === 0) {
       if (d.titulo.trim().length < 5) e.titulo = 'El título debe tener al menos 5 caracteres';
       if (!d.id_categoria) e.id_categoria = 'Elige una categoría';
-      if (d.descripcion.trim().length < 10) e.descripcion = 'Describe el objeto con al menos 10 caracteres';
+      if (d.descripcion.trim().length < 10)
+        e.descripcion = 'Describe el objeto con al menos 10 caracteres';
     } else if (n === 1) {
       if (!d.id_lugar) e.id_lugar = 'Elige un lugar';
       if (!d.fecha) e.fecha = 'Indica la fecha';
       if (!d.hora) e.hora = 'Indica la hora aproximada';
-      if (d.fecha && d.hora && new Date(aFechaSuceso(d.fecha, d.hora)) > new Date()) e.fecha = 'La fecha no puede estar en el futuro';
+      if (d.fecha && d.hora && new Date(aFechaSuceso(d.fecha, d.hora)) > new Date())
+        e.fecha = 'La fecha no puede estar en el futuro';
     } else {
-      if (hallazgo && d.detalle_reservado.trim().length < 3) e.detalle_reservado = 'Registra un detalle que sólo el dueño conocería';
+      if (hallazgo && d.detalle_reservado.trim().length < 3)
+        e.detalle_reservado = 'Registra un detalle que sólo el dueño conocería';
       // RF-08 · pregunta 13.6 (2026-11-21): al menos una foto también en un PERDIDO.
       if (fotos.length === 0)
-        e.imagenes = hallazgo ? 'Agrega al menos una foto del objeto' : 'Agrega al menos una foto: del objeto o de uno parecido';
+        e.imagenes = hallazgo
+          ? 'Agrega al menos una foto del objeto'
+          : 'Agrega al menos una foto: del objeto o de uno parecido';
     }
     setErrores(e);
     return Object.keys(e).length === 0;
@@ -95,8 +107,14 @@ export function AsistentePublicacion({
   function elegirFotos(e: React.ChangeEvent<HTMLInputElement>) {
     const nuevas = Array.from(e.target.files ?? []);
     e.target.value = '';
-    const mala = nuevas.find((a) => !TIPOS_IMAGEN.includes(a.type) || a.size > TAMANO_MAXIMO_IMAGEN);
-    if (mala) return setErrores((x) => ({ ...x, imagenes: `«${mala.name}» debe ser JPG, PNG o WEBP de máximo 5 MB` }));
+    const mala = nuevas.find(
+      (a) => !TIPOS_IMAGEN.includes(a.type) || a.size > TAMANO_MAXIMO_IMAGEN,
+    );
+    if (mala)
+      return setErrores((x) => ({
+        ...x,
+        imagenes: `«${mala.name}» debe ser JPG, PNG o WEBP de máximo 5 MB`,
+      }));
     setFotos((x) => [...x, ...nuevas].slice(0, MAX_IMAGENES));
     setErrores((x) => ({ ...x, imagenes: '' }));
   }
@@ -140,7 +158,9 @@ export function AsistentePublicacion({
         if (p >= 0) setPaso(p);
       }
       const msg = e instanceof Error ? e.message : 'Ocurrió un error inesperado.';
-      setErrorGeneral(id ? `La publicación se creó, pero las fotos no se pudieron subir: ${msg}` : msg);
+      setErrorGeneral(
+        id ? `La publicación se creó, pero las fotos no se pudieron subir: ${msg}` : msg,
+      );
     } finally {
       setEnviando(false);
     }
@@ -160,13 +180,18 @@ export function AsistentePublicacion({
       <h1 className="titulo-pagina">Nueva publicación</h1>
       {prellenado && (
         <p className="note note-info">
-          Estás publicando el hallazgo de «{prellenado.desde.titulo}». Copiamos la categoría, el título y el lugar:
-          revísalos, agrega una foto y el detalle reservado. Al publicar, le avisamos a quien lo perdió.
+          Estás publicando el hallazgo de «{prellenado.desde.titulo}». Copiamos la categoría, el
+          título y el lugar: revísalos, agrega una foto y el detalle reservado. Al publicar, le
+          avisamos a quien lo perdió.
         </p>
       )}
       <ol className="wsteps" aria-label="Pasos">
         {PASOS.map((n, i) => (
-          <li key={n} aria-current={i === paso ? 'step' : undefined} className={i < paso ? 'done' : ''}>
+          <li
+            key={n}
+            aria-current={i === paso ? 'step' : undefined}
+            className={i < paso ? 'done' : ''}
+          >
             {i + 1}. {n}
           </li>
         ))}
@@ -194,15 +219,30 @@ export function AsistentePublicacion({
               <label className="label" htmlFor="titulo">
                 Título
               </label>
-              <input id="titulo" name="titulo" className="field" maxLength={100} value={d.titulo} onChange={cambiar}
-                placeholder="Ej.: Calculadora Casio fx-991 negra" {...inv('titulo')} />
+              <input
+                id="titulo"
+                name="titulo"
+                className="field"
+                maxLength={100}
+                value={d.titulo}
+                onChange={cambiar}
+                placeholder="Ej.: Calculadora Casio fx-991 negra"
+                {...inv('titulo')}
+              />
               {err('titulo')}
             </div>
             <div>
               <label className="label" htmlFor="id_categoria">
                 Categoría
               </label>
-              <select id="id_categoria" name="id_categoria" className="field" value={d.id_categoria} onChange={cambiar} {...inv('id_categoria')}>
+              <select
+                id="id_categoria"
+                name="id_categoria"
+                className="field"
+                value={d.id_categoria}
+                onChange={cambiar}
+                {...inv('id_categoria')}
+              >
                 <option value="">Selecciona…</option>
                 {catalogos.categorias.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -216,9 +256,17 @@ export function AsistentePublicacion({
               <label className="label" htmlFor="descripcion">
                 Descripción
               </label>
-              <textarea id="descripcion" name="descripcion" className="field" rows={4} maxLength={2000} value={d.descripcion}
-                onChange={cambiar} {...inv('descripcion')}
-                placeholder="Color, marca, tamaño, estado… No incluyas el detalle que servirá para verificar al dueño." />
+              <textarea
+                id="descripcion"
+                name="descripcion"
+                className="field"
+                rows={4}
+                maxLength={2000}
+                value={d.descripcion}
+                onChange={cambiar}
+                {...inv('descripcion')}
+                placeholder="Color, marca, tamaño, estado… No incluyas el detalle que servirá para verificar al dueño."
+              />
               {err('descripcion')}
             </div>
           </>
@@ -230,7 +278,14 @@ export function AsistentePublicacion({
               <label className="label" htmlFor="id_lugar">
                 Sede y lugar
               </label>
-              <select id="id_lugar" name="id_lugar" className="field" value={d.id_lugar} onChange={cambiar} {...inv('id_lugar')}>
+              <select
+                id="id_lugar"
+                name="id_lugar"
+                className="field"
+                value={d.id_lugar}
+                onChange={cambiar}
+                {...inv('id_lugar')}
+              >
                 <option value="">Selecciona…</option>
                 {catalogos.sedes.map((s) => (
                   <optgroup key={s.id} label={s.nombre}>
@@ -250,14 +305,31 @@ export function AsistentePublicacion({
                 <label className="label" htmlFor="fecha">
                   Fecha
                 </label>
-                <input id="fecha" name="fecha" type="date" className="field" max={hoyColombia()} value={d.fecha} onChange={cambiar} {...inv('fecha')} />
+                <input
+                  id="fecha"
+                  name="fecha"
+                  type="date"
+                  className="field"
+                  max={hoyColombia()}
+                  value={d.fecha}
+                  onChange={cambiar}
+                  {...inv('fecha')}
+                />
                 {err('fecha')}
               </div>
               <div>
                 <label className="label" htmlFor="hora">
                   Hora aproximada
                 </label>
-                <input id="hora" name="hora" type="time" className="field" value={d.hora} onChange={cambiar} {...inv('hora')} />
+                <input
+                  id="hora"
+                  name="hora"
+                  type="time"
+                  className="field"
+                  value={d.hora}
+                  onChange={cambiar}
+                  {...inv('hora')}
+                />
                 {err('hora')}
               </div>
             </div>
@@ -268,8 +340,9 @@ export function AsistentePublicacion({
           <>
             {categoria?.sensible && (
               <p className="note note-info">
-                <strong>Objeto sensible.</strong> Tapa números de documento, tarjetas o datos personales antes de tomar la foto. Se
-                recomienda entregarlo en la oficina de seguridad de la facultad.
+                <strong>Objeto sensible.</strong> Tapa números de documento, tarjetas o datos
+                personales antes de tomar la foto. Se recomienda entregarlo en la oficina de
+                seguridad de la facultad.
               </p>
             )}
             <div>
@@ -278,7 +351,8 @@ export function AsistentePublicacion({
               </span>
               {!hallazgo && (
                 <p className="muted small">
-                  ¿No tienes una foto de tu objeto? Sube una de uno igual o parecido: ayuda a que quien lo encuentre lo reconozca.
+                  ¿No tienes una foto de tu objeto? Sube una de uno igual o parecido: ayuda a que
+                  quien lo encuentre lo reconozca.
                 </p>
               )}
               <div className="photos">
@@ -286,7 +360,11 @@ export function AsistentePublicacion({
                   <div key={src} className="photo">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={src} alt={`Foto ${i + 1}`} />
-                    <button type="button" aria-label={`Quitar foto ${i + 1}`} onClick={() => setFotos((x) => x.filter((_, j) => j !== i))}>
+                    <button
+                      type="button"
+                      aria-label={`Quitar foto ${i + 1}`}
+                      onClick={() => setFotos((x) => x.filter((_, j) => j !== i))}
+                    >
                       ✕
                     </button>
                   </div>
@@ -294,7 +372,12 @@ export function AsistentePublicacion({
                 {fotos.length < MAX_IMAGENES && (
                   <label className="add-photo">
                     + Agregar
-                    <input type="file" accept={TIPOS_IMAGEN.join(',')} multiple onChange={elegirFotos} />
+                    <input
+                      type="file"
+                      accept={TIPOS_IMAGEN.join(',')}
+                      multiple
+                      onChange={elegirFotos}
+                    />
                   </label>
                 )}
               </div>
@@ -305,10 +388,20 @@ export function AsistentePublicacion({
                 <label className="label" htmlFor="detalle_reservado">
                   Detalle reservado
                 </label>
-                <textarea id="detalle_reservado" name="detalle_reservado" className="field" rows={2} maxLength={500}
-                  value={d.detalle_reservado} onChange={cambiar} {...inv('detalle_reservado')}
-                  placeholder="Un rasgo que no se ve en las fotos: un sticker, una marca, lo que tenía adentro…" />
-                <p className="muted small mt-1">🔒 Nadie más lo verá. Quien reclame deberá describirlo para demostrar que es suyo.</p>
+                <textarea
+                  id="detalle_reservado"
+                  name="detalle_reservado"
+                  className="field"
+                  rows={2}
+                  maxLength={500}
+                  value={d.detalle_reservado}
+                  onChange={cambiar}
+                  {...inv('detalle_reservado')}
+                  placeholder="Un rasgo que no se ve en las fotos: un sticker, una marca, lo que tenía adentro…"
+                />
+                <p className="muted small mt-1">
+                  🔒 Nadie más lo verá. Quien reclame deberá describirlo para demostrar que es suyo.
+                </p>
                 {err('detalle_reservado')}
               </div>
             )}
@@ -328,18 +421,31 @@ export function AsistentePublicacion({
 
         <div className="row" style={{ justifyContent: 'space-between' }}>
           {paso > 0 ? (
-            <button type="button" className="btn" onClick={() => (setErrores({}), setPaso(paso - 1))}>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => (setErrores({}), setPaso(paso - 1))}
+            >
               ← Atrás
             </button>
           ) : (
             <span />
           )}
           {paso < 2 ? (
-            <button type="button" className="btn btn-primary" onClick={() => validar(paso) && setPaso(paso + 1)}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => validar(paso) && setPaso(paso + 1)}
+            >
               Siguiente →
             </button>
           ) : (
-            <button type="button" className="btn btn-primary" onClick={publicar} disabled={enviando}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={publicar}
+              disabled={enviando}
+            >
               {enviando ? 'Publicando…' : 'Publicar'}
             </button>
           )}

@@ -13,15 +13,15 @@ refleja en `CLAUDE.md` o en `docs/pendientes.md`.
 
 ## 2. Producto
 
-| # | Tema | Hoy | Opciones |
-|---|---|---|---|
-| 1 | **Objetos en reclamación en el catálogo** | `GET /publicaciones` trae sólo `ACTIVA` por defecto: al aceptar una reclamación, el objeto desaparece del catálogo | Mostrar también `EN_RECLAMACION` (con su insignia) o dejarlo así |
-| 2 | **Aviso de coincidencia al publicar un PERDIDO** | Sólo se avisa al publicar un ENCONTRADO. Quien publica la pérdida después ve las sugerencias en su página, pero no le llega aviso | Avisarle también, o dejarlo así |
-| 3 | **Rutas de los enlaces de los correos de aviso** | El backend enlaza a `/reclamaciones/:id` y `/publicaciones/:id/reclamaciones`; el frontend las redirige a `/mensajes/:id` y a `/publicaciones/:id#reclamaciones` | Cambiar las rutas en el backend o mantener las redirecciones |
-| 4 | **Íconos de categoría** | El backend guarda un nombre (`laptop`, `id-card`…) y el frontend lo muestra como emoji; uno desconocido sale como 📦 | Fijar la lista de nombres válidos para cuando el admin cree categorías (RF-28) |
-| 5 | ✅ Qué ve un visitante | **Resuelto:** catálogo, búsqueda y ficha completos; ninguna acción sin sesión | — |
-| 6 | ✅ Fotos en un PERDIDO | **Resuelto:** obligatorias también (al menos una; se sugiere una de un objeto parecido) | — |
-| 7 | ✅ Botón "Lo tengo" en un PERDIDO | **Resuelto:** "¡Lo tengo!" abre el asistente con categoría, título y lugar copiados (`/publicar?lo_tengo=<id>`) | — |
+| #   | Tema                                             | Hoy                                                                                                                                                              | Opciones                                                                       |
+| --- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| 1   | **Objetos en reclamación en el catálogo**        | `GET /publicaciones` trae sólo `ACTIVA` por defecto: al aceptar una reclamación, el objeto desaparece del catálogo                                               | Mostrar también `EN_RECLAMACION` (con su insignia) o dejarlo así               |
+| 2   | **Aviso de coincidencia al publicar un PERDIDO** | Sólo se avisa al publicar un ENCONTRADO. Quien publica la pérdida después ve las sugerencias en su página, pero no le llega aviso                                | Avisarle también, o dejarlo así                                                |
+| 3   | **Rutas de los enlaces de los correos de aviso** | El backend enlaza a `/reclamaciones/:id` y `/publicaciones/:id/reclamaciones`; el frontend las redirige a `/mensajes/:id` y a `/publicaciones/:id#reclamaciones` | Cambiar las rutas en el backend o mantener las redirecciones                   |
+| 4   | **Íconos de categoría**                          | El backend guarda un nombre (`laptop`, `id-card`…) y el frontend lo muestra como emoji; uno desconocido sale como 📦                                             | Fijar la lista de nombres válidos para cuando el admin cree categorías (RF-28) |
+| 5   | ✅ Qué ve un visitante                           | **Resuelto:** catálogo, búsqueda y ficha completos; ninguna acción sin sesión                                                                                    | —                                                                              |
+| 6   | ✅ Fotos en un PERDIDO                           | **Resuelto:** obligatorias también (al menos una; se sugiere una de un objeto parecido)                                                                          | —                                                                              |
+| 7   | ✅ Botón "Lo tengo" en un PERDIDO                | **Resuelto:** "¡Lo tengo!" abre el asistente con categoría, título y lugar copiados (`/publicar?lo_tengo=<id>`)                                                  | —                                                                              |
 
 ## 3. Despliegue y calidad
 

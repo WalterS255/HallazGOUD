@@ -22,7 +22,10 @@ export function GestionCategorias({ categorias }: { categorias: CategoriaAdmin[]
   async function crear(e: React.FormEvent) {
     e.preventDefault();
     const ok = await ejecutar(() =>
-      llamarApi('/api/admin/categorias', { metodo: 'POST', cuerpo: { nombre: nombre.trim(), icono, sensible } }),
+      llamarApi('/api/admin/categorias', {
+        metodo: 'POST',
+        cuerpo: { nombre: nombre.trim(), icono, sensible },
+      }),
     );
     if (ok) {
       setNombre('');
@@ -48,7 +51,13 @@ export function GestionCategorias({ categorias }: { categorias: CategoriaAdmin[]
                 <label className="sr-only" htmlFor={`cat-${c.id}`}>
                   Nuevo nombre de {c.nombre}
                 </label>
-                <input id={`cat-${c.id}`} className="field grow" maxLength={60} value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)} />
+                <input
+                  id={`cat-${c.id}`}
+                  className="field grow"
+                  maxLength={60}
+                  value={nuevoNombre}
+                  onChange={(e) => setNuevoNombre(e.target.value)}
+                />
                 <button type="submit" className="btn btn-primary" disabled={ocupado}>
                   Guardar
                 </button>
@@ -75,8 +84,14 @@ export function GestionCategorias({ categorias }: { categorias: CategoriaAdmin[]
                   >
                     Renombrar <span className="sr-only">{c.nombre}</span>
                   </button>
-                  <button type="button" className="btn" disabled={ocupado} onClick={() => cambiar(c.id, { sensible: !c.sensible })}>
-                    {c.sensible ? 'Quitar sensible' : 'Marcar sensible'} <span className="sr-only">{c.nombre}</span>
+                  <button
+                    type="button"
+                    className="btn"
+                    disabled={ocupado}
+                    onClick={() => cambiar(c.id, { sensible: !c.sensible })}
+                  >
+                    {c.sensible ? 'Quitar sensible' : 'Marcar sensible'}{' '}
+                    <span className="sr-only">{c.nombre}</span>
                   </button>
                   <button
                     type="button"
@@ -84,7 +99,8 @@ export function GestionCategorias({ categorias }: { categorias: CategoriaAdmin[]
                     disabled={ocupado}
                     onClick={() => cambiar(c.id, { activa: !c.activa })}
                   >
-                    {c.activa ? 'Desactivar' : 'Activar'} <span className="sr-only">{c.nombre}</span>
+                    {c.activa ? 'Desactivar' : 'Activar'}{' '}
+                    <span className="sr-only">{c.nombre}</span>
                   </button>
                 </span>
               </>
@@ -99,13 +115,25 @@ export function GestionCategorias({ categorias }: { categorias: CategoriaAdmin[]
           <label className="label" htmlFor="cat-nombre">
             Nombre
           </label>
-          <input id="cat-nombre" className="field" required maxLength={60} value={nombre} onChange={(e) => setNombre(e.target.value)} />
+          <input
+            id="cat-nombre"
+            className="field"
+            required
+            maxLength={60}
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+          />
         </div>
         <div>
           <label className="label" htmlFor="cat-icono">
             Ícono
           </label>
-          <select id="cat-icono" className="field" value={icono} onChange={(e) => setIcono(e.target.value)}>
+          <select
+            id="cat-icono"
+            className="field"
+            value={icono}
+            onChange={(e) => setIcono(e.target.value)}
+          >
             {Object.entries(ICONOS_CATEGORIA).map(([clave, emoji]) => (
               <option key={clave} value={clave}>
                 {emoji} {clave}
@@ -114,7 +142,11 @@ export function GestionCategorias({ categorias }: { categorias: CategoriaAdmin[]
           </select>
         </div>
         <label className="row" style={{ gap: 8 }}>
-          <input type="checkbox" checked={sensible} onChange={(e) => setSensible(e.target.checked)} />
+          <input
+            type="checkbox"
+            checked={sensible}
+            onChange={(e) => setSensible(e.target.checked)}
+          />
           Sensible (documentos, tarjetas, llaves): el formulario pide tapar datos personales
         </label>
         <button type="submit" className="btn btn-primary" disabled={ocupado || !nombre.trim()}>

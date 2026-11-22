@@ -73,7 +73,11 @@ export default async function AdminPage() {
             </div>
             <div className="kpi">
               <span className="muted small">Tasa de recuperación</span>
-              <b>{est.recuperacion.tasa === null ? '—' : `${Math.round(est.recuperacion.tasa * 100)} %`}</b>
+              <b>
+                {est.recuperacion.tasa === null
+                  ? '—'
+                  : `${Math.round(est.recuperacion.tasa * 100)} %`}
+              </b>
               <span className="muted small">Meta del semestre: ≥ 35 %</span>
             </div>
             <div className="kpi">
@@ -82,7 +86,10 @@ export default async function AdminPage() {
             </div>
           </section>
           <section className="cols3">
-            <Barras titulo="Publicaciones por mes" filas={est.por_mes.map((m) => ({ nombre: m.mes, total: m.perdidos + m.encontrados }))} />
+            <Barras
+              titulo="Publicaciones por mes"
+              filas={est.por_mes.map((m) => ({ nombre: m.mes, total: m.perdidos + m.encontrados }))}
+            />
             <Barras titulo="Categorías más frecuentes" filas={est.categorias_frecuentes} />
             <Barras titulo="Lugares críticos (pérdidas)" filas={est.lugares_criticos} />
           </section>
@@ -102,7 +109,9 @@ export default async function AdminPage() {
                 </Link>
                 <span className="muted">
                   {r.reportante.nombre} · {formatearFechaHora(r.fecha)}{' '}
-                  {r.vencido && <span className="chip chip-alerta">Vencido: {r.horas_pendiente} h</span>}
+                  {r.vencido && (
+                    <span className="chip chip-alerta">Vencido: {r.horas_pendiente} h</span>
+                  )}
                 </span>
               </div>
               <p>

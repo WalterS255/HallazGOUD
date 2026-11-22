@@ -26,8 +26,8 @@ export default async function CatalogosAdminPage() {
       </Link>
       <h1 className="titulo-pagina">Catálogos</h1>
       <p className="muted">
-        Lo que aparece en el formulario de publicar. Las categorías no se borran: se desactivan. Una sede con lugares, o un
-        lugar con publicaciones, no se puede borrar.
+        Lo que aparece en el formulario de publicar. Las categorías no se borran: se desactivan. Una
+        sede con lugares, o un lugar con publicaciones, no se puede borrar.
       </p>
       <GestionCategorias categorias={categorias} />
       <GestionSedes sedes={catalogos.sedes} />

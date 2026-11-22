@@ -26,7 +26,8 @@ export function AccionesAutor({
     setError(null);
     try {
       await accion();
-      despues ? despues() : router.refresh();
+      if (despues) despues();
+      else router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo completar la acción.');
     } finally {
@@ -37,12 +38,17 @@ export function AccionesAutor({
   function subirFotos(e: React.ChangeEvent<HTMLInputElement>) {
     const archivos = Array.from(e.target.files ?? []);
     e.target.value = '';
-    const malo = archivos.find((a) => !TIPOS_IMAGEN.includes(a.type) || a.size > TAMANO_MAXIMO_IMAGEN);
+    const malo = archivos.find(
+      (a) => !TIPOS_IMAGEN.includes(a.type) || a.size > TAMANO_MAXIMO_IMAGEN,
+    );
     if (malo) return setError(`«${malo.name}» debe ser JPG, PNG o WEBP de máximo 5 MB.`);
-    if (archivos.length + imagenes.length > MAX_IMAGENES) return setError(`Máximo ${MAX_IMAGENES} fotos por publicación.`);
+    if (archivos.length + imagenes.length > MAX_IMAGENES)
+      return setError(`Máximo ${MAX_IMAGENES} fotos por publicación.`);
     const formData = new FormData();
     archivos.forEach((a) => formData.append('imagenes', a));
-    ejecutar(() => llamarApi(`/api/publicaciones/${publicacionId}/imagenes`, { metodo: 'POST', formData }));
+    ejecutar(() =>
+      llamarApi(`/api/publicaciones/${publicacionId}/imagenes`, { metodo: 'POST', formData }),
+    );
   }
 
   if (!editable) return null;
@@ -77,7 +83,11 @@ export function AccionesAutor({
             <Link href={`/publicaciones/${publicacionId}/editar`} className="btn">
               Editar
             </Link>
-            <button type="button" className="btn btn-danger" onClick={() => setConfirmarRetiro(true)}>
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={() => setConfirmarRetiro(true)}
+            >
               Retirar publicación
             </button>
           </div>
@@ -98,7 +108,11 @@ export function AccionesAutor({
                 aria-label={`Quitar foto ${img.orden}`}
                 disabled={ocupado}
                 onClick={() =>
-                  ejecutar(() => llamarApi(`/api/publicaciones/${publicacionId}/imagenes/${img.orden}`, { metodo: 'DELETE' }))
+                  ejecutar(() =>
+                    llamarApi(`/api/publicaciones/${publicacionId}/imagenes/${img.orden}`, {
+                      metodo: 'DELETE',
+                    }),
+                  )
                 }
               >
                 ✕
@@ -108,7 +122,13 @@ export function AccionesAutor({
           {imagenes.length < MAX_IMAGENES && (
             <label className="add-photo">
               {ocupado ? 'Subiendo…' : '+ Agregar'}
-              <input type="file" accept={TIPOS_IMAGEN.join(',')} multiple disabled={ocupado} onChange={subirFotos} />
+              <input
+                type="file"
+                accept={TIPOS_IMAGEN.join(',')}
+                multiple
+                disabled={ocupado}
+                onChange={subirFotos}
+              />
             </label>
           )}
         </div>

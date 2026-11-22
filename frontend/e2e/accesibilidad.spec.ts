@@ -23,7 +23,11 @@ let idEditable = 0; // una publicación ACTIVA de la autora, para la pantalla de
 const PANTALLAS: Pantalla[] = [
   { nombre: 'Inicio', ruta: '/', quien: 'visitante' },
   { nombre: 'Catálogo', ruta: '/publicaciones', quien: 'visitante' },
-  { nombre: 'Ficha (visitante)', ruta: () => `/publicaciones/${idPublicacion}`, quien: 'visitante' },
+  {
+    nombre: 'Ficha (visitante)',
+    ruta: () => `/publicaciones/${idPublicacion}`,
+    quien: 'visitante',
+  },
   { nombre: 'Ingresar', ruta: '/login', quien: 'visitante' },
   { nombre: 'Crear cuenta', ruta: '/registro', quien: 'visitante' },
   { nombre: 'Recuperar contraseña', ruta: '/recuperar', quien: 'visitante' },
@@ -34,7 +38,11 @@ const PANTALLAS: Pantalla[] = [
   { nombre: 'Mensajes', ruta: '/mensajes', quien: 'usuario' },
   { nombre: 'Notificaciones', ruta: '/notificaciones', quien: 'usuario' },
   { nombre: 'Perfil', ruta: '/perfil', quien: 'usuario' },
-  { nombre: 'Editar publicación', ruta: () => `/publicaciones/${idEditable}/editar`, quien: 'usuario' },
+  {
+    nombre: 'Editar publicación',
+    ruta: () => `/publicaciones/${idEditable}/editar`,
+    quien: 'usuario',
+  },
   { nombre: 'Administración', ruta: '/admin', quien: 'moderador' },
   { nombre: 'Catálogos (admin)', ruta: '/admin/catalogos', quien: 'admin' },
   { nombre: 'Cuentas (admin)', ruta: '/admin/cuentas?q=Prueba', quien: 'admin' },
@@ -47,9 +55,14 @@ const contextos: Partial<Record<Pantalla['quien'], BrowserContext>> = {};
 
 async function contextoDe(browser: Browser, quien: Pantalla['quien']): Promise<BrowserContext> {
   if (!contextos[quien]) {
-    const correo = quien === 'visitante' ? null : { usuario: AUTORA, moderador: RECLAMANTE, admin: ADMIN }[quien];
+    const correo =
+      quien === 'visitante'
+        ? null
+        : { usuario: AUTORA, moderador: RECLAMANTE, admin: ADMIN }[quien];
     // Sesión ya iniciada por e2e/sesiones.setup.ts; el visitante entra sin sesión.
-    contextos[quien] = await browser.newContext(correo ? { storageState: archivoSesion(correo) } : {});
+    contextos[quien] = await browser.newContext(
+      correo ? { storageState: archivoSesion(correo) } : {},
+    );
   }
   return contextos[quien]!;
 }
@@ -58,9 +71,15 @@ test.beforeAll(async ({ request, browser }) => {
   // Una publicación cualquiera para revisar la ficha.
   const res = await request.get('/api/publicaciones?limite=1');
   idPublicacion = (await res.json()).datos[0]?.id;
-  expect(idPublicacion, 'Hace falta al menos una publicación ACTIVA (corre el recorrido)').toBeTruthy();
+  expect(
+    idPublicacion,
+    'Hace falta al menos una publicación ACTIVA (corre el recorrido)',
+  ).toBeTruthy();
   const usuario = await contextoDe(browser, 'usuario');
-  const mias = (await (await usuario.request.get('/api/usuarios/me/publicaciones')).json()) as { id: number; estado: string }[];
+  const mias = (await (await usuario.request.get('/api/usuarios/me/publicaciones')).json()) as {
+    id: number;
+    estado: string;
+  }[];
   idEditable = mias.find((p) => p.estado === 'ACTIVA')?.id ?? 0;
   expect(idEditable, 'La autora necesita una publicación ACTIVA (corre editar.spec)').toBeTruthy();
 });
@@ -76,12 +95,17 @@ function resumir(violaciones: Awaited<ReturnType<AxeBuilder['analyze']>>['violat
     impacto: v.impact,
     que: v.help,
     elementos: v.nodes.length,
-    ejemplo: v.nodes[0]?.target.join(' ') + ' → ' + (v.nodes[0]?.failureSummary ?? '').split('\n').slice(1, 2).join(''),
+    ejemplo:
+      v.nodes[0]?.target.join(' ') +
+      ' → ' +
+      (v.nodes[0]?.failureSummary ?? '').split('\n').slice(1, 2).join(''),
   }));
 }
 
 async function anchoDesbordado(page: Page): Promise<number> {
-  return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  return page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
 }
 
 for (const tema of TEMAS) {
@@ -93,7 +117,10 @@ for (const tema of TEMAS) {
       await page.addInitScript((t) => localStorage.setItem('tema', t), tema);
       await page.goto(typeof p.ruta === 'function' ? p.ruta() : p.ruta);
       await page.waitForLoadState('networkidle');
-      await expect(page.locator('html')).toHaveAttribute('data-theme', tema === 'light' ? 'light' : /dark|^$/);
+      await expect(page.locator('html')).toHaveAttribute(
+        'data-theme',
+        tema === 'light' ? 'light' : /dark|^$/,
+      );
 
       const { violations } = await new AxeBuilder({ page }).withTags(REGLAS_WCAG).analyze();
       expect(resumir(violations), `WCAG 2.1 AA en ${p.nombre}`).toEqual([]);
@@ -122,7 +149,9 @@ test('solo con el teclado: saltar al contenido, foco visible e ingresar', async 
       const e = document.activeElement as HTMLElement | null;
       if (!e) return false;
       const s = getComputedStyle(e);
-      return (s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0) || s.boxShadow !== 'none';
+      return (
+        (s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0) || s.boxShadow !== 'none'
+      );
     });
   await page.getByLabel('Correo institucional').focus();
   expect(await contornoVisible(), 'el campo de correo enfocado no muestra el foco').toBe(true);

@@ -18,29 +18,37 @@ export default async function EstadoPage() {
       <div>
         <h1 className="titulo-pagina">Estado de la conexión</h1>
         <p className="muted small">
-          Comprueba que el frontend llegue al backend configurado en <code className="mono">frontend/.env</code> y que las
-          respuestas sean las esperadas.
+          Comprueba que el frontend llegue al backend configurado en{' '}
+          <code className="mono">frontend/.env</code> y que las respuestas sean las esperadas.
         </p>
       </div>
 
       <section className="stack" aria-labelledby="t-backend">
         <div className="sec-head" style={{ margin: 0 }}>
           <h2 id="t-backend">Servidor del frontend → backend</h2>
-          <span className={`chip ${ok ? 'chip-ENTREGADA' : 'chip-alerta'}`}>{ok ? 'Conectado' : 'Hay problemas'}</span>
+          <span className={`chip ${ok ? 'chip-ENTREGADA' : 'chip-alerta'}`}>
+            {ok ? 'Conectado' : 'Hay problemas'}
+          </span>
         </div>
         <ul className="list">
           {chequeos.map((c) => {
             const e = ESTILO[c.estado];
             return (
               <li key={c.nombre} className="list-item" style={{ alignItems: 'flex-start' }}>
-                <span aria-hidden style={{ color: e.color, fontWeight: 700, width: 16, textAlign: 'center' }}>
+                <span
+                  aria-hidden
+                  style={{ color: e.color, fontWeight: 700, width: 16, textAlign: 'center' }}
+                >
                   {e.marca}
                 </span>
                 <span className="grow">
                   <strong>
                     {c.nombre} <span className="sr-only">{e.etiqueta}</span>
                   </strong>
-                  <span className="small" style={{ color: c.estado === 'falla' ? 'var(--accent)' : 'var(--muted)' }}>
+                  <span
+                    className="small"
+                    style={{ color: c.estado === 'falla' ? 'var(--accent)' : 'var(--muted)' }}
+                  >
                     {c.detalle}
                   </span>
                 </span>

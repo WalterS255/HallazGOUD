@@ -41,7 +41,12 @@ export type TipoLugar =
   | 'EDIFICIO_PRINCIPAL'
   | 'ADMINISTRATIVO'
   | 'OTRO';
-export type LugarCatalogo = { id: number; edificio: string; referencia: string | null; tipo: TipoLugar | null };
+export type LugarCatalogo = {
+  id: number;
+  edificio: string;
+  referencia: string | null;
+  tipo: TipoLugar | null;
+};
 export type Sede = { id: number; nombre: string; lugares: LugarCatalogo[] };
 export type Catalogos = { categorias: Categoria[]; sedes: Sede[] };
 /** GET /admin/categorias: todas, también las desactivadas (RF-28). */
@@ -115,12 +120,25 @@ export type ReclamacionDetalle = {
   autor: Persona;
   reclamante: Persona;
   soy: 'AUTOR' | 'RECLAMANTE';
-  entrega: { confirmo_autor: boolean; confirmo_reclamante: boolean; fecha_entrega: FechaISO | null } | null;
+  entrega: {
+    confirmo_autor: boolean;
+    confirmo_reclamante: boolean;
+    fecha_entrega: FechaISO | null;
+  } | null;
 };
 
-export type ReclamacionesDePublicacion = { detalle_reservado: string | null; reclamaciones: ReclamacionRecibida[] };
+export type ReclamacionesDePublicacion = {
+  detalle_reservado: string | null;
+  reclamaciones: ReclamacionRecibida[];
+};
 
-export type Mensaje = { id: number; contenido: string; leido: boolean; fecha_envio: FechaISO; emisor: Persona };
+export type Mensaje = {
+  id: number;
+  contenido: string;
+  leido: boolean;
+  fecha_envio: FechaISO;
+  emisor: Persona;
+};
 
 // §11 Notificaciones
 export type TipoNotificacion = 'RECLAMACION' | 'ESTADO' | 'MENSAJE' | 'COINCIDENCIA' | 'MODERACION';

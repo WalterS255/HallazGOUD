@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { FormEditarPublicacion, type ValoresEdicion } from '@/components/publicacion/FormEditarPublicacion';
+import {
+  FormEditarPublicacion,
+  type ValoresEdicion,
+} from '@/components/publicacion/FormEditarPublicacion';
 import { apiGet, apiGetOpcional } from '@/lib/api/servidor';
 import { aFechaYHoraColombia } from '@/lib/formato';
 import { usuarioOLogin } from '@/lib/sesion';
@@ -29,7 +32,8 @@ export default async function EditarPublicacionPage({ params }: Props) {
       </Link>
     </div>
   );
-  if (!p || p.usuario.id !== yo.id) return aviso('Solo quien publicó puede editar esta publicación.');
+  if (!p || p.usuario.id !== yo.id)
+    return aviso('Solo quien publicó puede editar esta publicación.');
   if (p.estado !== 'ACTIVA' && p.estado !== 'EN_RECLAMACION') {
     return aviso('Esta publicación ya no se puede editar (está entregada, expirada o retirada).');
   }

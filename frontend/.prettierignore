@@ -1,0 +1,10 @@
+# Generado o de terceros: no se formatea
+.next/
+node_modules/
+package-lock.json
+next-env.d.ts
+playwright-report/
+test-results/
+
+# Prototipo de diseño autocontenido: se conserva tal cual como referencia
+docs/referencia-diseno-demo.html

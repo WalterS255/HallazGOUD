@@ -3,7 +3,15 @@
 import { useState } from 'react';
 import type { Imagen } from '@/lib/tipos';
 
-export function Galeria({ imagenes, titulo, icono }: { imagenes: Imagen[]; titulo: string; icono: string }) {
+export function Galeria({
+  imagenes,
+  titulo,
+  icono,
+}: {
+  imagenes: Imagen[];
+  titulo: string;
+  icono: string;
+}) {
   const [actual, setActual] = useState(0);
   const foto = imagenes[Math.min(actual, imagenes.length - 1)];
 
@@ -35,7 +43,9 @@ export function Galeria({ imagenes, titulo, icono }: { imagenes: Imagen[]; titul
           ))}
         </div>
       )}
-      {imagenes.length === 0 && <p className="muted small mt-2">Esta publicación no tiene fotos.</p>}
+      {imagenes.length === 0 && (
+        <p className="muted small mt-2">Esta publicación no tiene fotos.</p>
+      )}
     </div>
   );
 }

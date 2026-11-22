@@ -12,7 +12,9 @@ export async function Encabezado() {
   let sinBackend = false;
   try {
     usuario = await obtenerUsuario();
-    if (usuario) noLeidas = (await apiGetOpcional<Notificaciones>('/notificaciones?no_leidas=true'))?.no_leidas ?? 0;
+    if (usuario)
+      noLeidas =
+        (await apiGetOpcional<Notificaciones>('/notificaciones?no_leidas=true'))?.no_leidas ?? 0;
   } catch {
     sinBackend = true; // el encabezado nunca debe tumbar la página
   }

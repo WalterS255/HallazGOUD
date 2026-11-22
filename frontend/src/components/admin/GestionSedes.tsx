@@ -25,7 +25,9 @@ export function GestionSedes({ sedes }: { sedes: Sede[] }) {
   const [nuevaSede, setNuevaSede] = useState('');
   const [renombrando, setRenombrando] = useState<number | null>(null);
   const [nombre, setNombre] = useState('');
-  const [lugarNuevo, setLugarNuevo] = useState<Record<number, { edificio: string; tipo: string }>>({});
+  const [lugarNuevo, setLugarNuevo] = useState<Record<number, { edificio: string; tipo: string }>>(
+    {},
+  );
 
   const api = (ruta: string, metodo: 'POST' | 'PATCH' | 'DELETE', cuerpo?: object) =>
     ejecutar(() => llamarApi(`/api/admin/${ruta}`, { metodo, cuerpo }));
@@ -37,20 +39,31 @@ export function GestionSedes({ sedes }: { sedes: Sede[] }) {
       {sedes.map((s) => {
         const nuevo = lugarNuevo[s.id] ?? { edificio: '', tipo: '' };
         return (
-          <article key={s.id} className="stack" style={{ gap: 8, borderTop: '1px solid var(--line)', paddingTop: 12 }}>
+          <article
+            key={s.id}
+            className="stack"
+            style={{ gap: 8, borderTop: '1px solid var(--line)', paddingTop: 12 }}
+          >
             {renombrando === s.id ? (
               <form
                 method="post"
                 className="row"
                 onSubmit={async (e) => {
                   e.preventDefault();
-                  if (await api(`sedes/${s.id}`, 'PATCH', { nombre: nombre.trim() })) setRenombrando(null);
+                  if (await api(`sedes/${s.id}`, 'PATCH', { nombre: nombre.trim() }))
+                    setRenombrando(null);
                 }}
               >
                 <label className="sr-only" htmlFor={`sede-${s.id}`}>
                   Nuevo nombre de la sede {s.nombre}
                 </label>
-                <input id={`sede-${s.id}`} className="field" maxLength={80} value={nombre} onChange={(e) => setNombre(e.target.value)} />
+                <input
+                  id={`sede-${s.id}`}
+                  className="field"
+                  maxLength={80}
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                />
                 <button type="submit" className="btn btn-primary" disabled={ocupado}>
                   Guardar
                 </button>
@@ -72,7 +85,12 @@ export function GestionSedes({ sedes }: { sedes: Sede[] }) {
                   >
                     Renombrar <span className="sr-only">la sede {s.nombre}</span>
                   </button>
-                  <button type="button" className="btn btn-danger" disabled={ocupado} onClick={() => api(`sedes/${s.id}`, 'DELETE')}>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    disabled={ocupado}
+                    onClick={() => api(`sedes/${s.id}`, 'DELETE')}
+                  >
                     Borrar <span className="sr-only">la sede {s.nombre}</span>
                   </button>
                 </span>
@@ -92,7 +110,9 @@ export function GestionSedes({ sedes }: { sedes: Sede[] }) {
                     style={{ width: 'auto' }}
                     value={l.tipo ?? ''}
                     disabled={ocupado}
-                    onChange={(e) => api(`lugares/${l.id}`, 'PATCH', { tipo: e.target.value || null })}
+                    onChange={(e) =>
+                      api(`lugares/${l.id}`, 'PATCH', { tipo: e.target.value || null })
+                    }
                   >
                     <option value="">Sin clasificar</option>
                     {TIPOS_LUGAR.map((t) => (
@@ -101,8 +121,16 @@ export function GestionSedes({ sedes }: { sedes: Sede[] }) {
                       </option>
                     ))}
                   </select>
-                  <button type="button" className="btn btn-danger" disabled={ocupado} onClick={() => api(`lugares/${l.id}`, 'DELETE')}>
-                    Borrar <span className="sr-only">{l.edificio} de {s.nombre}</span>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    disabled={ocupado}
+                    onClick={() => api(`lugares/${l.id}`, 'DELETE')}
+                  >
+                    Borrar{' '}
+                    <span className="sr-only">
+                      {l.edificio} de {s.nombre}
+                    </span>
                   </button>
                 </li>
               ))}
@@ -132,7 +160,9 @@ export function GestionSedes({ sedes }: { sedes: Sede[] }) {
                 placeholder="Nuevo lugar (ej.: Biblioteca)"
                 maxLength={100}
                 value={nuevo.edificio}
-                onChange={(e) => setLugarNuevo((x) => ({ ...x, [s.id]: { ...nuevo, edificio: e.target.value } }))}
+                onChange={(e) =>
+                  setLugarNuevo((x) => ({ ...x, [s.id]: { ...nuevo, edificio: e.target.value } }))
+                }
               />
               <label className="sr-only" htmlFor={`nuevo-tipo-${s.id}`}>
                 Tipo del nuevo lugar en {s.nombre}
@@ -142,7 +172,9 @@ export function GestionSedes({ sedes }: { sedes: Sede[] }) {
                 className="field"
                 style={{ width: 'auto' }}
                 value={nuevo.tipo}
-                onChange={(e) => setLugarNuevo((x) => ({ ...x, [s.id]: { ...nuevo, tipo: e.target.value } }))}
+                onChange={(e) =>
+                  setLugarNuevo((x) => ({ ...x, [s.id]: { ...nuevo, tipo: e.target.value } }))
+                }
               >
                 <option value="">Sin clasificar</option>
                 {TIPOS_LUGAR.map((t) => (
@@ -151,7 +183,11 @@ export function GestionSedes({ sedes }: { sedes: Sede[] }) {
                   </option>
                 ))}
               </select>
-              <button type="submit" className="btn btn-primary" disabled={ocupado || !nuevo.edificio.trim()}>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={ocupado || !nuevo.edificio.trim()}
+              >
                 Agregar lugar <span className="sr-only">en {s.nombre}</span>
               </button>
             </form>
@@ -171,7 +207,15 @@ export function GestionSedes({ sedes }: { sedes: Sede[] }) {
         <label className="sr-only" htmlFor="nueva-sede">
           Nombre de la nueva sede
         </label>
-        <input id="nueva-sede" className="field" style={{ flex: 1 }} placeholder="Nueva sede" maxLength={80} value={nuevaSede} onChange={(e) => setNuevaSede(e.target.value)} />
+        <input
+          id="nueva-sede"
+          className="field"
+          style={{ flex: 1 }}
+          placeholder="Nueva sede"
+          maxLength={80}
+          value={nuevaSede}
+          onChange={(e) => setNuevaSede(e.target.value)}
+        />
         <button type="submit" className="btn btn-primary" disabled={ocupado || !nuevaSede.trim()}>
           Crear sede
         </button>

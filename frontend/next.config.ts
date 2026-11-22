@@ -43,7 +43,10 @@ const config: NextConfig = {
           // Encontrados con OWASP ZAP (Fase J):
           { key: 'Content-Security-Policy', value: csp },
           // La app no usa cámara (las fotos se eligen con <input type=file>), micrófono, GPS ni pagos.
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=()' },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+          },
           // Aísla la ventana y los recursos de otros sitios (ventanas emergentes, lecturas cruzadas).
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
           { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
@@ -55,7 +58,11 @@ const config: NextConfig = {
   async redirects() {
     return [
       { source: '/reclamaciones/:id', destination: '/mensajes/:id', permanent: false },
-      { source: '/publicaciones/:id/reclamaciones', destination: '/publicaciones/:id#reclamaciones', permanent: false },
+      {
+        source: '/publicaciones/:id/reclamaciones',
+        destination: '/publicaciones/:id#reclamaciones',
+        permanent: false,
+      },
     ];
   },
 };

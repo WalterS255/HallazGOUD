@@ -7,7 +7,8 @@ export const ADMIN = 'admin.prueba@udistrital.edu.co';
 
 export function contrasenaSeed(): string {
   const c = process.env.CONTRASENA_SEED;
-  if (!c) throw new Error('Falta CONTRASENA_SEED en el .env de la raíz (la de los usuarios del seed).');
+  if (!c)
+    throw new Error('Falta CONTRASENA_SEED en el .env de la raíz (la de los usuarios del seed).');
   return c;
 }
 

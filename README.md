@@ -149,7 +149,9 @@ git push -u origin feature/front-catalogo    # subirla
 
 ## Control de cada commit
 
-Antes de cada `git commit`, husky ejecuta **Prettier** (formatea) y **oxlint** (busca errores comunes) sobre los archivos `.ts` del backend que vas a guardar. Si oxlint encuentra algo, **el commit no se hace** y la terminal dice qué corregir. No uses `--no-verify` para saltarlo: si el control molesta, es mejor ajustarlo. (El frontend todavía no tiene su propio control: está en `docs/pendientes.md`.)
+Antes de cada `git commit`, husky ejecuta **Prettier** (formatea) y **oxlint** (busca errores comunes) sobre los archivos que vas a guardar: los `.ts` del backend con `backend/lint-staged.config.js`, y los `.ts`/`.tsx` del frontend con `frontend/lint-staged.config.mjs` (con las reglas de React, Next.js y accesibilidad). Si oxlint encuentra algo, **el commit no se hace** y la terminal dice qué corregir. No uses `--no-verify` para saltarlo: si el control molesta, es mejor ajustarlo.
+
+> El control se activa con el `npm install` **de la raíz** (paso 2 de "Cómo levantarlo"). Si nunca lo corriste, tus commits no pasan por él: compruébalo con `git config core.hooksPath` (debe decir `.husky/_`).
 
 ## Estructura del backend
 

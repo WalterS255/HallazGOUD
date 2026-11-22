@@ -37,7 +37,8 @@ export default async function ConversacionPage({ params }: Props) {
     return (
       <div className="stack" style={{ maxWidth: 760, width: '100%', marginInline: 'auto' }}>
         <p className="note note-info">
-          Esta reclamación se canceló y el chat quedó cerrado. «{ficha.publicacion.titulo}» volvió al catálogo.
+          Esta reclamación se canceló y el chat quedó cerrado. «{ficha.publicacion.titulo}» volvió
+          al catálogo.
         </p>
         <Link href={`/publicaciones/${ficha.publicacion.id}`} className="link">
           Ver la publicación
@@ -57,7 +58,8 @@ export default async function ConversacionPage({ params }: Props) {
     );
   }
 
-  const contraparte = (ficha.soy === 'AUTOR' ? ficha.reclamante : ficha.autor).nombre ?? 'la otra persona';
+  const contraparte =
+    (ficha.soy === 'AUTOR' ? ficha.reclamante : ficha.autor).nombre ?? 'la otra persona';
 
   return (
     <>
