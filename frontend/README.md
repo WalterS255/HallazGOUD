@@ -107,5 +107,8 @@ src/lib/formato.ts       Fechas, folios, íconos de categoría y enlaces de los 
 | `npm run dev`                 | Desarrollo en el puerto 3001                                                               |
 | `npm run build` / `npm start` | Compilación y servidor de producción                                                       |
 | `npm run typecheck`           | Verificación de tipos                                                                      |
+| `npm run lint`                | oxlint con las reglas de React, Next.js y accesibilidad (`.oxlintrc.json`)                 |
+| `npm run format`              | Formatea todo con Prettier (`.prettierrc`, igual al del backend)                           |
+| `npm run format:check`        | ¿Todo está formateado? No cambia nada (lo usa el CI)                                       |
 | `npm run test:e2e`            | Playwright: el recorrido completo en un navegador real a 360 px (ver `docs/pruebas.md` §8) |
 | `npm run test:e2e:ver`        | Lo mismo, mostrando el navegador                                                           |

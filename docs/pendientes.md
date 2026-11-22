@@ -27,7 +27,7 @@ Resueltas el 2026-11-21: suspensión al instante (el guard revisa la cuenta en c
 - [ ] Desenfoque automático de la miniatura en categorías sensibles (regla 6.6, opcional).
 
 ### Frontend
-- [ ] Linter, Prettier y pruebas propias: hoy el hook de pre-commit solo revisa los `.ts` con la configuración del backend; los `.tsx` del frontend no se revisan.
+- [ ] Pruebas propias de los componentes (React Testing Library). El linter y Prettier ya están: el hook de pre-commit y el CI revisan también `frontend/`.
 - [ ] Recomendados en `frontend/docs/endpoints-pendientes.md` que siguen abiertos (#5: `id_publicacion` en los avisos).
 
 ### Calidad (Fase J)
