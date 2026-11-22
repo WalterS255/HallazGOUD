@@ -82,7 +82,7 @@ export function FormPerfil({ perfil }: { perfil: Perfil }) {
         </div>
       </div>
 
-      <form onSubmit={guardar} className="stack">
+      <form method="post" onSubmit={guardar} className="stack">
         <div>
           <label htmlFor="nombre" className="label">
             Nombre

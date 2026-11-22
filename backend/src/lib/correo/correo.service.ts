@@ -30,6 +30,7 @@ export class CorreoService {
             port: config.smtp.puerto,
             // Mailpit (1025) no usa TLS. Con un SMTP real en el puerto 465 sería `secure: true`.
             secure: config.smtp.puerto === 465,
+            auth: config.smtp.auth,
           });
   }
 

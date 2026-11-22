@@ -78,7 +78,7 @@ Cada pieza recibe la siguiente por el **constructor** (inyección de dependencia
 | `modules/notificaciones` | Avisos en la app y por correo (global) |
 | `modules/moderacion` | Reportes y bandeja del moderador |
 | `modules/admin` | Catálogos, cuentas y estadísticas |
-| `jobs` | Expiración a 90 días (`expiracion.service.ts`) y el reloj que la dispara cada día a las 3:00 a. m. hora de Colombia (`programador.service.ts`, con `node-cron`) |
+| `jobs` | Expiración a 90 días (`expiracion.service.ts`), limpieza de las fotos de entregas de hace más de 90 días (`limpieza-imagenes.service.ts`) y el reloj que las dispara cada día a las 3:00 y 3:30 a. m. hora de Colombia (`programador.service.ts`, con `node-cron`) |
 | `lib/prisma` | Cliente de Prisma como provider global |
 | `lib/auditoria` | Registro en `auditoria`, dentro de la misma transacción |
 | `lib/correo` | Envío de correos y plantillas |
@@ -139,7 +139,7 @@ Ejemplo: `PATCH /api/reclamaciones/7` con `{ "decision": "ACEPTAR" }`.
 | `npm run test:e2e` | La app completa por HTTP (salud, errores, roles, límites) | La de desarrollo, solo lectura |
 | `npm run test:db` | Flujos completos por HTTP y restricciones, contra PostgreSQL real | Crea `hallazgo_test_<carpeta>_<pid>` y la **borra al terminar** |
 
-Estado (2026-11-21): **276 unitarias, 26 e2e y 142 contra la base**, todas en verde; cobertura de los servicios: 87 % (mínimo 60 %, `npm run test:cov`). Detalle de cada archivo y cómo escribir una prueba: [`pruebas.md`](pruebas.md).
+Estado (2026-11-21): **282 unitarias, 27 e2e y 144 contra la base**, todas en verde; cobertura de los servicios: 87 % (mínimo 60 %, `npm run test:cov`). Detalle de cada archivo y cómo escribir una prueba: [`pruebas.md`](pruebas.md).
 
 Para que dos corridas no se pisen, cada una usa su propia base. Pero `npm install` y las pruebas **no deben correr a la vez en la misma carpeta**: se pisan `node_modules` y el cliente de Prisma queda a medias (síntoma: *"Property '$queryRaw' does not exist"*; arreglo: `npx prisma generate`).
 
@@ -164,12 +164,17 @@ Cuando trabajan dos personas (o sesiones) a la vez:
 - para usar la carpeta principal (merge, `npm install`, pruebas), se **anuncia**, se **espera respuesta** y al terminar se avisa "carpeta libre";
 - las ramas se unen a `main` con `git merge --ff-only`, después de verificar en el worktree.
 
-## Despliegue (pendiente, Fase K)
+## Despliegue (Fase K)
 
-Plan: un VPS con Docker Compose.
-1. Dockerfiles de producción (backend compilado; frontend con `next build` + `next start`, que tiene su propio servidor).
-2. Proxy inverso con HTTPS (TLS) delante de Next.js. Backend con `TRUST_PROXY=1` y frontend con `CONFIAR_PROXY=true`: así el rate limit cuenta por la IP real y nadie puede inventarla (ver `backend/src/comun/limites/limites.ts`).
-3. No publicar los puertos de PostgreSQL, el explorador de SeaweedFS ni Mailpit.
-4. Backend con `DATABASE_URL` = `hallazgo_app`; migraciones con `DATABASE_URL_MIGRACIONES` = dueño (`prisma migrate deploy`).
-5. Cron diario de `infra/respaldo/respaldar.sh` y una copia fuera del servidor.
-6. CI en GitHub Actions: lint + las tres baterías de pruebas en cada PR.
+Un VPS con Docker Compose (`docker-compose.prod.yml`). Guía paso a paso: [`infra/despliegue/README.md`](../infra/despliegue/README.md).
+
+```
+Internet ──443──► Caddy (HTTPS) ──► frontend (Next) ──/api──► backend (Nest) ──► PostgreSQL, SeaweedFS, SMTP
+```
+
+1. Imágenes: `backend/Dockerfile` (con un target `migrar`) y `frontend/Dockerfile` (Next `standalone`). Corren sin root.
+2. Caddy con HTTPS automático (Let's Encrypt) y HSTS. Backend con `TRUST_PROXY=1` y frontend con `CONFIAR_PROXY=true`: el rate limit cuenta por la IP real y nadie puede inventarla.
+3. Solo Caddy publica puertos: PostgreSQL, SeaweedFS (y su explorador sin contraseña), el backend y el frontend no son alcanzables desde fuera.
+4. Arranque ordenado: base sana → `migrar` (dueño, `DATABASE_URL_MIGRACIONES`) → `rol-app` (`infra/bd/roles.sql`) → backend (`hallazgo_app`, permisos mínimos) → frontend → Caddy.
+5. Respaldos diarios con `ARCHIVO_ENV=.env.prod bash infra/respaldo/respaldar.sh` (cron) y copia fuera del servidor.
+6. CI en GitHub Actions (`.github/workflows/ci.yml`): lint, las tres baterías de pruebas y las imágenes Docker en cada PR.

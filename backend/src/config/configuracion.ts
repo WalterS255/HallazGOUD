@@ -39,6 +39,12 @@ const esquemaEntorno = z
       .max(5, { error: 'debe estar entre 0 y 5' })
       .default(0),
     ZONA_HORARIA: texto.default('America/Bogota'),
+    // SOLO para la prueba de carga (k6): 200 usuarios simulados desde un PC son UNA IP y
+    // el rate limit los frenaría. Se niega a funcionar en producción (ver superRefine).
+    SIN_LIMITE_PETICIONES: z
+      .enum(['true', 'false'], { error: 'debe ser true o false' })
+      .default('false')
+      .transform((v) => v === 'true'),
 
     DATABASE_URL: z
       .string({ error: 'es obligatoria' })
@@ -61,6 +67,9 @@ const esquemaEntorno = z
     SMTP_HOST: texto,
     SMTP_PORT: puertoTcp,
     SMTP_FROM: texto,
+    // Usuario y clave del SMTP real (producción). Mailpit no los pide: en desarrollo, vacíos.
+    SMTP_USUARIO: z.string().trim().optional(),
+    SMTP_CLAVE: z.string().optional(),
 
     S3_ENDPOINT: z.url({ error: 'debe ser una URL (http://…)' }),
     S3_REGION: texto.default('us-east-1'),
@@ -71,6 +80,13 @@ const esquemaEntorno = z
   // Reglas que miran varias variables a la vez: solo aplican en producción.
   .superRefine((v, ctx) => {
     if (v.NODE_ENV !== 'production') return;
+    if (v.SIN_LIMITE_PETICIONES) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['SIN_LIMITE_PETICIONES'],
+        message: 'no se permite en producción: dejaría el login sin freno contra ataques',
+      });
+    }
     for (const nombre of ['JWT_SECRET', 'S3_ACCESS_KEY', 'S3_SECRET_KEY'] as const) {
       if (esValorDeEjemplo(v[nombre])) {
         ctx.addIssue({
@@ -91,12 +107,19 @@ function aConfig(v: z.infer<typeof esquemaEntorno>) {
     nivelLog: v.NIVEL_LOG ?? (v.NODE_ENV === 'test' ? 'silent' : 'info'),
     urlFrontend: v.URL_FRONTEND,
     saltosProxy: v.TRUST_PROXY,
+    sinLimitePeticiones: v.SIN_LIMITE_PETICIONES,
     zonaHoraria: v.ZONA_HORARIA,
     baseDatos: { url: v.DATABASE_URL },
     jwt: { secreto: v.JWT_SECRET, expiraEn: v.JWT_EXPIRA_EN },
     bcryptCoste: v.BCRYPT_COSTE,
     dominioCorreo: v.DOMINIO_CORREO.toLowerCase(),
-    smtp: { host: v.SMTP_HOST, puerto: v.SMTP_PORT, remitente: v.SMTP_FROM },
+    smtp: {
+      host: v.SMTP_HOST,
+      puerto: v.SMTP_PORT,
+      remitente: v.SMTP_FROM,
+      // Solo si hay usuario: un SMTP real (Brevo, SES, Gmail…) exige autenticarse.
+      auth: v.SMTP_USUARIO ? { user: v.SMTP_USUARIO, pass: v.SMTP_CLAVE ?? '' } : undefined,
+    },
     s3: {
       endpoint: v.S3_ENDPOINT,
       region: v.S3_REGION,

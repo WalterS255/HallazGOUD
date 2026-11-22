@@ -14,7 +14,10 @@ destino="${2:-hallazgo_restaurada}"
 
 raiz="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$raiz"
-set -a; . ./.env; set +a
+# En el servidor: ARCHIVO_ENV=.env.prod (trae COMPOSE_FILE=docker-compose.prod.yml, así que
+# docker compose apunta al stack de producción). En desarrollo, el .env de siempre.
+archivo_env="${ARCHIVO_ENV:-.env}"
+set -a; . "./$archivo_env"; set +a
 
 if [ "$destino" = "$POSTGRES_DB" ]; then
   read -r -p "Vas a REEMPLAZAR $destino con $archivo. Escribe el nombre de la base para confirmar: " ok

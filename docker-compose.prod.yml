@@ -1,0 +1,142 @@
+# HallazGO UD · PRODUCCIÓN (Fase K). Guía completa: infra/despliegue/README.md
+#
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#
+# Proyecto aparte ("hallazgo-prod") con sus propios volúmenes: nunca toca los datos de
+# desarrollo aunque los dos corran en el mismo PC.
+#
+# Quién habla con quién (solo Caddy publica puertos):
+#   Internet ──443──► caddy ──► frontend (Next) ──/api──► backend ──► db, s3, smtp
+#
+# Orden de arranque garantizado (depends_on):
+#   db sano → migrar (dueño de las tablas) → rol-app (hallazgo_app) → backend → frontend → caddy
+
+name: hallazgo-prod
+
+x-reinicio: &reinicio
+  restart: unless-stopped
+
+services:
+  db:
+    <<: *reinicio
+    image: postgres:18.6
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      TZ: UTC
+    # SIN ports: Postgres no se publica. Solo lo alcanzan los contenedores de esta red.
+    volumes:
+      - db_datos:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  s3:
+    <<: *reinicio
+    image: chrislusf/seaweedfs:4.50
+    # Solo la API S3. El explorador (filer, 8888) no tiene contraseña: no se publica.
+    command: server -dir=/data -s3 -s3.port=8333
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
+    volumes:
+      - s3_datos:/data
+
+  # Aplica las migraciones como DUEÑO de las tablas y termina.
+  migrar:
+    build: { context: ./backend, target: migrar }
+    image: hallazgo-migrar
+    environment:
+      DATABASE_URL_MIGRACIONES: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      db: { condition: service_healthy }
+    restart: "no"
+
+  # Crea o actualiza el rol hallazgo_app (permisos mínimos) y termina. Se repite en
+  # cada arranque a propósito: así las tablas de migraciones nuevas reciben sus permisos.
+  rol-app:
+    image: postgres:18.6
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    command: >
+      psql -h db -U ${POSTGRES_USER} -d ${POSTGRES_DB} -v ON_ERROR_STOP=1
+      -v clave_app=${CLAVE_APP_BD} -f /roles.sql
+    volumes:
+      - ./infra/bd/roles.sql:/roles.sql:ro
+    depends_on:
+      migrar: { condition: service_completed_successfully }
+    restart: "no"
+
+  backend:
+    <<: *reinicio
+    build: { context: ./backend }
+    image: hallazgo-backend
+    environment:
+      NODE_ENV: production
+      PUERTO: 3000
+      # El backend entra como hallazgo_app, que no puede borrar tablas ni tocar la auditoría.
+      DATABASE_URL: postgresql://hallazgo_app:${CLAVE_APP_BD}@db:5432/${POSTGRES_DB}
+      URL_FRONTEND: https://${DOMINIO}
+      # 1 intermediario de confianza delante del backend: Next (ver comun/limites/limites.ts).
+      TRUST_PROXY: 1
+      ZONA_HORARIA: America/Bogota
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRA_EN: ${JWT_EXPIRA_EN:-1d}
+      BCRYPT_COSTE: ${BCRYPT_COSTE:-12}
+      DOMINIO_CORREO: ${DOMINIO_CORREO:-udistrital.edu.co}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_FROM: ${SMTP_FROM}
+      SMTP_USUARIO: ${SMTP_USUARIO:-}
+      SMTP_CLAVE: ${SMTP_CLAVE:-}
+      S3_ENDPOINT: http://s3:8333
+      S3_REGION: us-east-1
+      S3_BUCKET: ${S3_BUCKET:-hallazgo-imagenes}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      NIVEL_LOG: info
+    depends_on:
+      rol-app: { condition: service_completed_successfully }
+      s3: { condition: service_started }
+
+  frontend:
+    <<: *reinicio
+    build: { context: ./frontend }
+    image: hallazgo-frontend
+    environment:
+      BACKEND_URL: http://backend:3000
+      BACKEND_API_PREFIX: /api
+      DOMINIO_CORREO: ${DOMINIO_CORREO:-udistrital.edu.co}
+      # Hay un proxy de confianza delante (Caddy): se reenvía al backend la IP que Caddy
+      # pone al final de X-Forwarded-For (frontend/src/lib/ip-cliente.ts).
+      CONFIAR_PROXY: "true"
+    depends_on:
+      backend: { condition: service_healthy }
+
+  caddy:
+    <<: *reinicio
+    image: caddy:2.11.7
+    # El ÚNICO servicio con puertos publicados. Caddy saca y renueva solo el
+    # certificado HTTPS (Let's Encrypt) para ${DOMINIO}.
+    # En el servidor: 80 y 443. Para probar en un PC donde están ocupados: PUERTO_HTTP y PUERTO_HTTPS.
+    ports:
+      - "${PUERTO_HTTP:-80}:80"
+      - "${PUERTO_HTTPS:-443}:443"
+      - "${PUERTO_HTTPS:-443}:443/udp"
+    environment:
+      DOMINIO: ${DOMINIO}
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_datos:/data
+      - caddy_config:/config
+    depends_on:
+      frontend: { condition: service_healthy }
+
+volumes:
+  db_datos:
+  s3_datos:
+  caddy_datos:
+  caddy_config:

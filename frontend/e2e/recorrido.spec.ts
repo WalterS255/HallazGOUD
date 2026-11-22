@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { AUTORA, FOTO_PNG, iniciarSesion, RECLAMANTE } from './ayudas';
+import { AUTORA, FOTO_PNG, paginaCon, RECLAMANTE } from './ayudas';
 
 // Fase J: el recorrido completo de la propuesta, en un navegador real y a 360 px.
 // Dos personas a la vez, cada una en su propio navegador (contexto), como dos celulares:
@@ -11,13 +11,9 @@ test('publicar → buscar → reclamar → aceptar → conversar → entregar', 
   const marca = Date.now().toString(36);
   const titulo = `Paraguas negro plegable ${marca}`;
 
-  const autora = await (await browser.newContext()).newPage();
-  const reclamante = await (await browser.newContext()).newPage();
-
-  await test.step('las dos personas inician sesión', async () => {
-    await iniciarSesion(autora, AUTORA);
-    await iniciarSesion(reclamante, RECLAMANTE);
-  });
+  // Cada una con su sesión ya iniciada (e2e/sesiones.setup.ts).
+  const autora = await paginaCon(browser, AUTORA);
+  const reclamante = await paginaCon(browser, RECLAMANTE);
 
   let idPublicacion = '';
   await test.step('la autora publica el hallazgo con el asistente de 3 pasos (RNF-03)', async () => {

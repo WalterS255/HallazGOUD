@@ -44,9 +44,11 @@ export class AlmacenamientoService implements OnModuleInit {
           });
   }
 
-  // En desarrollo, crea el bucket si no existe (en una instalación nueva no lo hay).
+  // Crea el bucket si no existe: en una instalación nueva (también un VPS recién
+  // montado) no lo hay, y la primera foto fallaría. Es seguro repetirlo: primero pregunta.
+  // Si las llaves no permiten crearlo, se registra el error y la app arranca igual.
   async onModuleInit(): Promise<void> {
-    if (!this.s3 || config.entorno === 'production') return;
+    if (!this.s3) return;
     try {
       await this.s3.send(new HeadBucketCommand({ Bucket: config.s3.bucket }));
     } catch {

@@ -40,7 +40,7 @@ export function BotonReportar({ publicacionId }: { publicacionId: number }) {
   }
 
   return (
-    <form onSubmit={enviar} className="stack" noValidate>
+    <form method="post" onSubmit={enviar} className="stack" noValidate>
       <div>
         <label className="label" htmlFor="motivo">
           ¿Por qué la reportas?

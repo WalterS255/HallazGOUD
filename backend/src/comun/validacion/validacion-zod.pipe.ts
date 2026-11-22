@@ -18,6 +18,18 @@ export class ValidacionZod<T extends z.ZodType> implements PipeTransform {
   constructor(private readonly esquema: T) {}
 
   transform(valor: unknown): z.output<T> {
+    // PostgreSQL no admite el carácter nulo (\u0000) en un texto: sin este freno, un
+    // "q=%00" llegaba a la base y respondía 500 (error 22021). Lo encontró OWASP ZAP
+    // (Fase J). Se revisa aquí, una vez, para TODAS las entradas validadas.
+    const campoConNulo = buscarNulo(valor);
+    if (campoConNulo !== null) {
+      throw new ErrorApp(
+        HttpStatus.BAD_REQUEST,
+        'SOLICITUD_INVALIDA',
+        'Revisa los datos enviados.',
+        [{ campo: campoConNulo, mensaje: 'Contiene caracteres no permitidos' }],
+      );
+    }
     const resultado = this.esquema.safeParse(valor);
     if (resultado.success) {
       // Se devuelve el dato YA procesado por Zod (con .trim(), .toLowerCase(), valores
@@ -32,6 +44,21 @@ export class ValidacionZod<T extends z.ZodType> implements PipeTransform {
       aDetalles(resultado.error),
     );
   }
+}
+
+// Devuelve la ruta del primer texto que contiene \u0000 ('nombre', 'items.2.texto',
+// '(cuerpo)' si el dato entero es un texto), o null si no hay ninguno.
+export function buscarNulo(valor: unknown, ruta: string[] = []): string | null {
+  if (typeof valor === 'string') {
+    return valor.includes('\u0000') ? ruta.join('.') || '(cuerpo)' : null;
+  }
+  if (valor !== null && typeof valor === 'object') {
+    for (const [clave, hijo] of Object.entries(valor)) {
+      const encontrado = buscarNulo(hijo, [...ruta, clave]);
+      if (encontrado !== null) return encontrado;
+    }
+  }
+  return null;
 }
 
 export function aDetalles(error: z.ZodError): DetalleError[] {

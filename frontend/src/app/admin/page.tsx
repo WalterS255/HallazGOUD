@@ -49,6 +49,16 @@ export default async function AdminPage() {
   return (
     <>
       <h1 className="titulo-pagina">Administración</h1>
+      {esAdmin && (
+        <nav className="row" style={{ gap: 8 }} aria-label="Gestión">
+          <Link href="/admin/catalogos" className="btn">
+            Catálogos: categorías, sedes y lugares
+          </Link>
+          <Link href="/admin/cuentas" className="btn">
+            Cuentas: suspender o reactivar
+          </Link>
+        </nav>
+      )}
 
       {est && (
         <>

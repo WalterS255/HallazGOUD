@@ -13,6 +13,16 @@ export function configurarApp(
   // No anunciar "X-Powered-By: Express": no le regalamos pistas a un atacante.
   app.disable('x-powered-by');
 
+  // Encabezados de seguridad que pidió OWASP ZAP (Fase J). Sin helmet: son dos líneas.
+  // nosniff: el navegador no "adivina" el tipo de una respuesta (un JSON nunca se
+  // interpreta como HTML o script).
+  app.use((_req: unknown, res: { setHeader(k: string, v: string): void }, next: () => void) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    // Solo la propia app puede usar las respuestas (fotos incluidas) desde otro sitio.
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+    next();
+  });
+
   // IP real del usuario para el rate limit (ver comun/limites/limites.ts). Con N saltos,
   // Express toma de X-Forwarded-For la IP que puso el intermediario de confianza más
   // lejano e ignora lo que haya a la izquierda (lo que el propio cliente pudo inventar).

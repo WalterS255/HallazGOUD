@@ -31,6 +31,12 @@ describe('GET /api/salud (e2e)', () => {
     expect(res.headers['x-powered-by']).toBeUndefined();
   });
 
+  it('envía los encabezados de seguridad de la API (OWASP ZAP, Fase J)', async () => {
+    const res = await request(app.getHttpServer()).get('/api/salud');
+    expect(res.headers['x-content-type-options']).toBe('nosniff');
+    expect(res.headers['cross-origin-resource-policy']).toBe('same-origin');
+  });
+
   // Esta sí toca la BD real (la del DATABASE_URL): necesita `docker compose up -d`.
   it('GET /api/salud/bd confirma que llega a PostgreSQL', async () => {
     const res = await request(app.getHttpServer()).get('/api/salud/bd').expect(200);

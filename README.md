@@ -120,6 +120,10 @@ Se ejecutan dentro de `backend/`.
 
 Qué prueba cada archivo y cómo escribir una prueba nueva: [`docs/pruebas.md`](docs/pruebas.md).
 
+## Producción
+
+Imágenes de Docker, `docker-compose.prod.yml` con HTTPS (Caddy) y la guía paso a paso para un VPS: [`infra/despliegue/README.md`](infra/despliegue/README.md). Manuales: [usuario](docs/manual-usuario.md) y [administrador](docs/manual-administrador.md).
+
 ## Cómo trabajamos en equipo (ramas y Pull Requests)
 
 Usamos **un solo repositorio** con las dos carpetas (`backend/` y `frontend/`) y **ramas cortas** que se unen a `main` por medio de un *Pull Request* (PR): una propuesta de cambio en GitHub que la otra persona revisa antes de unirla.

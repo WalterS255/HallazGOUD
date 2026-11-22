@@ -5,7 +5,8 @@
 #   bash infra/respaldo/respaldar.sh otra_bd     # respalda otra base
 #
 # En el VPS se programa con cron, una vez al día:
-#   0 3 * * * cd /ruta/hallazgo && bash infra/respaldo/respaldar.sh >> respaldos/respaldo.log 2>&1
+#   0 4 * * * cd /ruta/hallazgo && ARCHIVO_ENV=.env.prod bash infra/respaldo/respaldar.sh >> respaldos/respaldo.log 2>&1
+# (4:00 a. m.: después de la expiración, 3:00, y la limpieza de fotos, 3:30.)
 #
 # Formato "custom" de pg_dump (-Fc): comprimido y restaurable con pg_restore,
 # que permite restaurar tablas sueltas. Los archivos van a respaldos/ (en .gitignore:
@@ -14,7 +15,10 @@ set -euo pipefail
 
 raiz="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$raiz"
-set -a; . ./.env; set +a
+# En el servidor: ARCHIVO_ENV=.env.prod (trae COMPOSE_FILE=docker-compose.prod.yml, así que
+# docker compose apunta al stack de producción). En desarrollo, el .env de siempre.
+archivo_env="${ARCHIVO_ENV:-.env}"
+set -a; . "./$archivo_env"; set +a
 
 bd="${1:-$POSTGRES_DB}"
 dias_retencion="${DIAS_RETENCION_RESPALDO:-30}"

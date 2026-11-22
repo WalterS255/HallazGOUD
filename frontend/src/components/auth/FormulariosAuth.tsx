@@ -88,7 +88,11 @@ export function FormLogin({ siguiente }: { siguiente: string }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="stack">
+    // method="post" aunque el envío lo maneje React: si alguien pulsa "Ingresar" ANTES de
+    // que cargue el JavaScript (celular lento), el navegador envía el formulario solo.
+    // Sin method sería GET y la contraseña quedaría en la URL, el historial y los logs.
+    // Lo encontró OWASP ZAP (Fase J): /login?contrasena=…&correo=…
+    <form method="post" onSubmit={onSubmit} className="stack">
       <Campo id="correo" etiqueta="Correo institucional" type="email" autoComplete="email" required value={correo}
         onChange={(e) => setCorreo(e.target.value)} />
       <Campo id="contrasena" etiqueta="Contraseña" type="password" autoComplete="current-password" required />
@@ -131,7 +135,7 @@ export function FormRegistro({ dominio }: { dominio: string }) {
   if (exito) return <p className="note note-ok">{exito}</p>;
 
   return (
-    <form onSubmit={onSubmit} className="stack" noValidate>
+    <form method="post" onSubmit={onSubmit} className="stack" noValidate>
       <Campo id="nombre" etiqueta="Nombre completo" autoComplete="name" required error={errorDeCampo(error, 'nombre')} />
       <Campo id="correo" etiqueta={`Correo institucional (@${dominio})`} type="email" autoComplete="email" required
         placeholder={`usuario@${dominio}`} error={errorDeCampo(error, 'correo')} />
@@ -174,7 +178,7 @@ export function FormRecuperar() {
 
   if (exito) return <p className="note note-ok">{exito}</p>;
   return (
-    <form onSubmit={onSubmit} className="stack">
+    <form method="post" onSubmit={onSubmit} className="stack">
       <Campo id="correo" etiqueta="Correo institucional" type="email" autoComplete="email" required error={errorDeCampo(error, 'correo')} />
       <ErrorGeneral error={error} campos={['correo']} />
       <button type="submit" className="btn btn-primary" disabled={enviando}>
@@ -207,7 +211,7 @@ export function FormRestablecer({ token }: { token: string }) {
     );
   }
   return (
-    <form onSubmit={onSubmit} className="stack">
+    <form method="post" onSubmit={onSubmit} className="stack">
       <Campo id="contrasena" etiqueta="Nueva contraseña" type="password" autoComplete="new-password" required minLength={8}
         error={errorDeCampo(error, 'contrasena')} />
       <ErrorGeneral error={error} campos={['contrasena']} />

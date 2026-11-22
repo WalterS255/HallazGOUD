@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+!.env.prod.example
 
 # Dependencias y compilados
 node_modules/
@@ -23,8 +24,14 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Prueba de carga (k6): resultado de cada corrida
+infra/carga/resultado.json
+# Informes de OWASP ZAP: se regeneran con los comandos de infra/seguridad/README.md
+infra/seguridad/informes/
+
 # Pruebas E2E (Playwright)
 playwright-report/
+frontend/e2e/.auth/
 test-results/
 
 # Respaldos de la BD: contienen datos personales, nunca al repositorio
