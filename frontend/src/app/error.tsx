@@ -4,7 +4,10 @@ import Link from 'next/link';
 
 export default function ErrorPagina({ error, reset }: { error: Error; reset: () => void }) {
   return (
-    <div className="stack" style={{ maxWidth: 480, marginInline: 'auto', textAlign: 'center', paddingBlock: 48 }}>
+    <div
+      className="stack"
+      style={{ maxWidth: 480, marginInline: 'auto', textAlign: 'center', paddingBlock: 48 }}
+    >
       <h1 className="titulo-pagina">Algo salió mal</h1>
       <p className="muted">
         {process.env.NODE_ENV === 'development' && error.message

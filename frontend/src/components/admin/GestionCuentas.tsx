@@ -32,10 +32,20 @@ export function GestionCuentas({ cuentas, miId }: { cuentas: CuentaAdmin[]; miId
               </span>
             </span>
             <span className={`chip chip-${c.estado_cuenta === 'ACTIVA' ? 'ACTIVA' : 'RETIRADA'}`}>
-              {c.estado_cuenta === 'ACTIVA' ? 'Activa' : c.estado_cuenta === 'SUSPENDIDA' ? 'Suspendida' : 'Borrada'}
+              {c.estado_cuenta === 'ACTIVA'
+                ? 'Activa'
+                : c.estado_cuenta === 'SUSPENDIDA'
+                  ? 'Suspendida'
+                  : 'Borrada'}
             </span>
-            {c.id === miId || c.estado_cuenta === 'ELIMINADA' ? null : c.estado_cuenta === 'SUSPENDIDA' ? (
-              <button type="button" className="btn" disabled={ocupado} onClick={() => accion(c.id, { accion: 'REACTIVAR' })}>
+            {c.id === miId || c.estado_cuenta === 'ELIMINADA' ? null : c.estado_cuenta ===
+              'SUSPENDIDA' ? (
+              <button
+                type="button"
+                className="btn"
+                disabled={ocupado}
+                onClick={() => accion(c.id, { accion: 'REACTIVAR' })}
+              >
                 Reactivar <span className="sr-only">a {c.nombre}</span>
               </button>
             ) : suspendiendo === c.id ? (
@@ -45,7 +55,10 @@ export function GestionCuentas({ cuentas, miId }: { cuentas: CuentaAdmin[]; miId
                 style={{ gap: 6, flexBasis: '100%' }}
                 onSubmit={async (e) => {
                   e.preventDefault();
-                  const ok = await accion(c.id, { accion: 'SUSPENDER', ...(motivo.trim() && { motivo: motivo.trim() }) });
+                  const ok = await accion(c.id, {
+                    accion: 'SUSPENDER',
+                    ...(motivo.trim() && { motivo: motivo.trim() }),
+                  });
                   if (ok) {
                     setSuspendiendo(null);
                     setMotivo('');
@@ -55,8 +68,14 @@ export function GestionCuentas({ cuentas, miId }: { cuentas: CuentaAdmin[]; miId
                 <label className="label" htmlFor={`motivo-${c.id}`}>
                   Motivo (se le envía a la persona)
                 </label>
-                <input id={`motivo-${c.id}`} className="field" maxLength={300} value={motivo} onChange={(e) => setMotivo(e.target.value)}
-                  placeholder="Ej.: publicaciones falsas" />
+                <input
+                  id={`motivo-${c.id}`}
+                  className="field"
+                  maxLength={300}
+                  value={motivo}
+                  onChange={(e) => setMotivo(e.target.value)}
+                  placeholder="Ej.: publicaciones falsas"
+                />
                 <div className="row">
                   <button type="submit" className="btn btn-danger" disabled={ocupado}>
                     Confirmar suspensión
@@ -67,7 +86,11 @@ export function GestionCuentas({ cuentas, miId }: { cuentas: CuentaAdmin[]; miId
                 </div>
               </form>
             ) : (
-              <button type="button" className="btn btn-danger" onClick={() => setSuspendiendo(c.id)}>
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={() => setSuspendiendo(c.id)}
+              >
                 Suspender <span className="sr-only">a {c.nombre}</span>
               </button>
             )}

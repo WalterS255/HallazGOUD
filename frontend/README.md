@@ -4,12 +4,12 @@ Aplicación web en **Next.js 15 (App Router) + React 19 + Tailwind CSS 4 + TypeS
 para el celular. No tiene base de datos ni reglas de negocio: todo lo pide al backend de este
 repositorio siguiendo [`../docs/api.md`](../docs/api.md).
 
-| Documento | Para qué |
-|---|---|
-| [`../docs/api.md`](../docs/api.md) | El contrato con el backend: rutas, campos y códigos de error |
-| [`docs/endpoints-pendientes.md`](docs/endpoints-pendientes.md) | Lo que el frontend necesita y el backend aún no tiene |
+| Documento                                                              | Para qué                                                            |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| [`../docs/api.md`](../docs/api.md)                                     | El contrato con el backend: rutas, campos y códigos de error        |
+| [`docs/endpoints-pendientes.md`](docs/endpoints-pendientes.md)         | Lo que el frontend necesita y el backend aún no tiene               |
 | [`docs/referencia-diseno-demo.html`](docs/referencia-diseno-demo.html) | Prototipo del diseño (se abre con doble clic, con datos de ejemplo) |
-| [`../docs/pendientes.md`](../docs/pendientes.md) | Decisiones de producto pendientes |
+| [`../docs/pendientes.md`](../docs/pendientes.md)                       | Decisiones de producto pendientes                                   |
 
 ## Puesta en marcha
 
@@ -74,22 +74,22 @@ src/lib/formato.ts       Fechas, folios, íconos de categoría y enlaces de los 
 
 ## Pantallas
 
-| Pantalla | Ruta | Estado |
-|---|---|---|
-| Inicio: búsqueda, cifras, categorías, sedes, recientes | `/` | ✅ |
-| Catálogo con filtros, orden y paginación | `/publicaciones` | ✅ |
-| Detalle: galería, reclamar, reportar; para el autor: reclamaciones, coincidencias, fotos, retirar | `/publicaciones/[id]` | ✅ |
-| Asistente de publicación en 3 pasos | `/publicar` | ✅ |
-| Registro, ingreso, activación, recuperación | `/registro`, `/login`, `/verificar/[token]`, `/recuperar`, `/restablecer/[token]` | ✅ |
-| Chat y doble confirmación de entrega (sabe quién ya confirmó, con `GET /reclamaciones/:id`) | `/mensajes/[id]` | ✅ |
-| Notificaciones | `/notificaciones` | ✅ |
-| Perfil con foto | `/perfil` | ✅ |
-| Moderación y estadísticas | `/admin` | ✅ |
-| Catálogos: categorías, sedes y lugares (con tipo de lugar) — solo ADMIN | `/admin/catalogos` | ✅ |
-| Cuentas: buscar, suspender y reactivar — solo ADMIN | `/admin/cuentas` | ✅ |
-| Mis publicaciones y mis reclamaciones | `/mis-publicaciones` | ✅ |
-| Lista de chats | `/mensajes` | ✅ |
-| Editar publicación (el detalle reservado se bloquea si ya hay reclamaciones) | `/publicaciones/[id]/editar` | ✅ |
+| Pantalla                                                                                          | Ruta                                                                              | Estado |
+| ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------ |
+| Inicio: búsqueda, cifras, categorías, sedes, recientes                                            | `/`                                                                               | ✅     |
+| Catálogo con filtros, orden y paginación                                                          | `/publicaciones`                                                                  | ✅     |
+| Detalle: galería, reclamar, reportar; para el autor: reclamaciones, coincidencias, fotos, retirar | `/publicaciones/[id]`                                                             | ✅     |
+| Asistente de publicación en 3 pasos                                                               | `/publicar`                                                                       | ✅     |
+| Registro, ingreso, activación, recuperación                                                       | `/registro`, `/login`, `/verificar/[token]`, `/recuperar`, `/restablecer/[token]` | ✅     |
+| Chat y doble confirmación de entrega (sabe quién ya confirmó, con `GET /reclamaciones/:id`)       | `/mensajes/[id]`                                                                  | ✅     |
+| Notificaciones                                                                                    | `/notificaciones`                                                                 | ✅     |
+| Perfil con foto                                                                                   | `/perfil`                                                                         | ✅     |
+| Moderación y estadísticas                                                                         | `/admin`                                                                          | ✅     |
+| Catálogos: categorías, sedes y lugares (con tipo de lugar) — solo ADMIN                           | `/admin/catalogos`                                                                | ✅     |
+| Cuentas: buscar, suspender y reactivar — solo ADMIN                                               | `/admin/cuentas`                                                                  | ✅     |
+| Mis publicaciones y mis reclamaciones                                                             | `/mis-publicaciones`                                                              | ✅     |
+| Lista de chats                                                                                    | `/mensajes`                                                                       | ✅     |
+| Editar publicación (el detalle reservado se bloquea si ya hay reclamaciones)                      | `/publicaciones/[id]/editar`                                                      | ✅     |
 
 ## Reglas que respeta
 
@@ -102,10 +102,10 @@ src/lib/formato.ts       Fechas, folios, íconos de categoría y enlaces de los 
 
 ## Comandos
 
-| Comando | Qué hace |
-|---|---|
-| `npm run dev` | Desarrollo en el puerto 3001 |
-| `npm run build` / `npm start` | Compilación y servidor de producción |
-| `npm run typecheck` | Verificación de tipos |
-| `npm run test:e2e` | Playwright: el recorrido completo en un navegador real a 360 px (ver `docs/pruebas.md` §8) |
-| `npm run test:e2e:ver` | Lo mismo, mostrando el navegador |
+| Comando                       | Qué hace                                                                                   |
+| ----------------------------- | ------------------------------------------------------------------------------------------ |
+| `npm run dev`                 | Desarrollo en el puerto 3001                                                               |
+| `npm run build` / `npm start` | Compilación y servidor de producción                                                       |
+| `npm run typecheck`           | Verificación de tipos                                                                      |
+| `npm run test:e2e`            | Playwright: el recorrido completo en un navegador real a 360 px (ver `docs/pruebas.md` §8) |
+| `npm run test:e2e:ver`        | Lo mismo, mostrando el navegador                                                           |

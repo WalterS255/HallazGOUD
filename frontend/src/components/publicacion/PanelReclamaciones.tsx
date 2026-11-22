@@ -9,7 +9,13 @@ import { ETIQUETA_RECLAMACION, formatearFechaHora } from '@/lib/formato';
 import type { ReclamacionesDePublicacion } from '@/lib/tipos';
 
 // RF-19: el autor compara cada respuesta con su detalle reservado y decide.
-export function PanelReclamaciones({ publicacionId, datos }: { publicacionId: number; datos: ReclamacionesDePublicacion }) {
+export function PanelReclamaciones({
+  publicacionId,
+  datos,
+}: {
+  publicacionId: number;
+  datos: ReclamacionesDePublicacion;
+}) {
   const router = useRouter();
   const [procesando, setProcesando] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +58,8 @@ export function PanelReclamaciones({ publicacionId, datos }: { publicacionId: nu
             <div className="claim-head">
               <strong>{r.reclamante.nombre}</strong>
               <span className="muted">
-                {formatearFechaHora(r.fecha)} · <span className={`chip chip-${r.estado}`}>{ETIQUETA_RECLAMACION[r.estado]}</span>
+                {formatearFechaHora(r.fecha)} ·{' '}
+                <span className={`chip chip-${r.estado}`}>{ETIQUETA_RECLAMACION[r.estado]}</span>
               </span>
             </div>
             <p>
@@ -61,7 +68,12 @@ export function PanelReclamaciones({ publicacionId, datos }: { publicacionId: nu
             {r.evidencia_url && (
               <p className="small">
                 <strong>Evidencia:</strong>{' '}
-                <a href={r.evidencia_url} target="_blank" rel="noopener noreferrer nofollow" className="link">
+                <a
+                  href={r.evidencia_url}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="link"
+                >
                   abrir enlace
                 </a>
               </p>
@@ -77,7 +89,12 @@ export function PanelReclamaciones({ publicacionId, datos }: { publicacionId: nu
                 >
                   Aceptar y abrir chat
                 </button>
-                <button type="button" className="btn" disabled={procesando === r.id} onClick={() => decidir(r.id, 'RECHAZAR')}>
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={procesando === r.id}
+                  onClick={() => decidir(r.id, 'RECHAZAR')}
+                >
                   Rechazar
                 </button>
               </div>

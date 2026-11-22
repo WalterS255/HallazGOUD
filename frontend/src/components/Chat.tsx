@@ -71,10 +71,13 @@ export function Chat({
     setEnviando(true);
     setError(null);
     try {
-      const nuevo = await llamarApi<{ id: number; contenido: string; fecha_envio: string }>(`${url}/mensajes`, {
-        metodo: 'POST',
-        cuerpo: { contenido: texto },
-      });
+      const nuevo = await llamarApi<{ id: number; contenido: string; fecha_envio: string }>(
+        `${url}/mensajes`,
+        {
+          metodo: 'POST',
+          cuerpo: { contenido: texto },
+        },
+      );
       setMensajes((m) => [...m, { ...nuevo, leido: false, emisor: { id: miId, nombre: 'Tú' } }]);
       setTexto('');
     } catch (err) {
@@ -112,10 +115,16 @@ export function Chat({
   return (
     <div className="chat-layout">
       <div className="chat">
-        <div ref={log} className="chat-log" aria-live="polite" aria-label={`Conversación con ${contraparte}`}>
+        <div
+          ref={log}
+          className="chat-log"
+          aria-live="polite"
+          aria-label={`Conversación con ${contraparte}`}
+        >
           {mensajes.length === 0 && (
             <p className="muted small" style={{ textAlign: 'center' }}>
-              Escribe el primer mensaje. Acuerden un lugar dentro del campus y no compartan datos personales.
+              Escribe el primer mensaje. Acuerden un lugar dentro del campus y no compartan datos
+              personales.
             </p>
           )}
           {mensajes.map((m) => {
@@ -142,8 +151,15 @@ export function Chat({
             <label htmlFor="chat-txt" className="sr-only">
               Mensaje
             </label>
-            <input id="chat-txt" className="field" maxLength={2000} autoComplete="off" placeholder="Escribe un mensaje…"
-              value={texto} onChange={(e) => setTexto(e.target.value)} />
+            <input
+              id="chat-txt"
+              className="field"
+              maxLength={2000}
+              autoComplete="off"
+              placeholder="Escribe un mensaje…"
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+            />
             <button type="submit" className="btn btn-primary" disabled={enviando || !texto.trim()}>
               Enviar
             </button>
@@ -164,17 +180,23 @@ export function Chat({
             </Link>
           </p>
         ) : entrega === 'entregada' ? (
-          <p className="note note-ok">Entrega confirmada por ambas partes. ¡Gracias por usar HallazGO UD!</p>
+          <p className="note note-ok">
+            Entrega confirmada por ambas partes. ¡Gracias por usar HallazGO UD!
+          </p>
         ) : entrega === 'yo-confirme' ? (
-          <p className="note note-info">Confirmaste la entrega. Falta que {contraparte} también la confirme.</p>
+          <p className="note note-info">
+            Confirmaste la entrega. Falta que {contraparte} también la confirme.
+          </p>
         ) : (
           <>
             {entrega === 'otro-confirmo' && (
-              <p className="note note-info">{contraparte} ya confirmó la entrega. Falta tu confirmación.</p>
+              <p className="note note-info">
+                {contraparte} ya confirmó la entrega. Falta tu confirmación.
+              </p>
             )}
             <p className="muted small">
-              Cuando el objeto esté en manos de su dueño, ambos confirman. Con la doble confirmación la publicación queda
-              como entregada.
+              Cuando el objeto esté en manos de su dueño, ambos confirman. Con la doble confirmación
+              la publicación queda como entregada.
             </p>
             <button type="button" className="btn btn-primary" onClick={confirmar}>
               Confirmar entrega

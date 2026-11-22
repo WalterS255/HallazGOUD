@@ -35,10 +35,21 @@ export function AccionesModeracion({ reporteId }: { reporteId: number }) {
           <label className="label" htmlFor={`motivo-${reporteId}`}>
             Motivo para el autor (opcional)
           </label>
-          <input id={`motivo-${reporteId}`} className="field" maxLength={300} value={motivo} onChange={(e) => setMotivo(e.target.value)}
-            placeholder="Ej.: la foto muestra datos personales" />
+          <input
+            id={`motivo-${reporteId}`}
+            className="field"
+            maxLength={300}
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+            placeholder="Ej.: la foto muestra datos personales"
+          />
           <div className="row">
-            <button type="button" className="btn btn-danger" disabled={ocupado} onClick={() => resolver('OCULTAR')}>
+            <button
+              type="button"
+              className="btn btn-danger"
+              disabled={ocupado}
+              onClick={() => resolver('OCULTAR')}
+            >
               Confirmar y ocultar
             </button>
             <button type="button" className="btn" onClick={() => setOcultando(false)}>
@@ -51,7 +62,12 @@ export function AccionesModeracion({ reporteId }: { reporteId: number }) {
           <button type="button" className="btn btn-danger" onClick={() => setOcultando(true)}>
             Ocultar publicación
           </button>
-          <button type="button" className="btn" disabled={ocupado} onClick={() => resolver('DESCARTAR')}>
+          <button
+            type="button"
+            className="btn"
+            disabled={ocupado}
+            onClick={() => resolver('DESCARTAR')}
+          >
             Descartar reporte
           </button>
         </div>

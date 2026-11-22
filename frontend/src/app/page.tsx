@@ -5,10 +5,22 @@ import { iconoCategoria, mapaIconos } from '@/lib/formato';
 import type { Catalogos, Pagina, ResumenPublicacion } from '@/lib/tipos';
 
 const PASOS = [
-  ['Se publica', 'Quien encuentra el objeto sube fotos, lugar y hora, y guarda un detalle que nadie más ve.'],
-  ['Aparece la coincidencia', 'El sistema compara categoría, sede, fecha y descripción, y avisa a quien lo perdió.'],
-  ['Se reclama', 'El dueño describe el detalle reservado; quien lo encontró acepta o rechaza la reclamación.'],
-  ['Se entrega', 'Coordinan por el chat interno y ambos confirman. La publicación queda como entregada.'],
+  [
+    'Se publica',
+    'Quien encuentra el objeto sube fotos, lugar y hora, y guarda un detalle que nadie más ve.',
+  ],
+  [
+    'Aparece la coincidencia',
+    'El sistema compara categoría, sede, fecha y descripción, y avisa a quien lo perdió.',
+  ],
+  [
+    'Se reclama',
+    'El dueño describe el detalle reservado; quien lo encontró acepta o rechaza la reclamación.',
+  ],
+  [
+    'Se entrega',
+    'Coordinan por el chat interno y ambos confirman. La publicación queda como entregada.',
+  ],
 ];
 
 export default async function InicioPage() {
@@ -27,14 +39,21 @@ export default async function InicioPage() {
           <p className="eyebrow">Objetos perdidos y encontrados · Universidad Distrital</p>
           <h1>Lo que se pierde en la U, en la U aparece.</h1>
           <p className="lead">
-            Publica lo que encontraste o lo que perdiste en el campus. Te avisamos cuando aparezca algo parecido y
-            coordinas la entrega por un chat interno, sin compartir tu correo ni tu teléfono.
+            Publica lo que encontraste o lo que perdiste en el campus. Te avisamos cuando aparezca
+            algo parecido y coordinas la entrega por un chat interno, sin compartir tu correo ni tu
+            teléfono.
           </p>
           <form action="/publicaciones" method="get" role="search" className="search">
             <label htmlFor="q-inicio" className="sr-only">
               Buscar objetos
             </label>
-            <input id="q-inicio" name="q" type="search" className="field" placeholder="Calculadora, carné, chaqueta…" />
+            <input
+              id="q-inicio"
+              name="q"
+              type="search"
+              className="field"
+              placeholder="Calculadora, carné, chaqueta…"
+            />
             <button className="btn btn-primary" type="submit">
               Buscar
             </button>
@@ -84,7 +103,11 @@ export default async function InicioPage() {
             Ver todos →
           </Link>
         </div>
-        <GrillaPublicaciones items={encontrados.datos} iconos={iconos} vacio="Todavía no hay objetos encontrados." />
+        <GrillaPublicaciones
+          items={encontrados.datos}
+          iconos={iconos}
+          vacio="Todavía no hay objetos encontrados."
+        />
       </section>
 
       <section>
@@ -94,8 +117,14 @@ export default async function InicioPage() {
             Ver todos →
           </Link>
         </div>
-        <p className="muted small mb-3">¿Encontraste alguno de estos? Publícalo y el sistema le avisará al dueño.</p>
-        <GrillaPublicaciones items={perdidos.datos} iconos={iconos} vacio="No hay objetos perdidos reportados." />
+        <p className="muted small mb-3">
+          ¿Encontraste alguno de estos? Publícalo y el sistema le avisará al dueño.
+        </p>
+        <GrillaPublicaciones
+          items={perdidos.datos}
+          iconos={iconos}
+          vacio="No hay objetos perdidos reportados."
+        />
       </section>
 
       <section>

@@ -28,7 +28,10 @@ export default async function MisPublicacionesPage() {
           </Link>
         </div>
         {publicaciones === undefined ? (
-          <AvisoPendiente endpoint="GET /api/usuarios/me/publicaciones" que="listar tus publicaciones" />
+          <AvisoPendiente
+            endpoint="GET /api/usuarios/me/publicaciones"
+            que="listar tus publicaciones"
+          />
         ) : publicaciones.length === 0 ? (
           <p className="empty">Todavía no has publicado nada.</p>
         ) : (
@@ -42,14 +45,17 @@ export default async function MisPublicacionesPage() {
                   <span className="grow">
                     <strong>{p.titulo}</strong>
                     <span className="muted small">
-                      <span className="mono">{folio(p.id)}</span> · {p.sede} · {formatearFecha(p.fecha_creacion)}
+                      <span className="mono">{folio(p.id)}</span> · {p.sede} ·{' '}
+                      {formatearFecha(p.fecha_creacion)}
                     </span>
                   </span>
                   <span className="chips">
                     <ChipTipo tipo={p.tipo} />
                     <ChipEstado estado={p.estado} />
                     {p.reclamaciones_pendientes > 0 && (
-                      <span className="chip chip-alerta">{p.reclamaciones_pendientes} por revisar</span>
+                      <span className="chip chip-alerta">
+                        {p.reclamaciones_pendientes} por revisar
+                      </span>
                     )}
                   </span>
                 </Link>
@@ -62,7 +68,10 @@ export default async function MisPublicacionesPage() {
       <section className="stack">
         <h2>Mis reclamaciones</h2>
         {reclamaciones === undefined ? (
-          <AvisoPendiente endpoint="GET /api/usuarios/me/reclamaciones" que="listar los objetos que reclamaste" />
+          <AvisoPendiente
+            endpoint="GET /api/usuarios/me/reclamaciones"
+            que="listar los objetos que reclamaste"
+          />
         ) : reclamaciones.length === 0 ? (
           <p className="empty">No has reclamado ningún objeto.</p>
         ) : (
@@ -70,7 +79,11 @@ export default async function MisPublicacionesPage() {
             {reclamaciones.map((r) => (
               <li key={r.id}>
                 <Link
-                  href={r.estado === 'ACEPTADA' ? enlaceChat(r.id, r.publicacion.id) : `/publicaciones/${r.publicacion.id}`}
+                  href={
+                    r.estado === 'ACEPTADA'
+                      ? enlaceChat(r.id, r.publicacion.id)
+                      : `/publicaciones/${r.publicacion.id}`
+                  }
                   className="list-item"
                 >
                   <span className="grow">
@@ -78,8 +91,12 @@ export default async function MisPublicacionesPage() {
                     <span className="muted small">{formatearFecha(r.fecha)}</span>
                   </span>
                   <span className="chips">
-                    <span className={`chip chip-${r.estado}`}>{ETIQUETA_RECLAMACION[r.estado]}</span>
-                    {r.estado === 'ACEPTADA' && <span className="chip chip-ACTIVA">Abrir chat</span>}
+                    <span className={`chip chip-${r.estado}`}>
+                      {ETIQUETA_RECLAMACION[r.estado]}
+                    </span>
+                    {r.estado === 'ACEPTADA' && (
+                      <span className="chip chip-ACTIVA">Abrir chat</span>
+                    )}
                   </span>
                 </Link>
               </li>

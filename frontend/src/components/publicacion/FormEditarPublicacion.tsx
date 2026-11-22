@@ -29,15 +29,22 @@ type Props = {
 
 // RF-10: el autor edita su publicación mientras no esté entregada, expirada ni retirada.
 // Solo se envían los campos que cambiaron (el backend exige que cambie al menos uno).
-export function FormEditarPublicacion({ publicacionId, esHallazgo, detalleBloqueado, iniciales, catalogos }: Props) {
+export function FormEditarPublicacion({
+  publicacionId,
+  esHallazgo,
+  detalleBloqueado,
+  iniciales,
+  catalogos,
+}: Props) {
   const router = useRouter();
   const [v, setV] = useState(iniciales);
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
 
-  const cambiar = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    setV((x) => ({ ...x, [e.target.name]: e.target.value }));
+  const cambiar = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+  ) => setV((x) => ({ ...x, [e.target.name]: e.target.value }));
   const err = (campo: string) =>
     errores[campo] ? (
       <p id={`${campo}-error`} className="err" role="alert">
@@ -54,7 +61,8 @@ export function FormEditarPublicacion({ publicacionId, esHallazgo, detalleBloque
     if (v.descripcion !== iniciales.descripcion) cambios.descripcion = v.descripcion;
     if (v.id_categoria !== iniciales.id_categoria) cambios.id_categoria = Number(v.id_categoria);
     if (v.id_lugar !== iniciales.id_lugar) cambios.id_lugar = Number(v.id_lugar);
-    if (v.fecha !== iniciales.fecha || v.hora !== iniciales.hora) cambios.fecha_suceso = aFechaSuceso(v.fecha, v.hora);
+    if (v.fecha !== iniciales.fecha || v.hora !== iniciales.hora)
+      cambios.fecha_suceso = aFechaSuceso(v.fecha, v.hora);
     if (esHallazgo && !detalleBloqueado && v.detalle_reservado !== iniciales.detalle_reservado) {
       cambios.detalle_reservado = v.detalle_reservado;
     }
@@ -88,7 +96,15 @@ export function FormEditarPublicacion({ publicacionId, esHallazgo, detalleBloque
         <label className="label" htmlFor="titulo">
           Título
         </label>
-        <input id="titulo" name="titulo" className="field" maxLength={120} value={v.titulo} onChange={cambiar} {...inv('titulo')} />
+        <input
+          id="titulo"
+          name="titulo"
+          className="field"
+          maxLength={120}
+          value={v.titulo}
+          onChange={cambiar}
+          {...inv('titulo')}
+        />
         {err('titulo')}
       </div>
 
@@ -96,7 +112,14 @@ export function FormEditarPublicacion({ publicacionId, esHallazgo, detalleBloque
         <label className="label" htmlFor="id_categoria">
           Categoría
         </label>
-        <select id="id_categoria" name="id_categoria" className="field" value={v.id_categoria} onChange={cambiar} {...inv('id_categoria')}>
+        <select
+          id="id_categoria"
+          name="id_categoria"
+          className="field"
+          value={v.id_categoria}
+          onChange={cambiar}
+          {...inv('id_categoria')}
+        >
           {catalogos.categorias.map((c) => (
             <option key={c.id} value={c.id}>
               {iconoCategoria(c.icono)} {c.nombre}
@@ -110,7 +133,16 @@ export function FormEditarPublicacion({ publicacionId, esHallazgo, detalleBloque
         <label className="label" htmlFor="descripcion">
           Descripción
         </label>
-        <textarea id="descripcion" name="descripcion" className="field" rows={4} maxLength={1000} value={v.descripcion} onChange={cambiar} {...inv('descripcion')} />
+        <textarea
+          id="descripcion"
+          name="descripcion"
+          className="field"
+          rows={4}
+          maxLength={1000}
+          value={v.descripcion}
+          onChange={cambiar}
+          {...inv('descripcion')}
+        />
         {err('descripcion')}
       </div>
 
@@ -118,7 +150,14 @@ export function FormEditarPublicacion({ publicacionId, esHallazgo, detalleBloque
         <label className="label" htmlFor="id_lugar">
           Sede y lugar
         </label>
-        <select id="id_lugar" name="id_lugar" className="field" value={v.id_lugar} onChange={cambiar} {...inv('id_lugar')}>
+        <select
+          id="id_lugar"
+          name="id_lugar"
+          className="field"
+          value={v.id_lugar}
+          onChange={cambiar}
+          {...inv('id_lugar')}
+        >
           <option value="">Selecciona…</option>
           {catalogos.sedes.map((s) => (
             <optgroup key={s.id} label={s.nombre}>
@@ -139,14 +178,30 @@ export function FormEditarPublicacion({ publicacionId, esHallazgo, detalleBloque
           <label className="label" htmlFor="fecha">
             Fecha
           </label>
-          <input id="fecha" name="fecha" type="date" className="field" max={hoyColombia()} value={v.fecha} onChange={cambiar} {...inv('fecha')} />
+          <input
+            id="fecha"
+            name="fecha"
+            type="date"
+            className="field"
+            max={hoyColombia()}
+            value={v.fecha}
+            onChange={cambiar}
+            {...inv('fecha')}
+          />
           {err('fecha')}
         </div>
         <div style={{ flex: '1 1 120px' }}>
           <label className="label" htmlFor="hora">
             Hora aproximada
           </label>
-          <input id="hora" name="hora" type="time" className="field" value={v.hora} onChange={cambiar} />
+          <input
+            id="hora"
+            name="hora"
+            type="time"
+            className="field"
+            value={v.hora}
+            onChange={cambiar}
+          />
         </div>
       </div>
 

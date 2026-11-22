@@ -16,7 +16,8 @@ export default async function VerificarPage({ params }: { params: Promise<{ toke
   let ok = true;
   let mensaje: string;
   try {
-    mensaje = (await apiGet<{ mensaje: string }>(`/auth/verificar/${encodeURIComponent(token)}`)).mensaje;
+    mensaje = (await apiGet<{ mensaje: string }>(`/auth/verificar/${encodeURIComponent(token)}`))
+      .mensaje;
   } catch (e) {
     if (!(e instanceof ErrorBackend) || e.status >= 500) throw e;
     ok = false;

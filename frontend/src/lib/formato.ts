@@ -4,13 +4,17 @@ import type { EstadoPublicacion, EstadoReclamacion, Notificacion, TipoPublicacio
 const ZONA = 'America/Bogota';
 
 export function formatearFecha(fecha: string) {
-  return new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeZone: ZONA }).format(new Date(fecha));
+  return new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeZone: ZONA }).format(
+    new Date(fecha),
+  );
 }
 
 export function formatearFechaHora(fecha: string) {
-  return new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeStyle: 'short', timeZone: ZONA }).format(
-    new Date(fecha),
-  );
+  return new Intl.DateTimeFormat('es-CO', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: ZONA,
+  }).format(new Date(fecha));
 }
 
 export function relativo(fecha: string) {
@@ -76,7 +80,10 @@ export function mapaIconos(categorias: { nombre: string; icono: string | null }[
   return Object.fromEntries(categorias.map((c) => [c.nombre, iconoCategoria(c.icono)]));
 }
 
-export const ETIQUETA_TIPO: Record<TipoPublicacion, string> = { PERDIDO: 'Perdido', ENCONTRADO: 'Encontrado' };
+export const ETIQUETA_TIPO: Record<TipoPublicacion, string> = {
+  PERDIDO: 'Perdido',
+  ENCONTRADO: 'Encontrado',
+};
 
 export const ETIQUETA_ESTADO: Record<EstadoPublicacion, string> = {
   ACTIVA: 'Activa',

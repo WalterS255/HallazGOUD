@@ -11,7 +11,15 @@ export function ChipEstado({ estado }: { estado: EstadoPublicacion }) {
 }
 
 /** Tarjeta del catálogo. `icono` es el emoji de la categoría (se muestra si no hay foto). */
-export function TarjetaPublicacion({ p, icono, puntaje }: { p: ResumenPublicacion; icono: string; puntaje?: number }) {
+export function TarjetaPublicacion({
+  p,
+  icono,
+  puntaje,
+}: {
+  p: ResumenPublicacion;
+  icono: string;
+  puntaje?: number;
+}) {
   return (
     <Link href={`/publicaciones/${p.id}`} className="pub">
       <span className="pub-media">
@@ -29,7 +37,9 @@ export function TarjetaPublicacion({ p, icono, puntaje }: { p: ResumenPublicacio
         <span className="chips">
           <ChipTipo tipo={p.tipo} />
           <ChipEstado estado={p.estado} />
-          {puntaje !== undefined && <span className="chip chip-match">{Math.round(puntaje)} % similar</span>}
+          {puntaje !== undefined && (
+            <span className="chip chip-match">{Math.round(puntaje)} % similar</span>
+          )}
         </span>
         <span className="pub-title">{p.titulo}</span>
         <span className="pub-meta">
@@ -56,7 +66,12 @@ export function GrillaPublicaciones({
   return (
     <div className="grid-pubs">
       {items.map((p) => (
-        <TarjetaPublicacion key={p.id} p={p} icono={iconos[p.categoria] ?? '📦'} puntaje={p.puntaje} />
+        <TarjetaPublicacion
+          key={p.id}
+          p={p}
+          icono={iconos[p.categoria] ?? '📦'}
+          puntaje={p.puntaje}
+        />
       ))}
     </div>
   );
@@ -107,8 +122,8 @@ export function AvisoPendiente({ endpoint, que }: { endpoint: string; que: strin
     <div className="note note-pendiente stack" style={{ gap: 6 }}>
       <strong>Pendiente en el backend</strong>
       <span>
-        Para {que} hace falta <code className="mono">{endpoint}</code>. La propuesta de respuesta está en{' '}
-        <code className="mono">frontend/docs/endpoints-pendientes.md</code>.
+        Para {que} hace falta <code className="mono">{endpoint}</code>. La propuesta de respuesta
+        está en <code className="mono">frontend/docs/endpoints-pendientes.md</code>.
       </span>
     </div>
   );

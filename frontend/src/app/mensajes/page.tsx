@@ -20,12 +20,14 @@ export default async function MensajesPage() {
         <>
           <AvisoPendiente endpoint="GET /api/usuarios/me/conversaciones" que="listar tus chats" />
           <p className="muted small">
-            Mientras tanto, los chats se abren desde el detalle de la publicación o desde la notificación de
-            &quot;reclamación aceptada&quot;.
+            Mientras tanto, los chats se abren desde el detalle de la publicación o desde la
+            notificación de &quot;reclamación aceptada&quot;.
           </p>
         </>
       ) : conversaciones.length === 0 ? (
-        <p className="empty">Aún no tienes conversaciones. El chat se habilita cuando se acepta una reclamación.</p>
+        <p className="empty">
+          Aún no tienes conversaciones. El chat se habilita cuando se acepta una reclamación.
+        </p>
       ) : (
         <ul className="list">
           {conversaciones.map((c) => (

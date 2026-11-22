@@ -35,7 +35,9 @@ test('categorías: crear sensible, desactivar (sale del formulario de publicar) 
   await expect(fila.getByText('Sensible', { exact: true })).toBeVisible();
 
   const publicas = async () =>
-    ((await (await admin.request.get('/api/catalogos')).json()).categorias as { nombre: string }[]).map((c) => c.nombre);
+    (
+      (await (await admin.request.get('/api/catalogos')).json()).categorias as { nombre: string }[]
+    ).map((c) => c.nombre);
   expect(await publicas()).toContain(nombre);
 
   await fila.getByRole('button', { name: `Desactivar ${nombre}` }).click();
@@ -51,12 +53,16 @@ test('sedes y lugares: crear, clasificar el lugar, y no borrar lo que está en u
   await admin.goto('/admin/catalogos');
   await admin.getByLabel('Nombre de la nueva sede').fill(sede);
   await admin.getByRole('button', { name: 'Crear sede' }).click();
-  const bloque = admin.getByRole('article').filter({ has: admin.getByRole('heading', { name: sede }) });
+  const bloque = admin
+    .getByRole('article')
+    .filter({ has: admin.getByRole('heading', { name: sede }) });
   await expect(bloque).toBeVisible();
 
   // Lugar nuevo, ya clasificado como biblioteca (edificio análogo, pregunta 13.2).
   await bloque.getByLabel(`Nuevo lugar en ${sede}`, { exact: true }).fill('Biblioteca');
-  await bloque.getByLabel(`Tipo del nuevo lugar en ${sede}`, { exact: true }).selectOption('BIBLIOTECA');
+  await bloque
+    .getByLabel(`Tipo del nuevo lugar en ${sede}`, { exact: true })
+    .selectOption('BIBLIOTECA');
   await bloque.getByRole('button', { name: `Agregar lugar en ${sede}` }).click();
   const tipo = bloque.getByLabel(`Tipo de lugar de Biblioteca (${sede})`, { exact: true });
   await expect(tipo).toHaveValue('BIBLIOTECA');
@@ -65,7 +71,9 @@ test('sedes y lugares: crear, clasificar el lugar, y no borrar lo que está en u
   await tipo.selectOption('CAFETERIA');
   await admin.waitForLoadState('networkidle');
   await admin.reload();
-  await expect(bloque.getByLabel(`Tipo de lugar de Biblioteca (${sede})`, { exact: true })).toHaveValue('CAFETERIA');
+  await expect(
+    bloque.getByLabel(`Tipo de lugar de Biblioteca (${sede})`, { exact: true }),
+  ).toHaveValue('CAFETERIA');
 
   // Una sede con lugares no se borra: el backend responde 409 EN_USO y se muestra.
   await bloque.getByRole('button', { name: `Borrar la sede ${sede}` }).click();
@@ -84,7 +92,13 @@ test('cuentas: buscar sin ver el correo, suspender con motivo y reactivar', asyn
   const nombre = `Cuenta Prueba ${marca}`;
   const correo = `cuenta.${marca}@udistrital.edu.co`;
   const registro = await admin.request.post('/api/auth/registro', {
-    data: { nombre, correo, programa: 'Sistemas', contrasena: 'Una-clave-123', aceptaPolitica: true },
+    data: {
+      nombre,
+      correo,
+      programa: 'Sistemas',
+      contrasena: 'Una-clave-123',
+      aceptaPolitica: true,
+    },
   });
   expect(registro.status()).toBe(201);
 

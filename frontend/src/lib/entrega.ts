@@ -12,7 +12,10 @@ export function estadoEntrega(f: Pick<ReclamacionDetalle, 'soy' | 'entrega'>): E
   const e = f.entrega;
   if (!e) return 'pendiente';
   if (e.fecha_entrega) return 'entregada';
-  const [mia, suya] = f.soy === 'AUTOR' ? [e.confirmo_autor, e.confirmo_reclamante] : [e.confirmo_reclamante, e.confirmo_autor];
+  const [mia, suya] =
+    f.soy === 'AUTOR'
+      ? [e.confirmo_autor, e.confirmo_reclamante]
+      : [e.confirmo_reclamante, e.confirmo_autor];
   if (mia) return 'yo-confirme';
   return suya ? 'otro-confirmo' : 'pendiente';
 }

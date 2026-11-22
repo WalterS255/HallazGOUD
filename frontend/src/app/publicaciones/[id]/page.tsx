@@ -10,7 +10,14 @@ import { FormReclamar } from '@/components/publicacion/FormReclamar';
 import { PanelReclamaciones } from '@/components/publicacion/PanelReclamaciones';
 import { aResumen, enlaceChat } from '@/lib/adaptar';
 import { apiGet, apiGetOpcional, apiGetPendiente, ErrorBackend } from '@/lib/api/servidor';
-import { ETIQUETA_RECLAMACION, folio, formatearFecha, formatearFechaHora, iconoCategoria, mapaIconos } from '@/lib/formato';
+import {
+  ETIQUETA_RECLAMACION,
+  folio,
+  formatearFecha,
+  formatearFechaHora,
+  iconoCategoria,
+  mapaIconos,
+} from '@/lib/formato';
 import { obtenerUsuario } from '@/lib/sesion';
 import type {
   Catalogos,
@@ -40,21 +47,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 /** RF-23: el backend devuelve ids y puntajes; cada sugerencia se completa con su ficha. */
 async function sugerencias(id: number): Promise<(ResumenPublicacion & { puntaje: number })[]> {
   const lista = (await apiGet<Coincidencia[]>(`/publicaciones/${id}/coincidencias`)).slice(0, 8);
-  const fichas = await Promise.all(lista.map((c) => apiGetOpcional<Publicacion>(`/publicaciones/${c.id_publicacion}`)));
+  const fichas = await Promise.all(
+    lista.map((c) => apiGetOpcional<Publicacion>(`/publicaciones/${c.id_publicacion}`)),
+  );
   return fichas.flatMap((f, i) => (f ? [{ ...aResumen(f), puntaje: lista[i].puntaje.total }] : []));
 }
 
 export default async function DetallePublicacionPage({ params }: Props) {
   const { id } = await params;
-  const [p, usuario, catalogos] = await Promise.all([cargar(id), obtenerUsuario(), apiGet<Catalogos>('/catalogos')]);
+  const [p, usuario, catalogos] = await Promise.all([
+    cargar(id),
+    obtenerUsuario(),
+    apiGet<Catalogos>('/catalogos'),
+  ]);
   const esAutor = !!usuario && usuario.id === p.usuario.id;
   const abierta = p.estado === 'ACTIVA' || p.estado === 'EN_RECLAMACION';
   const icono = iconoCategoria(catalogos.categorias.find((c) => c.id === p.categoria.id)?.icono);
 
   const [reclamaciones, coincidencias, misReclamaciones] = await Promise.all([
-    esAutor && p.tipo === 'ENCONTRADO' ? apiGet<ReclamacionesDePublicacion>(`/publicaciones/${p.id}/reclamaciones`) : null,
+    esAutor && p.tipo === 'ENCONTRADO'
+      ? apiGet<ReclamacionesDePublicacion>(`/publicaciones/${p.id}/reclamaciones`)
+      : null,
     esAutor && abierta ? sugerencias(p.id) : [],
-    usuario && !esAutor && p.tipo === 'ENCONTRADO' ? apiGetPendiente<MiReclamacion[]>('/usuarios/me/reclamaciones') : undefined,
+    usuario && !esAutor && p.tipo === 'ENCONTRADO'
+      ? apiGetPendiente<MiReclamacion[]>('/usuarios/me/reclamaciones')
+      : undefined,
   ]);
   const miReclamacion = misReclamaciones?.find((r) => r.publicacion.id === p.id);
 
@@ -95,7 +112,8 @@ export default async function DetallePublicacionPage({ params }: Props) {
 
           {p.categoria.sensible && p.tipo === 'ENCONTRADO' && (
             <p className="note note-info">
-              Objeto sensible: se recomienda hacer la entrega en la oficina de seguridad de la facultad.
+              Objeto sensible: se recomienda hacer la entrega en la oficina de seguridad de la
+              facultad.
             </p>
           )}
 
@@ -110,12 +128,16 @@ export default async function DetallePublicacionPage({ params }: Props) {
             </div>
           )}
 
-          {usuario && !esAutor && p.tipo === 'ENCONTRADO' &&
+          {usuario &&
+            !esAutor &&
+            p.tipo === 'ENCONTRADO' &&
             (miReclamacion ? (
               <div className="panel stack">
                 <p>
                   Tu reclamación está{' '}
-                  <span className={`chip chip-${miReclamacion.estado}`}>{ETIQUETA_RECLAMACION[miReclamacion.estado]}</span>
+                  <span className={`chip chip-${miReclamacion.estado}`}>
+                    {ETIQUETA_RECLAMACION[miReclamacion.estado]}
+                  </span>
                 </p>
                 {miReclamacion.estado === 'ACEPTADA' && (
                   <Link href={enlaceChat(miReclamacion.id, p.id)} className="btn btn-primary">
@@ -124,13 +146,17 @@ export default async function DetallePublicacionPage({ params }: Props) {
                 )}
               </div>
             ) : (
-              p.estado === 'ACTIVA' && <FormReclamar publicacionId={p.id} autor={p.usuario.nombre} />
+              p.estado === 'ACTIVA' && (
+                <FormReclamar publicacionId={p.id} autor={p.usuario.nombre} />
+              )
             ))}
 
           {/* "¡Lo tengo!" (pregunta 13.1): abre el asistente de hallazgo ya prellenado. */}
           {usuario && !esAutor && p.tipo === 'PERDIDO' && p.estado === 'ACTIVA' && (
             <div className="panel stack">
-              <p className="small">¿Tienes este objeto? Publica el hallazgo y le avisaremos a {p.usuario.nombre}.</p>
+              <p className="small">
+                ¿Tienes este objeto? Publica el hallazgo y le avisaremos a {p.usuario.nombre}.
+              </p>
               <Link href={`/publicar?lo_tengo=${p.id}`} className="btn btn-primary">
                 ¡Lo tengo!
               </Link>
@@ -149,7 +175,9 @@ export default async function DetallePublicacionPage({ params }: Props) {
             <section>
               <div className="sec-head">
                 <h2>Posibles coincidencias</h2>
-                <span className="muted small">Categoría 35 · sede 20 · fecha ±7 días 25 · texto 20</span>
+                <span className="muted small">
+                  Categoría 35 · sede 20 · fecha ±7 días 25 · texto 20
+                </span>
               </div>
               <GrillaPublicaciones
                 items={coincidencias}

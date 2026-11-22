@@ -54,7 +54,10 @@ export function FormPerfil({ perfil }: { perfil: Perfil }) {
     }
     const formData = new FormData();
     formData.append('foto', archivo);
-    ejecutar(() => llamarApi('/api/usuarios/me/foto', { metodo: 'POST', formData }), 'Foto actualizada.');
+    ejecutar(
+      () => llamarApi('/api/usuarios/me/foto', { metodo: 'POST', formData }),
+      'Foto actualizada.',
+    );
   }
 
   return (
@@ -71,11 +74,26 @@ export function FormPerfil({ perfil }: { perfil: Perfil }) {
         <div className="row">
           <label className="btn" style={{ position: 'relative' }}>
             {perfil.foto_url ? 'Cambiar foto' : 'Subir foto'}
-            <input type="file" accept={TIPOS_IMAGEN.join(',')} onChange={subirFoto} disabled={guardando} className="sr-only" />
+            <input
+              type="file"
+              accept={TIPOS_IMAGEN.join(',')}
+              onChange={subirFoto}
+              disabled={guardando}
+              className="sr-only"
+            />
           </label>
           {perfil.foto_url && (
-            <button type="button" className="btn btn-danger" disabled={guardando}
-              onClick={() => ejecutar(() => llamarApi('/api/usuarios/me/foto', { metodo: 'DELETE' }), 'Foto eliminada.')}>
+            <button
+              type="button"
+              className="btn btn-danger"
+              disabled={guardando}
+              onClick={() =>
+                ejecutar(
+                  () => llamarApi('/api/usuarios/me/foto', { metodo: 'DELETE' }),
+                  'Foto eliminada.',
+                )
+              }
+            >
               Quitar
             </button>
           )}
@@ -87,31 +105,58 @@ export function FormPerfil({ perfil }: { perfil: Perfil }) {
           <label htmlFor="nombre" className="label">
             Nombre
           </label>
-          <input id="nombre" name="nombre" className="field" defaultValue={perfil.nombre} required maxLength={120} />
+          <input
+            id="nombre"
+            name="nombre"
+            className="field"
+            defaultValue={perfil.nombre}
+            required
+            maxLength={120}
+          />
           {errorDeCampo(error, 'nombre') && <p className="err">{errorDeCampo(error, 'nombre')}</p>}
         </div>
         <div>
           <label htmlFor="programa" className="label">
             Programa o dependencia
           </label>
-          <input id="programa" name="programa" className="field" defaultValue={perfil.programa} required maxLength={160} />
-          {errorDeCampo(error, 'programa') && <p className="err">{errorDeCampo(error, 'programa')}</p>}
+          <input
+            id="programa"
+            name="programa"
+            className="field"
+            defaultValue={perfil.programa}
+            required
+            maxLength={160}
+          />
+          {errorDeCampo(error, 'programa') && (
+            <p className="err">{errorDeCampo(error, 'programa')}</p>
+          )}
         </div>
         <label className="small" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input type="checkbox" name="notificar_por_correo" defaultChecked={perfil.notificar_por_correo} />
+          <input
+            type="checkbox"
+            name="notificar_por_correo"
+            defaultChecked={perfil.notificar_por_correo}
+          />
           Recibir los avisos también por correo
         </label>
-        {error instanceof Error && !errorDeCampo(error, 'nombre') && !errorDeCampo(error, 'programa') && (
-          <p className="note note-err" role="alert">
-            {error.message}
-          </p>
-        )}
+        {error instanceof Error &&
+          !errorDeCampo(error, 'nombre') &&
+          !errorDeCampo(error, 'programa') && (
+            <p className="note note-err" role="alert">
+              {error.message}
+            </p>
+          )}
         {aviso && (
           <p className="note note-ok" role="status">
             {aviso}
           </p>
         )}
-        <button type="submit" className="btn btn-primary" disabled={guardando} style={{ justifySelf: 'start' }}>
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={guardando}
+          style={{ justifySelf: 'start' }}
+        >
           Guardar cambios
         </button>
       </form>

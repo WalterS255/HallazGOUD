@@ -16,7 +16,10 @@ export default async function CuentasAdminPage({ searchParams }: { searchParams:
 
   const q = (unico((await searchParams).q) ?? '').trim();
   // El backend pide al menos 2 letras; sin búsqueda no se lista a nadie.
-  const cuentas = q.length >= 2 ? await apiGet<CuentaAdmin[]>(`/admin/usuarios?q=${encodeURIComponent(q)}`) : null;
+  const cuentas =
+    q.length >= 2
+      ? await apiGet<CuentaAdmin[]>(`/admin/usuarios?q=${encodeURIComponent(q)}`)
+      : null;
 
   return (
     <>
@@ -29,12 +32,22 @@ export default async function CuentasAdminPage({ searchParams }: { searchParams:
           Buscar por nombre o por correo exacto
         </label>
         <div className="row">
-          <input id="q" name="q" className="field" style={{ flex: 1 }} minLength={2} defaultValue={q} placeholder="Ej.: Luis Gómez" />
+          <input
+            id="q"
+            name="q"
+            className="field"
+            style={{ flex: 1 }}
+            minLength={2}
+            defaultValue={q}
+            placeholder="Ej.: Luis Gómez"
+          />
           <button type="submit" className="btn btn-primary">
             Buscar
           </button>
         </div>
-        <p className="muted small">Por privacidad, los resultados no muestran el correo (regla 6.3).</p>
+        <p className="muted small">
+          Por privacidad, los resultados no muestran el correo (regla 6.3).
+        </p>
       </form>
       {cuentas && <GestionCuentas cuentas={cuentas} miId={usuario.id} />}
     </>

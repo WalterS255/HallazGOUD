@@ -21,7 +21,10 @@ export function FormReclamar({ publicacionId, autor }: { publicacionId: number; 
     try {
       await llamarApi(`/api/publicaciones/${publicacionId}/reclamaciones`, {
         metodo: 'POST',
-        cuerpo: { respuesta_detalle: f.get('respuesta_detalle'), ...(evidencia && { evidencia_url: evidencia }) },
+        cuerpo: {
+          respuesta_detalle: f.get('respuesta_detalle'),
+          ...(evidencia && { evidencia_url: evidencia }),
+        },
       });
       setListo(true);
       router.refresh();
@@ -52,7 +55,8 @@ export function FormReclamar({ publicacionId, autor }: { publicacionId: number; 
     <form method="post" onSubmit={enviar} className="panel stack" noValidate>
       <h3>Reclamar este objeto</h3>
       <p className="muted small">
-        Quien lo encontró guardó un detalle que no aparece en la publicación. Descríbelo para demostrar que es tuyo.
+        Quien lo encontró guardó un detalle que no aparece en la publicación. Descríbelo para
+        demostrar que es tuyo.
       </p>
       <div>
         <label className="label" htmlFor="respuesta_detalle">
@@ -68,7 +72,9 @@ export function FormReclamar({ publicacionId, autor }: { publicacionId: number; 
           placeholder="Ej.: tiene un sticker en la parte de atrás"
           aria-invalid={!!errorDeCampo(error, 'respuesta_detalle')}
         />
-        {errorDeCampo(error, 'respuesta_detalle') && <p className="err">{errorDeCampo(error, 'respuesta_detalle')}</p>}
+        {errorDeCampo(error, 'respuesta_detalle') && (
+          <p className="err">{errorDeCampo(error, 'respuesta_detalle')}</p>
+        )}
       </div>
       <div>
         <label className="label" htmlFor="evidencia_url">
@@ -82,13 +88,17 @@ export function FormReclamar({ publicacionId, autor }: { publicacionId: number; 
           placeholder="https://… (foto tuya con el objeto, factura…)"
           aria-invalid={!!errorDeCampo(error, 'evidencia_url')}
         />
-        {errorDeCampo(error, 'evidencia_url') && <p className="err">{errorDeCampo(error, 'evidencia_url')}</p>}
+        {errorDeCampo(error, 'evidencia_url') && (
+          <p className="err">{errorDeCampo(error, 'evidencia_url')}</p>
+        )}
       </div>
-      {error instanceof Error && !errorDeCampo(error, 'respuesta_detalle') && !errorDeCampo(error, 'evidencia_url') && (
-        <p className="note note-err" role="alert">
-          {error.message}
-        </p>
-      )}
+      {error instanceof Error &&
+        !errorDeCampo(error, 'respuesta_detalle') &&
+        !errorDeCampo(error, 'evidencia_url') && (
+          <p className="note note-err" role="alert">
+            {error.message}
+          </p>
+        )}
       <div className="row">
         <button type="submit" className="btn btn-primary" disabled={enviando}>
           {enviando ? 'Enviando…' : 'Enviar reclamación'}

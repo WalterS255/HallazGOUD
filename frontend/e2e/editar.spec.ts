@@ -3,7 +3,9 @@ import { AUTORA, paginaCon, RECLAMANTE } from './ayudas';
 
 // RF-10: el autor edita su publicación; con reclamaciones, el detalle reservado queda bloqueado.
 
-test('la autora edita su publicación; el detalle se bloquea al llegar una reclamación', async ({ browser }) => {
+test('la autora edita su publicación; el detalle se bloquea al llegar una reclamación', async ({
+  browser,
+}) => {
   const autora = await paginaCon(browser, AUTORA);
   const otro = await paginaCon(browser, RECLAMANTE);
 
@@ -30,7 +32,9 @@ test('la autora edita su publicación; el detalle se bloquea al llegar una recla
     await autora.getByRole('link', { name: 'Editar' }).click();
     await autora.waitForURL(`**/publicaciones/${id}/editar`);
     await expect(autora.getByLabel('Título')).toHaveValue(`Cartuchera roja ${marca}`);
-    await expect(autora.getByLabel('Detalle reservado')).toHaveValue('Tiene un llavero de dinosaurio');
+    await expect(autora.getByLabel('Detalle reservado')).toHaveValue(
+      'Tiene un llavero de dinosaurio',
+    );
   });
 
   await test.step('guardar sin cambios avisa y no envía nada', async () => {
@@ -43,7 +47,9 @@ test('la autora edita su publicación; el detalle se bloquea al llegar una recla
     await autora.getByLabel('Hora aproximada').fill('07:15');
     await autora.getByRole('button', { name: 'Guardar cambios' }).click();
     await autora.waitForURL(`**/publicaciones/${id}`);
-    await expect(autora.getByRole('heading', { name: `Cartuchera roja con stickers ${marca}` })).toBeVisible();
+    await expect(
+      autora.getByRole('heading', { name: `Cartuchera roja con stickers ${marca}` }),
+    ).toBeVisible();
     await expect(autora.getByText('7:15 a. m.')).toBeVisible();
   });
 

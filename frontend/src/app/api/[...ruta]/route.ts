@@ -21,7 +21,10 @@ async function proxy(req: NextRequest, { params }: Contexto): Promise<Response> 
 
   // El backend no tiene logout (el JWT no se invalida en el servidor): cerrar sesión es borrar el token.
   if (rutaApi === 'auth/logout') {
-    return new Response(null, { status: 303, headers: { Location: '/', 'Set-Cookie': cookieToken('', 0) } });
+    return new Response(null, {
+      status: 303,
+      headers: { Location: '/', 'Set-Cookie': cookieToken('', 0) },
+    });
   }
 
   const headers = new Headers();
@@ -47,7 +50,12 @@ async function proxy(req: NextRequest, { params }: Contexto): Promise<Response> 
     });
   } catch {
     return Response.json(
-      { error: { codigo: 'SIN_CONEXION', mensaje: `No se pudo conectar con el backend (${config.backendUrl}).` } },
+      {
+        error: {
+          codigo: 'SIN_CONEXION',
+          mensaje: `No se pudo conectar con el backend (${config.backendUrl}).`,
+        },
+      },
       { status: 502 },
     );
   }
@@ -75,7 +83,10 @@ async function proxy(req: NextRequest, { params }: Contexto): Promise<Response> 
   if (res.status === 401 && token) salida.append('set-cookie', cookieToken('', 0));
 
   const sinCuerpo = res.status === 204 || res.status === 304;
-  return new Response(sinCuerpo ? null : await res.arrayBuffer(), { status: res.status, headers: salida });
+  return new Response(sinCuerpo ? null : await res.arrayBuffer(), {
+    status: res.status,
+    headers: salida,
+  });
 }
 
 export const GET = proxy;
