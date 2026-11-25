@@ -101,6 +101,12 @@ export default async function DetallePublicacionPage({ params }: Props) {
             <dd>
               {p.lugar.sede.nombre} · {p.ubicacion ?? textoLugar(p.lugar)}
             </dd>
+            {p.pista && (
+              <>
+                <dt>Pista para reclamar</dt>
+                <dd>{p.pista}</dd>
+              </>
+            )}
             <dt>{p.tipo === 'ENCONTRADO' ? 'Encontrado' : 'Perdido'}</dt>
             <dd>{formatearFechaHora(p.fecha_suceso)}</dd>
             <dt>Publicado por</dt>
@@ -147,7 +153,7 @@ export default async function DetallePublicacionPage({ params }: Props) {
               </div>
             ) : (
               p.estado === 'ACTIVA' && (
-                <FormReclamar publicacionId={p.id} autor={p.usuario.nombre} />
+                <FormReclamar publicacionId={p.id} autor={p.usuario.nombre} pista={p.pista} />
               )
             ))}
 
@@ -170,7 +176,9 @@ export default async function DetallePublicacionPage({ params }: Props) {
       {esAutor && (
         <>
           <AccionesAutor publicacionId={p.id} imagenes={p.imagenes} editable={abierta} />
-          {reclamaciones && <PanelReclamaciones publicacionId={p.id} datos={reclamaciones} />}
+          {reclamaciones && (
+            <PanelReclamaciones publicacionId={p.id} datos={reclamaciones} pista={p.pista} />
+          )}
           {abierta && (
             <section>
               <div className="sec-head">

@@ -53,6 +53,7 @@ export class GestionService {
         id_categoria: datos.id_categoria,
         id_lugar: idLugar,
         ...(datos.ubicacion !== undefined && { ubicacion: datos.ubicacion }),
+        ...(datos.tipo === 'ENCONTRADO' && datos.pista !== undefined && { pista: datos.pista }),
         tipo: datos.tipo,
         titulo: datos.titulo,
         descripcion: datos.descripcion,
@@ -117,6 +118,9 @@ export class GestionService {
       const { detalle_reservado, id_sede, ...cambios } = datos;
       // Cambiar de sede = pasar al lugar "General" de la nueva sede (ver crear).
       if (id_sede !== undefined) cambios.id_lugar = await this.lugarDe(tx, { id_sede });
+      if (cambios.pista && actual.tipo === 'PERDIDO') {
+        throw campoInvalido('pista', 'Un objeto perdido no lleva pista (solo los encontrados)');
+      }
       if (detalle_reservado !== undefined) {
         if (actual.tipo === 'PERDIDO') {
           throw campoInvalido(

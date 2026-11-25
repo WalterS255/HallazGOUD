@@ -54,6 +54,7 @@ export class GestionRepository {
       id_categoria: number;
       id_lugar: number;
       ubicacion?: string | null;
+      pista?: string | null;
       tipo: 'PERDIDO' | 'ENCONTRADO';
       titulo: string;
       descripcion: string;
@@ -108,6 +109,7 @@ export class GestionRepository {
       id_categoria: number;
       id_lugar: number;
       ubicacion: string;
+      pista: string | null;
       fecha_suceso: Date;
     }>,
     ahora: Date,
@@ -130,6 +132,7 @@ export class GestionRepository {
         titulo: true,
         descripcion: true,
         ubicacion: true,
+        pista: true,
         estado: true,
         fecha_suceso: true,
         fecha_creacion: true,

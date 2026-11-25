@@ -194,6 +194,47 @@ describe('POST /api/publicaciones con sede + ubicación (2026-11-24)', () => {
   });
 });
 
+describe('pista pública del detalle reservado (2026-11-24)', () => {
+  it('se guarda, sale en la ficha pública y el detalle sigue sin salir', async () => {
+    const ana = await persona();
+    const res = await crearComo(ana, encontrado({ pista: '¿Qué tiene pegado el estuche?' }));
+    expect(res.status).toBe(201);
+    expect(res.body.pista).toBe('¿Qué tiene pegado el estuche?');
+    const ficha = await http.get(`/api/publicaciones/${res.body.id}`).expect(200);
+    expect(ficha.body.pista).toBe('¿Qué tiene pegado el estuche?');
+    expect(JSON.stringify(ficha.body)).not.toMatch(/Sticker de gato/);
+  });
+
+  it('el autor la cambia o la quita; en un PERDIDO → 400', async () => {
+    const ana = await persona();
+    const { body } = await crearComo(ana, encontrado({ pista: '¿Qué tiene pegado?' }));
+    const editar = (id: number, datos: object) =>
+      http.put(`/api/publicaciones/${id}`).set('Authorization', ana.auth).send(datos);
+    expect((await editar(body.id, { pista: '¿De qué animal es el sticker?' })).body.pista).toBe(
+      '¿De qué animal es el sticker?',
+    );
+    expect((await editar(body.id, { pista: '' })).body.pista).toBeNull();
+
+    const perdido = await crearComo(
+      ana,
+      encontrado({ tipo: 'PERDIDO', detalle_reservado: undefined }),
+    );
+    const r = await editar(perdido.body.id, { pista: '¿Qué color?' });
+    expect(r.status).toBe(400);
+    expect(r.body.error.detalles[0].campo).toBe('pista');
+  });
+
+  it('la BD rechaza una pista en un PERDIDO aunque se salte la API (CHECK)', async () => {
+    const perdido = await crearComo(
+      await persona(),
+      encontrado({ tipo: 'PERDIDO', detalle_reservado: undefined }),
+    );
+    await expect(
+      prisma.publicacion.update({ where: { id: perdido.body.id }, data: { pista: '¿Qué color?' } }),
+    ).rejects.toThrow(/chk_publicacion_pista/);
+  });
+});
+
 describe('PUT /api/publicaciones/:id', () => {
   it('el autor edita; cuenta como actividad (ultima_actividad avanza)', async () => {
     const ana = await persona();

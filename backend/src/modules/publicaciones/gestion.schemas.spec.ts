@@ -87,3 +87,28 @@ describe('lugar: sede + ubicación escrita (2026-11-24)', () => {
     expect(esquemaEditar.parse({ ubicacion: 'Sala 302' })).toEqual({ ubicacion: 'Sala 302' });
   });
 });
+
+describe('pista pública del detalle reservado (2026-11-24)', () => {
+  const hallazgo = { ...base, tipo: 'ENCONTRADO', detalle_reservado: 'sticker de gato' };
+
+  it('ENCONTRADO con pista → válido; sin pista también (es opcional)', () => {
+    expect(esquemaCrear.parse({ ...hallazgo, pista: ' ¿Qué tiene en la tapa? ' })).toMatchObject({
+      pista: '¿Qué tiene en la tapa?',
+    });
+    expect(esquemaCrear.safeParse(hallazgo).success).toBe(true);
+  });
+
+  it('PERDIDO con pista → error claro', () => {
+    const r = esquemaCrear.safeParse({ ...base, tipo: 'PERDIDO', pista: '¿Qué color?' });
+    expect(errores(r).pista).toBe('Un objeto perdido no lleva pista (solo los encontrados)');
+  });
+
+  it('la pista no puede revelar el detalle reservado', () => {
+    const r = esquemaCrear.safeParse({ ...hallazgo, pista: 'Tiene un STICKER DE GATO' });
+    expect(errores(r).pista).toBe('La pista no puede incluir el detalle reservado');
+  });
+
+  it('al editar, una pista vacía la quita (null)', () => {
+    expect(esquemaEditar.parse({ pista: '' })).toEqual({ pista: null });
+  });
+});

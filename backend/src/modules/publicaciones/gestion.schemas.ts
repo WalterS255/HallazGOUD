@@ -34,6 +34,32 @@ const detalleReservado = z
   .min(3, { error: 'El detalle reservado debe tener al menos 3 caracteres' })
   .max(500, { error: 'El detalle reservado puede tener máximo 500 caracteres' });
 
+// Pista PÚBLICA sobre el detalle reservado (2026-11-24): orienta a quien reclama
+// ("¿Qué tiene pegado en la base?") sin dar la respuesta. Opcional, solo en ENCONTRADO.
+const pista = z
+  .string({ error: 'Escribe la pista' })
+  .trim()
+  .min(3, { error: 'La pista debe tener al menos 3 caracteres' })
+  .max(150, { error: 'La pista puede tener máximo 150 caracteres' });
+
+// Al editar, una pista vacía la quita (queda null).
+const pistaEditar = z.union([z.literal('').transform(() => null), pista]);
+
+// La pista no puede contener el detalle: lo estaría publicando.
+const revisarPista = (
+  d: { pista?: string | null; detalle_reservado?: string },
+  ctx: z.RefinementCtx,
+) => {
+  const detalle = d.detalle_reservado?.toLowerCase();
+  if (d.pista && detalle && d.pista.toLowerCase().includes(detalle)) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['pista'],
+      message: 'La pista no puede incluir el detalle reservado',
+    });
+  }
+};
+
 // Dónde exactamente, en texto libre ("cuarto piso, al lado de una mesa").
 const ubicacion = z
   .string({ error: 'Describe dónde exactamente' })
@@ -80,7 +106,12 @@ export const esquemaCrear = z
   .discriminatedUnion(
     'tipo',
     [
-      z.object({ tipo: z.literal('ENCONTRADO'), ...comunes, detalle_reservado: detalleReservado }),
+      z.object({
+        tipo: z.literal('ENCONTRADO'),
+        ...comunes,
+        detalle_reservado: detalleReservado,
+        pista: pista.optional(),
+      }),
       z.object({
         tipo: z.literal('PERDIDO'),
         ...comunes,
@@ -91,11 +122,17 @@ export const esquemaCrear = z
             error: 'Un objeto perdido no lleva detalle reservado (solo los encontrados)',
           })
           .optional(),
+        pista: z
+          .undefined({ error: 'Un objeto perdido no lleva pista (solo los encontrados)' })
+          .optional(),
       }),
     ],
     { error: 'Indica si el objeto es PERDIDO o ENCONTRADO' },
   )
-  .superRefine((d, ctx) => revisarLugar(d, ctx, true));
+  .superRefine((d, ctx) => {
+    revisarLugar(d, ctx, true);
+    revisarPista(d, ctx);
+  });
 
 // Editar: todo opcional, pero al menos un campo. El TIPO no se puede cambiar
 // (convertir un PERDIDO en ENCONTRADO cambiaría quién puede reclamar).
@@ -109,12 +146,16 @@ export const esquemaEditar = z
     ubicacion: ubicacion.optional(),
     fecha_suceso: fechaSuceso.optional(),
     detalle_reservado: detalleReservado.optional(),
+    pista: pistaEditar.optional(),
   })
   .refine((d) => Object.values(d).some((v) => v !== undefined), {
     error: 'No hay nada que cambiar',
   })
   // Al editar todo es opcional: solo se impide mandar la sede y el lugar a la vez.
-  .superRefine((d, ctx) => revisarLugar(d, ctx, false));
+  .superRefine((d, ctx) => {
+    revisarLugar(d, ctx, false);
+    revisarPista(d, ctx);
+  });
 
 export const esquemaIdPublicacion = id('una publicación');
 

@@ -177,6 +177,8 @@ model publicacion {
   // Dónde exactamente (texto libre, junto con la sede). NULL en las publicaciones
   // anteriores a 2026-11-24, que solo tienen el edificio de id_lugar.
   ubicacion        String?                  @db.VarChar(200)
+  // Pista pública sobre el detalle reservado (solo ENCONTRADO; CHECK en la migración).
+  pista            String?                  @db.VarChar(150)
   fecha_suceso     DateTime                 @db.Timestamptz(6)
   estado           estado_publicacion       @default(ACTIVA)
   oculta           Boolean                  @default(false)

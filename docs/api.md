@@ -362,6 +362,7 @@ Ficha de detalle (RF-17).
   "fecha_suceso": "2026-10-24T15:00:00.000Z",
   "fecha_creacion": "2026-10-24T16:10:00.000Z",
   "ubicacion": "Cuarto piso, al lado de una mesa",
+  "pista": "¿Qué tiene pegado en la tapa?",
   "categoria": { "id": 5, "nombre": "Útiles y libros", "sensible": false },
   "lugar": {
     "edificio": "General",
@@ -394,10 +395,11 @@ ENCONTRADO:
   "id_sede": 1,
   "ubicacion": "Cuarto piso, al lado de una mesa",
   "fecha_suceso": "2026-10-24T10:00:00-05:00",
-  "detalle_reservado": "Tiene un sticker de un gato en la tapa"
+  "detalle_reservado": "Tiene un sticker de un gato en la tapa",
+  "pista": "¿Qué tiene pegado en la tapa?"
 }
 ```
-PERDIDO: igual, con `"tipo": "PERDIDO"` y **sin** `detalle_reservado` (si se envía, `400`).
+PERDIDO: igual, con `"tipo": "PERDIDO"` y **sin** `detalle_reservado` ni `pista` (si se envían, `400`).
 
 | Campo | Reglas |
 |---|---|
@@ -409,6 +411,7 @@ PERDIDO: igual, con `"tipo": "PERDIDO"` y **sin** `detalle_reservado` (si se env
 | `id_lugar` | Forma anterior, sigue aceptándose: un lugar del catálogo que debe existir. Se manda `id_sede` **o** `id_lugar`, no los dos (`400`) |
 | `fecha_suceso` | No puede estar en el futuro |
 | `detalle_reservado` | Solo ENCONTRADO, obligatorio: 3 a 500 caracteres. **Nunca se muestra públicamente** |
+| `pista` | Solo ENCONTRADO, opcional: 3 a 150 caracteres. **Pública** (sale en la ficha): orienta a quien reclama sin dar la respuesta. No puede contener el texto del `detalle_reservado` (`400`). Al editar, `""` la quita. La BD la impide en un PERDIDO (`chk_publicacion_pista`) |
 
 Respuesta `201`: la publicación creada (`id`, `tipo`, `titulo`, `descripcion`, `ubicacion`, `estado`, fechas, `categoria`, `lugar`) más `"aviso_sensible": true|false` (regla 6.6).
 Si es un ENCONTRADO, el servidor avisa por su cuenta a los autores de PERDIDOS compatibles (RF-24). Si es un PERDIDO, el frontend puede pedir enseguida `GET /publicaciones/:id/coincidencias` (RF-23).

@@ -13,7 +13,7 @@ const PASOS = ['¿Qué?', '¿Dónde y cuándo?', 'Fotos y verificación'];
 const CAMPOS_POR_PASO = [
   ['tipo', 'titulo', 'id_categoria', 'descripcion'],
   ['id_sede', 'ubicacion', 'id_lugar', 'fecha_suceso', 'fecha', 'hora'],
-  ['detalle_reservado', 'imagenes'],
+  ['detalle_reservado', 'pista', 'imagenes'],
 ];
 
 type Datos = {
@@ -26,6 +26,7 @@ type Datos = {
   fecha: string;
   hora: string;
   detalle_reservado: string;
+  pista: string;
 };
 
 // Asistente en 3 pasos (sección 7.6 de la propuesta, RNF-03). Crea la publicación y después sube las fotos.
@@ -59,6 +60,7 @@ export function AsistentePublicacion({
     fecha: hoyColombia(),
     hora: '',
     detalle_reservado: '',
+    pista: '',
   });
   const [fotos, setFotos] = useState<File[]>([]);
   const [errores, setErrores] = useState<Record<string, string>>({});
@@ -99,6 +101,12 @@ export function AsistentePublicacion({
     } else {
       if (hallazgo && d.detalle_reservado.trim().length < 3)
         e.detalle_reservado = 'Registra un detalle que sólo el dueño conocería';
+      const pista = d.pista.trim().toLowerCase();
+      const detalle = d.detalle_reservado.trim().toLowerCase();
+      if (hallazgo && pista && pista.length < 3)
+        e.pista = 'La pista debe tener al menos 3 caracteres';
+      else if (hallazgo && pista && detalle && pista.includes(detalle))
+        e.pista = 'La pista no puede incluir el detalle reservado';
       // RF-08 · pregunta 13.6 (2026-11-21): al menos una foto también en un PERDIDO.
       if (fotos.length === 0)
         e.imagenes = hallazgo
@@ -144,6 +152,8 @@ export function AsistentePublicacion({
             fecha_suceso: aFechaSuceso(d.fecha, d.hora),
             // Un PERDIDO no lleva detalle reservado: el backend rechaza el campo si se envía.
             ...(hallazgo && { detalle_reservado: d.detalle_reservado.trim() }),
+            // La pista es opcional y pública: solo se envía si se escribió.
+            ...(hallazgo && d.pista.trim() && { pista: d.pista.trim() }),
           },
         });
         id = creada.id;
@@ -426,6 +436,28 @@ export function AsistentePublicacion({
                   🔒 Nadie más lo verá. Quien reclame deberá describirlo para demostrar que es suyo.
                 </p>
                 {err('detalle_reservado')}
+              </div>
+            )}
+            {hallazgo && (
+              <div>
+                <label className="label" htmlFor="pista">
+                  Pista para quien reclame (opcional)
+                </label>
+                <input
+                  id="pista"
+                  name="pista"
+                  className="field"
+                  maxLength={150}
+                  value={d.pista}
+                  onChange={cambiar}
+                  {...inv('pista')}
+                  placeholder="Ej.: ¿Qué tiene pegado en la tapa?"
+                />
+                <p className="muted small mt-1">
+                  👁 Esta sí es pública: orienta a quien reclame sobre qué debe describir, sin dar la
+                  respuesta.
+                </p>
+                {err('pista')}
               </div>
             )}
           </>

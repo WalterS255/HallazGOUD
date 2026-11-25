@@ -54,6 +54,7 @@ export default async function EditarPublicacionPage({ params }: Props) {
     fecha,
     hora,
     detalle_reservado: reservado?.detalle_reservado ?? '',
+    pista: p.pista ?? '',
   };
 
   return (
