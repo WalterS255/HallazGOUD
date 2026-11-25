@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { PanelEstado } from '@/components/PanelEstado';
 import { diagnosticarBackend } from '@/lib/api/diagnostico';
+import { puedeVerEstado } from '@/lib/sesion';
 
 export const metadata: Metadata = { title: 'Estado de la conexión' };
 
@@ -11,6 +13,8 @@ const ESTILO = {
 };
 
 export default async function EstadoPage() {
+  // Solo administradores: a los demás, "no existe" (ni siquiera se insinúa la página).
+  if (!(await puedeVerEstado())) notFound();
   const { ok, chequeos } = await diagnosticarBackend();
 
   return (

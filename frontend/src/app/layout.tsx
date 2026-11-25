@@ -3,6 +3,7 @@ import { Archivo, Atkinson_Hyperlegible, JetBrains_Mono } from 'next/font/google
 import Link from 'next/link';
 import Script from 'next/script';
 import { Encabezado } from '@/components/Encabezado';
+import { puedeVerEstado } from '@/lib/sesion';
 import './globals.css';
 
 // Display con carácter (Archivo ancho), cuerpo muy legible (Atkinson, diseñada para baja visión, RNF-05)
@@ -37,7 +38,7 @@ export const viewport: Viewport = { themeColor: '#151110' };
 // Aplica el tema guardado antes de pintar, para que no parpadee. Sin preferencia: oscuro.
 const SCRIPT_TEMA = `try{var t=localStorage.getItem('tema');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}`;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="es"
@@ -59,9 +60,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="wrap small muted flex flex-wrap justify-between gap-2 py-5">
             <span>HallazGO UD · Universidad Distrital Francisco José de Caldas</span>
             <span className="flex gap-4">
-              <Link href="/estado" className="link">
-                Estado de la conexión
-              </Link>
+              {(await puedeVerEstado()) && (
+                <Link href="/estado" className="link">
+                  Estado de la conexión
+                </Link>
+              )}
               <Link href="/privacidad" className="link">
                 Tratamiento de datos
               </Link>
