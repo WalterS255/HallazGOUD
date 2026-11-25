@@ -28,11 +28,11 @@ test('publicar → buscar → reclamar → aceptar → conversar → entregar', 
     await autora.locator('#descripcion').fill('Paraguas negro con mango de madera, plegable.');
     await autora.getByRole('button', { name: 'Siguiente →' }).click();
     // Paso 2: ¿dónde y cuándo? (la fecha ya viene en hoy)
-    const biblioteca = await autora
-      .locator('#id_lugar option', { hasText: 'Biblioteca' })
-      .first()
-      .getAttribute('value');
-    await autora.locator('#id_lugar').selectOption(biblioteca!);
+    // La sede de la lista y, abajo, dónde exactamente (texto libre).
+    await autora.locator('#id_sede').selectOption({ index: 1 });
+    await autora
+      .getByLabel('¿Dónde exactamente?')
+      .fill('Biblioteca, segundo piso, junto a la ventana');
     await autora.getByLabel('Hora aproximada').fill('08:00');
     await autora.getByRole('button', { name: 'Siguiente →' }).click();
     // Paso 3: foto y detalle reservado

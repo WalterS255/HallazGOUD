@@ -12,7 +12,7 @@ const PASOS = ['¿Qué?', '¿Dónde y cuándo?', 'Fotos y verificación'];
 // Campos del backend que se corrigen en cada paso (para volver al paso del error).
 const CAMPOS_POR_PASO = [
   ['tipo', 'titulo', 'id_categoria', 'descripcion'],
-  ['id_lugar', 'fecha_suceso', 'fecha', 'hora'],
+  ['id_sede', 'ubicacion', 'id_lugar', 'fecha_suceso', 'fecha', 'hora'],
   ['detalle_reservado', 'imagenes'],
 ];
 
@@ -21,7 +21,8 @@ type Datos = {
   titulo: string;
   id_categoria: string;
   descripcion: string;
-  id_lugar: string;
+  id_sede: string;
+  ubicacion: string;
   fecha: string;
   hora: string;
   detalle_reservado: string;
@@ -33,7 +34,8 @@ export type Prellenado = {
   desde: { id: number; titulo: string };
   titulo: string;
   id_categoria: number;
-  id_lugar: number | null;
+  id_sede: number | null;
+  ubicacion: string;
 };
 
 export function AsistentePublicacion({
@@ -52,7 +54,8 @@ export function AsistentePublicacion({
     titulo: prellenado?.titulo ?? '',
     id_categoria: prellenado ? String(prellenado.id_categoria) : '',
     descripcion: '',
-    id_lugar: prellenado?.id_lugar ? String(prellenado.id_lugar) : '',
+    id_sede: prellenado?.id_sede ? String(prellenado.id_sede) : '',
+    ubicacion: prellenado?.ubicacion ?? '',
     fecha: hoyColombia(),
     hora: '',
     detalle_reservado: '',
@@ -86,7 +89,9 @@ export function AsistentePublicacion({
       if (d.descripcion.trim().length < 10)
         e.descripcion = 'Describe el objeto con al menos 10 caracteres';
     } else if (n === 1) {
-      if (!d.id_lugar) e.id_lugar = 'Elige un lugar';
+      if (!d.id_sede) e.id_sede = 'Elige una sede';
+      if (d.ubicacion.trim().length < 3)
+        e.ubicacion = 'Describe el lugar con al menos 3 caracteres';
       if (!d.fecha) e.fecha = 'Indica la fecha';
       if (!d.hora) e.hora = 'Indica la hora aproximada';
       if (d.fecha && d.hora && new Date(aFechaSuceso(d.fecha, d.hora)) > new Date())
@@ -133,7 +138,9 @@ export function AsistentePublicacion({
             titulo: d.titulo.trim(),
             descripcion: d.descripcion.trim(),
             id_categoria: Number(d.id_categoria),
-            id_lugar: Number(d.id_lugar),
+            // La sede + el texto libre: el backend la deja en el lugar "General" de la sede.
+            id_sede: Number(d.id_sede),
+            ubicacion: d.ubicacion.trim(),
             fecha_suceso: aFechaSuceso(d.fecha, d.hora),
             // Un PERDIDO no lleva detalle reservado: el backend rechaza el campo si se envía.
             ...(hallazgo && { detalle_reservado: d.detalle_reservado.trim() }),
@@ -275,30 +282,46 @@ export function AsistentePublicacion({
         {paso === 1 && (
           <>
             <div>
-              <label className="label" htmlFor="id_lugar">
-                Sede y lugar
+              <label className="label" htmlFor="id_sede">
+                Sede
               </label>
               <select
-                id="id_lugar"
-                name="id_lugar"
+                id="id_sede"
+                name="id_sede"
                 className="field"
-                value={d.id_lugar}
+                value={d.id_sede}
                 onChange={cambiar}
-                {...inv('id_lugar')}
+                {...inv('id_sede')}
               >
                 <option value="">Selecciona…</option>
                 {catalogos.sedes.map((s) => (
-                  <optgroup key={s.id} label={s.nombre}>
-                    {s.lugares.map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.edificio}
-                        {l.referencia ? ` · ${l.referencia}` : ''}
-                      </option>
-                    ))}
-                  </optgroup>
+                  <option key={s.id} value={s.id}>
+                    {s.nombre}
+                  </option>
                 ))}
               </select>
-              {err('id_lugar')}
+              {err('id_sede')}
+            </div>
+            <div>
+              <label className="label" htmlFor="ubicacion">
+                ¿Dónde exactamente?
+              </label>
+              <textarea
+                id="ubicacion"
+                name="ubicacion"
+                className="field"
+                rows={2}
+                maxLength={200}
+                value={d.ubicacion}
+                onChange={cambiar}
+                {...inv('ubicacion')}
+                placeholder={
+                  hallazgo
+                    ? 'Ej.: Edificio Sabio Caldas, cuarto piso, al lado de una mesa'
+                    : 'Ej.: Biblioteca, segundo piso, cerca de los computadores'
+                }
+              />
+              {err('ubicacion')}
             </div>
             <div className="two">
               <div>

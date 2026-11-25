@@ -133,6 +133,7 @@ describe('CatalogoService.listar (BD real)', () => {
       'sede',
       'tipo',
       'titulo',
+      'ubicacion',
     ];
     for (const fila of r.datos) expect(Object.keys(fila).sort()).toEqual(permitidos);
     const texto = JSON.stringify(r);

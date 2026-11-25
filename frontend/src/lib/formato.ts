@@ -116,3 +116,8 @@ export function enlaceNotificacion(n: Notificacion): string {
       return '/notificaciones';
   }
 }
+
+/** Edificio del catálogo (+ referencia): el lugar de las publicaciones sin `ubicacion`. */
+export function textoLugar(l: { edificio: string; referencia: string | null }) {
+  return l.referencia ? `${l.edificio} · ${l.referencia}` : l.edificio;
+}

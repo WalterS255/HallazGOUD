@@ -147,6 +147,53 @@ describe('POST /api/publicaciones', () => {
   });
 });
 
+describe('POST /api/publicaciones con sede + ubicación (2026-11-24)', () => {
+  it('queda en el lugar "General" de la sede (uno solo por sede) y guarda la ubicación', async () => {
+    const sede = await prisma.sede.create({ data: { nombre: unico('Sede ') } });
+    const datos = encontrado({
+      id_lugar: undefined,
+      id_sede: sede.id,
+      ubicacion: 'Cuarto piso, al lado de una mesa',
+    });
+    const yo = await persona();
+    const r1 = await crearComo(yo, datos);
+    const r2 = await crearComo(yo, datos);
+    expect(r1.status).toBe(201);
+    expect(r1.body).toMatchObject({
+      ubicacion: 'Cuarto piso, al lado de una mesa',
+      lugar: { edificio: 'General', sede: { id: sede.id } },
+    });
+    expect(r2.body.lugar.id).toBe(r1.body.lugar.id);
+    expect(await prisma.lugar.count({ where: { id_sede: sede.id } })).toBe(1);
+  });
+
+  it('sede inexistente → 400 con id_sede marcado', async () => {
+    const res = await crearComo(
+      await persona(),
+      encontrado({ id_lugar: undefined, id_sede: 999_999, ubicacion: 'Piso 4' }),
+    );
+    expect(res.status).toBe(400);
+    expect(res.body.error.detalles).toEqual([
+      { campo: 'id_sede', mensaje: 'Elige una sede válida' },
+    ]);
+  });
+
+  it('al editar, cambiar de sede y de ubicación', async () => {
+    const ana = await persona();
+    const { body } = await crearComo(ana);
+    const sede = await prisma.sede.create({ data: { nombre: unico('Sede ') } });
+    const res = await http
+      .put(`/api/publicaciones/${body.id}`)
+      .set('Authorization', ana.auth)
+      .send({ id_sede: sede.id, ubicacion: 'Cafetería, mesa del fondo' })
+      .expect(200);
+    expect(res.body).toMatchObject({
+      ubicacion: 'Cafetería, mesa del fondo',
+      lugar: { edificio: 'General', sede: { id: sede.id } },
+    });
+  });
+});
+
 describe('PUT /api/publicaciones/:id', () => {
   it('el autor edita; cuenta como actividad (ultima_actividad avanza)', async () => {
     const ana = await persona();

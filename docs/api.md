@@ -247,7 +247,8 @@ Todas mis publicaciones, **en cualquier estado** y aunque estén ocultas por mod
     "id": 41, "tipo": "ENCONTRADO", "estado": "ACTIVA",
     "titulo": "Calculadora Casio encontrada",
     "fecha_suceso": "2026-10-24T15:00:00.000Z", "fecha_creacion": "2026-10-24T16:10:00.000Z",
-    "categoria": "Útiles y libros", "sede": "Calle 40 (Ingeniería)", "edificio": "Biblioteca",
+    "categoria": "Útiles y libros", "sede": "Calle 40 (Ingeniería)", "edificio": "General",
+    "ubicacion": "Cuarto piso, al lado de una mesa",
     "miniatura": "/api/imagenes/publicaciones/41/<uuid>_min.webp",
     "oculta": false,
     "reclamaciones_pendientes": 2
@@ -335,7 +336,8 @@ Catálogo con filtros, búsqueda, orden y paginación (RF-13 a RF-16).
       "fecha_creacion": "2026-10-24T16:10:00.000Z",
       "categoria": "Útiles y libros",
       "sede": "Calle 40 (Ingeniería)",
-      "edificio": "Biblioteca",
+      "edificio": "General",
+      "ubicacion": "Cuarto piso, al lado de una mesa",
       "miniatura": "/api/imagenes/publicaciones/41/<uuid>_min.webp"
     }
   ],
@@ -345,6 +347,7 @@ Catálogo con filtros, búsqueda, orden y paginación (RF-13 a RF-16).
 }
 ```
 Las publicaciones **ocultas por moderación** nunca aparecen. `miniatura` es `null` si no tiene fotos.
+`ubicacion` es el texto de "dónde exactamente"; es `null` en las publicaciones anteriores al 2026-11-24, que solo tienen `edificio`. El frontend muestra `ubicacion` si hay, y si no, `edificio`.
 Errores: `400 SOLICITUD_INVALIDA` (con `detalles` por campo).
 
 ### `GET /publicaciones/:id` · público
@@ -358,9 +361,10 @@ Ficha de detalle (RF-17).
   "descripcion": "Calculadora científica gris en una mesa de la biblioteca",
   "fecha_suceso": "2026-10-24T15:00:00.000Z",
   "fecha_creacion": "2026-10-24T16:10:00.000Z",
+  "ubicacion": "Cuarto piso, al lado de una mesa",
   "categoria": { "id": 5, "nombre": "Útiles y libros", "sensible": false },
   "lugar": {
-    "edificio": "Biblioteca",
+    "edificio": "General",
     "referencia": null,
     "sede": { "id": 1, "nombre": "Calle 40 (Ingeniería)" }
   },
@@ -387,7 +391,8 @@ ENCONTRADO:
   "titulo": "Calculadora Casio encontrada",
   "descripcion": "Calculadora científica gris en una mesa de la biblioteca",
   "id_categoria": 5,
-  "id_lugar": 3,
+  "id_sede": 1,
+  "ubicacion": "Cuarto piso, al lado de una mesa",
   "fecha_suceso": "2026-10-24T10:00:00-05:00",
   "detalle_reservado": "Tiene un sticker de un gato en la tapa"
 }
@@ -399,16 +404,18 @@ PERDIDO: igual, con `"tipo": "PERDIDO"` y **sin** `detalle_reservado` (si se env
 | `titulo` | 5 a 100 caracteres |
 | `descripcion` | 10 a 2000 caracteres |
 | `id_categoria` | Debe existir y estar activa |
-| `id_lugar` | Debe existir |
+| `id_sede` | Debe existir. La publicación queda en el lugar **"General"** de esa sede (se crea solo la primera vez), así coincidencias, estadísticas y el filtro por sede siguen funcionando |
+| `ubicacion` | Obligatoria con `id_sede`: 3 a 200 caracteres. Dónde exactamente ("cuarto piso, al lado de una mesa") |
+| `id_lugar` | Forma anterior, sigue aceptándose: un lugar del catálogo que debe existir. Se manda `id_sede` **o** `id_lugar`, no los dos (`400`) |
 | `fecha_suceso` | No puede estar en el futuro |
 | `detalle_reservado` | Solo ENCONTRADO, obligatorio: 3 a 500 caracteres. **Nunca se muestra públicamente** |
 
-Respuesta `201`: la publicación creada (`id`, `tipo`, `titulo`, `descripcion`, `estado`, fechas, `categoria`, `lugar`) más `"aviso_sensible": true|false` (regla 6.6).
+Respuesta `201`: la publicación creada (`id`, `tipo`, `titulo`, `descripcion`, `ubicacion`, `estado`, fechas, `categoria`, `lugar`) más `"aviso_sensible": true|false` (regla 6.6).
 Si es un ENCONTRADO, el servidor avisa por su cuenta a los autores de PERDIDOS compatibles (RF-24). Si es un PERDIDO, el frontend puede pedir enseguida `GET /publicaciones/:id/coincidencias` (RF-23).
 Errores: `400 SOLICITUD_INVALIDA` (incluida la fecha futura, en `detalles`), `401`.
 
 ### `PUT /publicaciones/:id` · autor
-Editar (RF-10). Mismos campos que crear, todos opcionales (al menos uno). No se cambia el `tipo`.
+Editar (RF-10). Mismos campos que crear, todos opcionales (al menos uno). No se cambia el `tipo`. Cambiar `id_sede` mueve la publicación al lugar "General" de la nueva sede.
 Errores:
 | Código | Estado | Cuándo |
 |---|---|---|

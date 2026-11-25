@@ -11,7 +11,8 @@ export type ValoresEdicion = {
   titulo: string;
   id_categoria: string;
   descripcion: string;
-  id_lugar: string;
+  id_sede: string;
+  ubicacion: string;
   fecha: string;
   hora: string;
   detalle_reservado: string;
@@ -60,7 +61,12 @@ export function FormEditarPublicacion({
     if (v.titulo !== iniciales.titulo) cambios.titulo = v.titulo;
     if (v.descripcion !== iniciales.descripcion) cambios.descripcion = v.descripcion;
     if (v.id_categoria !== iniciales.id_categoria) cambios.id_categoria = Number(v.id_categoria);
-    if (v.id_lugar !== iniciales.id_lugar) cambios.id_lugar = Number(v.id_lugar);
+    // Con la sede va también la ubicación: el backend la pide para ubicar la publicación.
+    if (v.id_sede !== iniciales.id_sede) {
+      cambios.id_sede = Number(v.id_sede);
+      cambios.ubicacion = v.ubicacion.trim();
+    }
+    if (v.ubicacion !== iniciales.ubicacion) cambios.ubicacion = v.ubicacion.trim();
     if (v.fecha !== iniciales.fecha || v.hora !== iniciales.hora)
       cambios.fecha_suceso = aFechaSuceso(v.fecha, v.hora);
     if (esHallazgo && !detalleBloqueado && v.detalle_reservado !== iniciales.detalle_reservado) {
@@ -147,30 +153,42 @@ export function FormEditarPublicacion({
       </div>
 
       <div>
-        <label className="label" htmlFor="id_lugar">
-          Sede y lugar
+        <label className="label" htmlFor="id_sede">
+          Sede
         </label>
         <select
-          id="id_lugar"
-          name="id_lugar"
+          id="id_sede"
+          name="id_sede"
           className="field"
-          value={v.id_lugar}
+          value={v.id_sede}
           onChange={cambiar}
-          {...inv('id_lugar')}
+          {...inv('id_sede')}
         >
-          <option value="">Selecciona…</option>
           {catalogos.sedes.map((s) => (
-            <optgroup key={s.id} label={s.nombre}>
-              {s.lugares.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.edificio}
-                  {l.referencia ? ` · ${l.referencia}` : ''}
-                </option>
-              ))}
-            </optgroup>
+            <option key={s.id} value={s.id}>
+              {s.nombre}
+            </option>
           ))}
         </select>
-        {err('id_lugar')}
+        {err('id_sede')}
+      </div>
+
+      <div>
+        <label className="label" htmlFor="ubicacion">
+          ¿Dónde exactamente?
+        </label>
+        <textarea
+          id="ubicacion"
+          name="ubicacion"
+          className="field"
+          rows={2}
+          maxLength={200}
+          value={v.ubicacion}
+          onChange={cambiar}
+          {...inv('ubicacion')}
+          placeholder="Ej.: cuarto piso, al lado de una mesa"
+        />
+        {err('ubicacion')}
       </div>
 
       <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>

@@ -5,7 +5,7 @@ import {
   type ValoresEdicion,
 } from '@/components/publicacion/FormEditarPublicacion';
 import { apiGet, apiGetOpcional } from '@/lib/api/servidor';
-import { aFechaYHoraColombia } from '@/lib/formato';
+import { aFechaYHoraColombia, textoLugar } from '@/lib/formato';
 import { usuarioOLogin } from '@/lib/sesion';
 import type { Catalogos, Publicacion, ReclamacionesDePublicacion } from '@/lib/tipos';
 
@@ -43,16 +43,14 @@ export default async function EditarPublicacionPage({ params }: Props) {
   const reservado = esHallazgo
     ? await apiGet<ReclamacionesDePublicacion>(`/publicaciones/${p.id}/reclamaciones`)
     : null;
-  // La ficha trae el lugar como texto (sede + edificio); su id se busca en los catálogos.
-  const lugar = catalogos.sedes
-    .find((s) => s.id === p.lugar.sede.id)
-    ?.lugares.find((l) => l.edificio === p.lugar.edificio);
   const { fecha, hora } = aFechaYHoraColombia(p.fecha_suceso);
   const iniciales: ValoresEdicion = {
     titulo: p.titulo,
     id_categoria: String(p.categoria.id),
     descripcion: p.descripcion,
-    id_lugar: lugar ? String(lugar.id) : '',
+    id_sede: String(p.lugar.sede.id),
+    // Las publicaciones anteriores al campo "dónde exactamente" muestran su edificio.
+    ubicacion: p.ubicacion ?? textoLugar(p.lugar),
     fecha,
     hora,
     detalle_reservado: reservado?.detalle_reservado ?? '',
