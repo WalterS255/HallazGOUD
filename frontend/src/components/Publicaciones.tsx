@@ -43,7 +43,7 @@ export function TarjetaPublicacion({
         </span>
         <span className="pub-title">{p.titulo}</span>
         <span className="pub-meta">
-          {p.categoria} · {p.sede}, {p.edificio}
+          {p.categoria} · {p.sede}, {p.ubicacion ?? p.edificio}
         </span>
         <span className="pub-date" title={formatearFecha(p.fecha_suceso)}>
           {p.tipo === 'ENCONTRADO' ? 'Encontrado' : 'Perdido'} {relativo(p.fecha_suceso)}
@@ -87,7 +87,7 @@ export function EtiquetaHallazgo({ p }: { p: ResumenPublicacion | null }) {
         <dt>Sede</dt>
         <dd>{p ? p.sede : 'Cualquier sede'}</dd>
         <dt>Lugar</dt>
-        <dd>{p ? p.edificio : 'Biblioteca, cafetería…'}</dd>
+        <dd>{p ? (p.ubicacion ?? p.edificio) : 'Biblioteca, cafetería…'}</dd>
         <dt>Fecha</dt>
         <dd>{p ? formatearFecha(p.fecha_suceso) : 'Hoy'}</dd>
       </dl>

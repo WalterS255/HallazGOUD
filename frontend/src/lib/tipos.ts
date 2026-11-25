@@ -74,6 +74,8 @@ export type ResumenPublicacion = {
   categoria: string;
   sede: string;
   edificio: string;
+  /** Dónde exactamente (texto libre). null en las publicaciones anteriores al 2026-11-24. */
+  ubicacion: string | null;
   miniatura: string | null;
 };
 
@@ -88,6 +90,7 @@ export type Publicacion = {
   descripcion: string;
   fecha_suceso: FechaISO;
   fecha_creacion: FechaISO;
+  ubicacion: string | null;
   categoria: { id: number; nombre: string; sensible: boolean };
   lugar: { edificio: string; referencia: string | null; sede: { id: number; nombre: string } };
   imagenes: Imagen[];

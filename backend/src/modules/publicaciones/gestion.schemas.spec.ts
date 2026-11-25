@@ -58,3 +58,32 @@ describe('esquemaEditar', () => {
     expect(r).not.toHaveProperty('tipo');
   });
 });
+
+describe('lugar: sede + ubicación escrita (2026-11-24)', () => {
+  const conSede = { ...base, id_lugar: undefined, tipo: 'PERDIDO', id_sede: '3' };
+
+  it('sede + ubicación → válido, sin id_lugar', () => {
+    const r = esquemaCrear.parse({ ...conSede, ubicacion: '  Cuarto piso, junto a una mesa ' });
+    expect(r).toMatchObject({ id_sede: 3, ubicacion: 'Cuarto piso, junto a una mesa' });
+    expect(r.id_lugar).toBeUndefined();
+  });
+
+  it('sede sin ubicación → error en ubicacion', () => {
+    expect(errores(esquemaCrear.safeParse(conSede)).ubicacion).toBe('Describe dónde exactamente');
+  });
+
+  it('ni sede ni lugar → "Elige una sede"', () => {
+    const r = esquemaCrear.safeParse({ ...conSede, id_sede: undefined, ubicacion: 'Piso 4' });
+    expect(errores(r).id_sede).toBe('Elige una sede');
+  });
+
+  it('sede y lugar a la vez → error (crear y editar)', () => {
+    const r = esquemaCrear.safeParse({ ...conSede, id_lugar: 2, ubicacion: 'Piso 4' });
+    expect(errores(r).id_sede).toBe('Indica la sede o el lugar, no los dos');
+    expect(esquemaEditar.safeParse({ id_sede: 1, id_lugar: 2 }).success).toBe(false);
+  });
+
+  it('editar solo la ubicación → válido', () => {
+    expect(esquemaEditar.parse({ ubicacion: 'Sala 302' })).toEqual({ ubicacion: 'Sala 302' });
+  });
+});

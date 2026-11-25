@@ -13,6 +13,7 @@ export function aResumen(p: Publicacion): ResumenPublicacion {
     categoria: p.categoria.nombre,
     sede: p.lugar.sede.nombre,
     edificio: p.lugar.edificio,
+    ubicacion: p.ubicacion,
     miniatura: p.imagenes[0]?.url_miniatura ?? null,
   };
 }

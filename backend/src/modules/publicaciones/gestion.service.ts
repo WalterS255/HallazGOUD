@@ -46,11 +46,13 @@ export class GestionService {
     }
 
     const creada = await this.repo.enTransaccion(async (tx) => {
-      const sensible = await this.revisarCatalogos(tx, datos.id_categoria, datos.id_lugar);
+      const idLugar = await this.lugarDe(tx, datos);
+      const sensible = await this.revisarCatalogos(tx, datos.id_categoria, idLugar);
       const { id } = await this.repo.crear(tx, {
         id_usuario: ctx.usuario.id,
         id_categoria: datos.id_categoria,
-        id_lugar: datos.id_lugar,
+        id_lugar: idLugar,
+        ...(datos.ubicacion !== undefined && { ubicacion: datos.ubicacion }),
         tipo: datos.tipo,
         titulo: datos.titulo,
         descripcion: datos.descripcion,
@@ -112,7 +114,9 @@ export class GestionService {
         );
       }
 
-      const { detalle_reservado, ...cambios } = datos;
+      const { detalle_reservado, id_sede, ...cambios } = datos;
+      // Cambiar de sede = pasar al lugar "General" de la nueva sede (ver crear).
+      if (id_sede !== undefined) cambios.id_lugar = await this.lugarDe(tx, { id_sede });
       if (detalle_reservado !== undefined) {
         if (actual.tipo === 'PERDIDO') {
           throw campoInvalido(
@@ -187,6 +191,16 @@ export class GestionService {
       motivo: esAutor ? 'Retirada por el autor' : 'Retirada por moderación',
     });
     return { id, estado: cambio.hacia };
+  }
+
+  // El lugar llega como id_lugar (un edificio del catálogo) o como id_sede: en ese caso
+  // la publicación queda en el lugar "General" de la sede y el detalle va en `ubicacion`.
+  // Así el motor de coincidencias, las estadísticas y los filtros siguen usando id_lugar.
+  private async lugarDe(tx: Tx, d: { id_lugar?: number; id_sede?: number }): Promise<number> {
+    if (d.id_lugar !== undefined) return d.id_lugar;
+    const id = d.id_sede === undefined ? null : await this.repo.lugarGeneral(tx, d.id_sede);
+    if (id === null) throw campoInvalido('id_sede', 'Elige una sede válida');
+    return id;
   }
 
   // Devuelve si la categoría es sensible. Lanza 400 con el campo marcado si algo no sirve.

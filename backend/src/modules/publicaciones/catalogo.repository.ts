@@ -30,6 +30,7 @@ export interface ItemCatalogo {
   categoria: string;
   sede: string;
   edificio: string;
+  ubicacion: string | null;
   miniatura: string | null;
 }
 
@@ -43,6 +44,7 @@ const SELECT_DETALLE = {
   estado: true,
   titulo: true,
   descripcion: true,
+  ubicacion: true,
   fecha_suceso: true,
   fecha_creacion: true,
   categoria: { select: { id: true, nombre: true, sensible: true } },
@@ -105,7 +107,7 @@ export class CatalogoRepository {
       this.prisma.$queryRaw<ItemCatalogo[]>`
         SELECT p.id, p.tipo::text AS tipo, p.estado::text AS estado, p.titulo,
                p.fecha_suceso, p.fecha_creacion,
-               c.nombre AS categoria, s.nombre AS sede, l.edificio,
+               c.nombre AS categoria, s.nombre AS sede, l.edificio, p.ubicacion,
                (SELECT i.url_miniatura FROM imagen i
                 WHERE i.id_publicacion = p.id ORDER BY i.orden LIMIT 1) AS miniatura
         ${desde}

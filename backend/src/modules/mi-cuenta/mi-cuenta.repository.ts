@@ -16,6 +16,7 @@ export interface MiPublicacionFila {
   categoria: string;
   sede: string;
   edificio: string;
+  ubicacion: string | null;
   miniatura: string | null;
   oculta: boolean;
   reclamaciones_pendientes: number;
@@ -58,7 +59,7 @@ export class MiCuentaRepository {
     return this.prisma.$queryRaw<MiPublicacionFila[]>`
       SELECT p.id, p.tipo::text AS tipo, p.estado::text AS estado, p.titulo,
              p.fecha_suceso, p.fecha_creacion,
-             c.nombre AS categoria, s.nombre AS sede, l.edificio,
+             c.nombre AS categoria, s.nombre AS sede, l.edificio, p.ubicacion,
              (SELECT i.url_miniatura FROM imagen i
               WHERE i.id_publicacion = p.id ORDER BY i.orden LIMIT 1) AS miniatura,
              p.oculta,

@@ -17,6 +17,7 @@ import {
   formatearFechaHora,
   iconoCategoria,
   mapaIconos,
+  textoLugar,
 } from '@/lib/formato';
 import { obtenerUsuario } from '@/lib/sesion';
 import type {
@@ -98,8 +99,7 @@ export default async function DetallePublicacionPage({ params }: Props) {
             </dd>
             <dt>Lugar</dt>
             <dd>
-              {p.lugar.sede.nombre} · {p.lugar.edificio}
-              {p.lugar.referencia && ` · ${p.lugar.referencia}`}
+              {p.lugar.sede.nombre} · {p.ubicacion ?? textoLugar(p.lugar)}
             </dd>
             <dt>{p.tipo === 'ENCONTRADO' ? 'Encontrado' : 'Perdido'}</dt>
             <dd>{formatearFechaHora(p.fecha_suceso)}</dd>
