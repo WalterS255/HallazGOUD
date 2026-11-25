@@ -5,7 +5,15 @@ import { useRouter } from 'next/navigation';
 import { errorDeCampo, llamarApi } from '@/lib/api/cliente';
 
 // RF-18: el reclamante describe el detalle que el autor no publicó.
-export function FormReclamar({ publicacionId, autor }: { publicacionId: number; autor: string }) {
+export function FormReclamar({
+  publicacionId,
+  autor,
+  pista,
+}: {
+  publicacionId: number;
+  autor: string;
+  pista?: string | null;
+}) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -58,6 +66,11 @@ export function FormReclamar({ publicacionId, autor }: { publicacionId: number; 
         Quien lo encontró guardó un detalle que no aparece en la publicación. Descríbelo para
         demostrar que es tuyo.
       </p>
+      {pista && (
+        <p className="note note-info">
+          <strong>Pista de {autor}:</strong> {pista}
+        </p>
+      )}
       <div>
         <label className="label" htmlFor="respuesta_detalle">
           Detalle distintivo

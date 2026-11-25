@@ -45,6 +45,7 @@ const SELECT_DETALLE = {
   titulo: true,
   descripcion: true,
   ubicacion: true,
+  pista: true, // pública: orienta a quien reclama (el detalle reservado nunca sale)
   fecha_suceso: true,
   fecha_creacion: true,
   categoria: { select: { id: true, nombre: true, sensible: true } },

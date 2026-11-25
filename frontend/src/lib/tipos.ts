@@ -91,6 +91,8 @@ export type Publicacion = {
   fecha_suceso: FechaISO;
   fecha_creacion: FechaISO;
   ubicacion: string | null;
+  /** Pista pública sobre el detalle reservado (solo ENCONTRADO, opcional). */
+  pista: string | null;
   categoria: { id: number; nombre: string; sensible: boolean };
   lugar: { edificio: string; referencia: string | null; sede: { id: number; nombre: string } };
   imagenes: Imagen[];

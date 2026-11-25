@@ -12,9 +12,11 @@ import type { ReclamacionesDePublicacion } from '@/lib/tipos';
 export function PanelReclamaciones({
   publicacionId,
   datos,
+  pista,
 }: {
   publicacionId: number;
   datos: ReclamacionesDePublicacion;
+  pista?: string | null;
 }) {
   const router = useRouter();
   const [procesando, setProcesando] = useState<number | null>(null);
@@ -42,6 +44,12 @@ export function PanelReclamaciones({
           <strong>Tu detalle reservado:</strong> {datos.detalle_reservado}
           <br />
           <span className="small">Sólo tú lo ves. Compáralo con cada reclamación.</span>
+          {pista && (
+            <>
+              <br />
+              <span className="small">Pista pública que diste: «{pista}»</span>
+            </>
+          )}
         </p>
       )}
       <h3 id="t-reclamaciones">Reclamaciones ({datos.reclamaciones.length})</h3>

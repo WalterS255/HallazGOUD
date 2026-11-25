@@ -16,6 +16,7 @@ export type ValoresEdicion = {
   fecha: string;
   hora: string;
   detalle_reservado: string;
+  pista: string;
 };
 
 type Props = {
@@ -69,8 +70,16 @@ export function FormEditarPublicacion({
     if (v.ubicacion !== iniciales.ubicacion) cambios.ubicacion = v.ubicacion.trim();
     if (v.fecha !== iniciales.fecha || v.hora !== iniciales.hora)
       cambios.fecha_suceso = aFechaSuceso(v.fecha, v.hora);
+    // Vacía = quitar la pista (el backend la deja en null).
+    if (esHallazgo && v.pista.trim() !== iniciales.pista) cambios.pista = v.pista.trim();
     if (esHallazgo && !detalleBloqueado && v.detalle_reservado !== iniciales.detalle_reservado) {
       cambios.detalle_reservado = v.detalle_reservado;
+    }
+    const pista = v.pista.trim().toLowerCase();
+    const detalle = v.detalle_reservado.trim().toLowerCase();
+    if (esHallazgo && pista && detalle && pista.includes(detalle)) {
+      setErrores({ pista: 'La pista no puede incluir el detalle reservado' });
+      return;
     }
     if (Object.keys(cambios).length === 0) {
       setError('No cambiaste nada.');
@@ -245,6 +254,29 @@ export function FormEditarPublicacion({
               : '🔒 Nadie más lo verá. Quien reclame deberá describirlo.'}
           </p>
           {err('detalle_reservado')}
+        </div>
+      )}
+
+      {esHallazgo && (
+        <div>
+          <label className="label" htmlFor="pista">
+            Pista para quien reclame (opcional)
+          </label>
+          <input
+            id="pista"
+            name="pista"
+            className="field"
+            maxLength={150}
+            value={v.pista}
+            onChange={cambiar}
+            aria-describedby="pista-ayuda"
+            {...inv('pista')}
+            placeholder="Ej.: ¿Qué tiene pegado en la tapa?"
+          />
+          <p id="pista-ayuda" className="muted small">
+            👁 Pública: orienta a quien reclame sin dar la respuesta. Déjala vacía para quitarla.
+          </p>
+          {err('pista')}
         </div>
       )}
 
