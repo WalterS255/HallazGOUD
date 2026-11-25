@@ -24,9 +24,12 @@ export async function Encabezado() {
       {sinBackend && (
         <p className="aviso-conexion" role="alert">
           Sin conexión con el backend.{' '}
-          <Link href="/estado" className="underline">
-            Ver diagnóstico
-          </Link>
+          {/* El diagnóstico solo se abre así en desarrollo (ver puedeVerEstado). */}
+          {process.env.NODE_ENV === 'development' && (
+            <Link href="/estado" className="underline">
+              Ver diagnóstico
+            </Link>
+          )}
         </p>
       )}
       <div className="wrap">

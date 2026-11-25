@@ -14,6 +14,19 @@ export async function usuarioOLogin(rutaActual: string): Promise<Perfil> {
   return usuario;
 }
 
+/**
+ * ¿Puede ver /estado? Solo un ADMIN: el diagnóstico muestra la configuración del servidor.
+ * Excepción: en desarrollo, con el backend caído (no se puede saber quién es), se deja ver
+ * porque es justo cuando sirve.
+ */
+export async function puedeVerEstado(): Promise<boolean> {
+  try {
+    return (await obtenerUsuario())?.rol === 'ADMIN';
+  } catch {
+    return process.env.NODE_ENV === 'development';
+  }
+}
+
 export function esModerador(rol: Rol) {
   return rol === 'MODERADOR' || rol === 'ADMIN';
 }

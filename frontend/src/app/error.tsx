@@ -18,9 +18,12 @@ export default function ErrorPagina({ error, reset }: { error: Error; reset: () 
         <button type="button" onClick={reset} className="btn btn-primary">
           Reintentar
         </button>
-        <Link href="/estado" className="btn">
-          Ver estado de la conexión
-        </Link>
+        {/* /estado es solo para administradores; en desarrollo ayuda a diagnosticar. */}
+        {process.env.NODE_ENV === 'development' && (
+          <Link href="/estado" className="btn">
+            Ver estado de la conexión
+          </Link>
+        )}
       </div>
     </div>
   );
